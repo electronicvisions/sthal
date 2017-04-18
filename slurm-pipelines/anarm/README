@@ -1,0 +1,28 @@
+# How to start a pipeline for ADC evaluation and plotting 
+
+### The pipeline
+1. prerequisites (create folders, interpret arguments),
+2. anarm_test (perform the cycle of hardware settings and readings),
+3. plot (plot results, generating figures and html file).
+
+### Setup
+
+This part of the software uses [slurm-pipeline](https://github.com/acorg/slurm-pipeline). The class exists in the visionary-wafer container app, but it can be installed in other containers using [spack package installation](https://brainscales-r.kip.uni-heidelberg.de/projects/symap2ic/wiki/Spack).
+
+This tool requires loading modules `slurm-singularity` and either `nmpm_software` or a locally built project. After a successful run, a waferXX_dncXX folder will be generated in /<output_path>/<TAG>/data, together with overview.html and raw_traces_w_XX.html files.
+
+### Example
+```
+singularity exec --app visionary-wafer /containers/stable/latest slurm-pipeline.py --specification specification.json --output post.json --scriptArgs 't=RUN001' 'w=24' 'd=0' 'o=/output/path'
+```
+
+Observe that slurm-pipeline arguments are given with space separation, while arguments for the pipeline scripts are given following `--scriptArgs` option.
+
+Arguments:
+* `--specification`: JSON file that contains the pipeline steps, with names, dependencies, etc.
+* `--output`: JSON file that contains the output of slurm-pipeline.py (use `slurm-pipeline-status.py -s post.json` to view)
+* `--scriptArgs`: Specify arguments that should appear on the command line when initial step scripts are run. The provided arguments will be available to all called scripts through SP_ORIGINAL_ARGS variable. The arguments for --scriptArgs are: 
+      ** TAG, additional folder in the output path. This allows, for example, to keep different runs in separate folders
+      ** Wafer number
+      ** DNC number (from 0 to 47)
+      ** Scripts' output path (use `readlink -f ../relative/path` like in the example to convert a relative path to an absolute path).

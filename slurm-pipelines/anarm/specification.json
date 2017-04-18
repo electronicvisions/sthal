@@ -1,0 +1,21 @@
+{
+	"steps": [
+		{
+			"cwd" : "prereq",
+			"name": "prereq",
+			"script": "./submit.sh"
+		},
+		{
+			"cwd" : "anarm_test",
+			"dependencies": ["prereq"],
+			"name": "anarm_test",
+			"script": "./submit.sh"
+		},
+		{
+			"cwd" : "plot",
+			"dependencies": ["anarm_test"],
+			"name": "plot",
+			"script": "./submit.sh"
+		}
+	]
+}

@@ -383,7 +383,7 @@ class TestRecticleAout(unittest.TestCase):
                 except RuntimeError:
                     self.data_adcs[key] = (None, None, [])
 
-        self.wafer.configure(pysthal.HICANNConfigurator())
+        self.wafer.configure(pysthal.ParallelHICANNv4Configurator())
 
     def test_analog_readout(self):
         """Test HICANN AnaRM connections"""

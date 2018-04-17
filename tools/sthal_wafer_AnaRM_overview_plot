@@ -15,15 +15,17 @@ from xml.etree import ElementTree
 import jinja2
 import numpy
 import pandas
+import pylogging
 
 from bokeh.embed import autoload_static
 from bokeh.models import ColumnDataSource, HoverTool
 from bokeh.plotting import figure
 from bokeh.resources import CDN
 
+from pysthal.command_line_util import init_logger
+
 if StrictVersion(pandas.__version__) < StrictVersion('0.17.1'):
     raise ImportError("pandas version >= 0.17.1 required")
-
 
 ANAB_NAME = {1: 'top/slave', 2: 'bottom/master'}
 WAFER_PLOT_DATA = pandas.DataFrame(
@@ -85,11 +87,11 @@ DNC_TO_FPGA = {row.dnc: row.fpga
 DNC_TO_PINS = {row.dnc: "P{}/P{}".format(row.P1, row.P2)
                for row in WAFER_PLOT_DATA.itertuples()}
 
-
 def dnc_to_anarm(dnc):
     """return AnaRM board corresponding to the DNC"""
     return 'top/slave' if dnc < 24 else 'bottom/master'
 
+logger = pylogging.get("sthal_wafer_AnaRM_overview_plot")
 
 # Create a ninja environment containing our conversion tables and other useful
 # stuff
@@ -641,6 +643,7 @@ class WaferData(object):
         """
 
         if self.results is None:
+            logger.error("No results data available")
             return
 
         hicanns = 384
@@ -700,6 +703,10 @@ class WaferData(object):
         """
         Creates a wafer plot showing on which reticles runtime errors occured
         """
+
+        if self.results is None:
+            logger.error("No results data available")
+            return
 
         colors = {
             '': '#008000',
@@ -820,6 +827,7 @@ class WaferData(object):
             (error count, error message, ADCs on which the error occured)
         """
         if self.results is None:
+            logger.error("No results data available")
             return
         data = self.results.copy()
         adc_errors = data['adc_error'].value_counts()
@@ -857,6 +865,8 @@ def main():
 
     if not os.path.isdir(args.data_output_dir):
         exit(0)
+
+    init_logger()
 
     maindoc = os.path.join(args.data_output_dir, 'overview.html')
 

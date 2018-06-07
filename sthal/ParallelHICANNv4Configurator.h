@@ -8,6 +8,7 @@
 #include "sthal/HICANNConfigurator.h"
 
 PYPP_INSTANTIATE(std::vector< ::HMF::HICANN::FGRowOnFGBlock4 >)
+PYPP_INSTANTIATE(std::vector< std::vector< ::HMF::HICANN::FGRowOnFGBlock4 > >)
 
 namespace sthal {
 

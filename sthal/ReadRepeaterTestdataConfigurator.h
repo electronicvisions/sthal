@@ -31,24 +31,20 @@ public:
 
 	static log4cxx::LoggerPtr getLogger();
 
-	bool get_full_flag(::HMF::Coordinate::HICANNGlobal,
-	                   ::HMF::Coordinate::HRepeaterOnHICANN) const;
+	bool get_full_flag(::HMF::Coordinate::HRepeaterOnWafer) const;
 
-	bool get_full_flag(::HMF::Coordinate::HICANNGlobal,
-	                   ::HMF::Coordinate::VRepeaterOnHICANN) const;
+	bool get_full_flag(::HMF::Coordinate::VRepeaterOnWafer) const;
 
 	typedef std::array< ::HMF::HICANN::RepeaterBlock::TestEvent, 3> test_data_t;
 
-	test_data_t get_test_events(::HMF::Coordinate::HICANNGlobal,
-	                            ::HMF::Coordinate::HRepeaterOnHICANN) const;
+	test_data_t get_test_events(::HMF::Coordinate::HRepeaterOnWafer) const;
 
-	test_data_t get_test_events(::HMF::Coordinate::HICANNGlobal,
-	                            ::HMF::Coordinate::VRepeaterOnHICANN) const;
+	test_data_t get_test_events(::HMF::Coordinate::VRepeaterOnWafer) const;
 
 	std::vector< ::HMF::Coordinate::HRepeaterOnHICANN> get_active_hrepeater(
-	    ::HMF::Coordinate::HICANNGlobal) const;
+	    ::HMF::Coordinate::HICANNOnWafer) const;
 	std::vector< ::HMF::Coordinate::VRepeaterOnHICANN> get_active_vrepeater(
-	    ::HMF::Coordinate::HICANNGlobal) const;
+	    ::HMF::Coordinate::HICANNOnWafer) const;
 
 	p_s_s_t analyze_all(std::vector< ::HMF::HICANN::L1Address> expected_addrs,
 	                    std::vector<size_t> expected_periods) const;
@@ -57,11 +53,9 @@ public:
 	             std::vector< ::HMF::HICANN::L1Address> expected_addrs,
 	             std::vector<size_t> expected_periods) const;
 
-	void add_passive_hrepeater(::HMF::Coordinate::HICANNGlobal hicann,
-	                           ::HMF::Coordinate::HRepeaterOnHICANN hr);
+	void add_passive_hrepeater(::HMF::Coordinate::HRepeaterOnWafer hr);
 
-	void add_passive_vrepeater(::HMF::Coordinate::HICANNGlobal hicann,
-	                           ::HMF::Coordinate::VRepeaterOnHICANN vr);
+	void add_passive_vrepeater(::HMF::Coordinate::VRepeaterOnWafer vr);
 
 	friend std::ostream& operator<<(std::ostream& out,
 	                                const ReadRepeaterTestdataConfigurator& cfg);
@@ -70,28 +64,29 @@ private:
 
 #ifndef PYPLUSPLUS
 	tbb::concurrent_unordered_map<
-		::HMF::Coordinate::HICANNGlobal,
-		std::set< ::HMF::Coordinate::HRepeaterOnHICANN>,
-		std::hash< ::HMF::Coordinate::HICANNGlobal> >
+		::HMF::Coordinate::HICANNOnWafer,
+		std::set< ::HMF::Coordinate::HRepeaterOnWafer>,
+		std::hash< ::HMF::Coordinate::HICANNOnWafer> >
 		passive_hrepeater_map;
 
 	tbb::concurrent_unordered_map<
-		::HMF::Coordinate::HICANNGlobal,
-		std::set< ::HMF::Coordinate::VRepeaterOnHICANN>,
-		std::hash< ::HMF::Coordinate::HICANNGlobal> >
+		::HMF::Coordinate::HICANNOnWafer,
+		std::set< ::HMF::Coordinate::VRepeaterOnWafer>,
+		std::hash< ::HMF::Coordinate::HICANNOnWafer> >
 		passive_vrepeater_map;
 
 	tbb::concurrent_unordered_map<
-		::HMF::Coordinate::HICANNGlobal,
-		std::map< ::HMF::Coordinate::HRepeaterOnHICANN,
+		::HMF::Coordinate::HICANNOnWafer,
+		std::map< ::HMF::Coordinate::HRepeaterOnWafer,
 		std::pair<bool, test_data_t> >,
-		std::hash< ::HMF::Coordinate::HICANNGlobal> >
+		std::hash< ::HMF::Coordinate::HICANNOnWafer> >
 		result_hr;
 
 	tbb::concurrent_unordered_map<
-		::HMF::Coordinate::HICANNGlobal,
-		std::map< ::HMF::Coordinate::VRepeaterOnHICANN, std::pair<bool, test_data_t> >,
-		std::hash< ::HMF::Coordinate::HICANNGlobal> >
+		::HMF::Coordinate::HICANNOnWafer,
+		std::map< ::HMF::Coordinate::VRepeaterOnWafer,
+		std::pair<bool, test_data_t> >,
+		std::hash< ::HMF::Coordinate::HICANNOnWafer> >
 		result_vr;
 #endif
 

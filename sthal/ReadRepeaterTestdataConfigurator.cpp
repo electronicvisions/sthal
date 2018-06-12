@@ -55,42 +55,36 @@ log4cxx::LoggerPtr ReadRepeaterTestdataConfigurator::getLogger() {
 }
 
 bool ReadRepeaterTestdataConfigurator::get_full_flag(
-    ::HMF::Coordinate::HICANNGlobal hicann,
-    ::HMF::Coordinate::HRepeaterOnHICANN c_hr) const {
-	const bool full_flag = this->result_hr.at(hicann).at(c_hr).first;
-	LOG4CXX_TRACE(getLogger(), "get_full_flag: " << hicann << " " << c_hr
-	                                             << " full flag: " << full_flag);
+    ::HMF::Coordinate::HRepeaterOnWafer c_hr) const {
+	const bool full_flag = this->result_hr.at(c_hr.toHICANNOnWafer()).at(c_hr).first;
+	LOG4CXX_TRACE(getLogger(), "get_full_flag: " << c_hr << " full flag: " << full_flag);
 
 	return full_flag;
 }
 
 bool ReadRepeaterTestdataConfigurator::get_full_flag(
-    ::HMF::Coordinate::HICANNGlobal hicann,
-    ::HMF::Coordinate::VRepeaterOnHICANN c_vr) const {
-	const bool full_flag = this->result_vr.at(hicann).at(c_vr).first;
-	LOG4CXX_TRACE(getLogger(), "get_full_flag: " << hicann << " " << c_vr
-	                                             << " full flag: " << full_flag);
+    ::HMF::Coordinate::VRepeaterOnWafer c_vr) const {
+	const bool full_flag = this->result_vr.at(c_vr.toHICANNOnWafer()).at(c_vr).first;
+	LOG4CXX_TRACE(getLogger(), "get_full_flag: " << c_vr << " full flag: " << full_flag);
 
 	return full_flag;
 }
 
 std::array< ::HMF::HICANN::RepeaterBlock::TestEvent, 3>
 ReadRepeaterTestdataConfigurator::get_test_events(
-    ::HMF::Coordinate::HICANNGlobal hicann,
-    ::HMF::Coordinate::HRepeaterOnHICANN c_hr) const {
-	return this->result_hr.at(hicann).at(c_hr).second;
+    ::HMF::Coordinate::HRepeaterOnWafer c_hr) const {
+	return this->result_hr.at(c_hr.toHICANNOnWafer()).at(c_hr).second;
 }
 
 std::array< ::HMF::HICANN::RepeaterBlock::TestEvent, 3>
 ReadRepeaterTestdataConfigurator::get_test_events(
-    ::HMF::Coordinate::HICANNGlobal hicann,
-    ::HMF::Coordinate::VRepeaterOnHICANN c_vr) const {
-	return this->result_vr.at(hicann).at(c_vr).second;
+    ::HMF::Coordinate::VRepeaterOnWafer c_vr) const {
+	return this->result_vr.at(c_vr.toHICANNOnWafer()).at(c_vr).second;
 }
 
 std::vector< ::HMF::Coordinate::HRepeaterOnHICANN>
 ReadRepeaterTestdataConfigurator::get_active_hrepeater(
-    ::HMF::Coordinate::HICANNGlobal hicann) const {
+    ::HMF::Coordinate::HICANNOnWafer hicann) const {
 	std::vector< ::HMF::Coordinate::HRepeaterOnHICANN> active_hrepeater;
 
 	for (auto kv : this->result_hr.at(hicann)) {
@@ -102,7 +96,7 @@ ReadRepeaterTestdataConfigurator::get_active_hrepeater(
 
 std::vector< ::HMF::Coordinate::VRepeaterOnHICANN>
 ReadRepeaterTestdataConfigurator::get_active_vrepeater(
-    ::HMF::Coordinate::HICANNGlobal hicann) const {
+    ::HMF::Coordinate::HICANNOnWafer hicann) const {
 	std::vector< ::HMF::Coordinate::VRepeaterOnHICANN> active_vrepeater;
 
 	for (auto kv : this->result_vr.at(hicann)) {
@@ -220,13 +214,13 @@ bool ReadRepeaterTestdataConfigurator::analyze(
 }
 
 void ReadRepeaterTestdataConfigurator::add_passive_hrepeater(
-    ::HMF::Coordinate::HICANNGlobal hicann, ::HMF::Coordinate::HRepeaterOnHICANN hr) {
-	passive_hrepeater_map[hicann].insert(hr);
+    ::HMF::Coordinate::HRepeaterOnWafer hr) {
+	passive_hrepeater_map[hr.toHICANNOnWafer()].insert(hr);
 }
 
 void ReadRepeaterTestdataConfigurator::add_passive_vrepeater(
-    ::HMF::Coordinate::HICANNGlobal hicann, ::HMF::Coordinate::VRepeaterOnHICANN vr) {
-	passive_vrepeater_map[hicann].insert(vr);
+    ::HMF::Coordinate::VRepeaterOnWafer vr) {
+	passive_vrepeater_map[vr.toHICANNOnWafer()].insert(vr);
 }
 
 void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t&,
@@ -235,6 +229,7 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t&,
 	LOG4CXX_TRACE(getLogger(), "ReadRepeaterTestdataConfigurator::config "
 	                               << h->coordinate());
 
+	auto const hicann_on_wafer = h->coordinate().toHICANNOnWafer();
 	L1Repeaters repeaters = hicann->repeater;
 
 	std::vector<HRepeaterOnHICANN> active_hrepeater;
@@ -252,8 +247,8 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t&,
 		}
 	}
 
-	auto passive_hrepeater = passive_hrepeater_map[h->coordinate()];
-	auto passive_vrepeater = passive_vrepeater_map[h->coordinate()];
+	auto passive_hrepeater = passive_hrepeater_map[hicann_on_wafer];
+	auto passive_vrepeater = passive_vrepeater_map[hicann_on_wafer];
 
 	std::vector<HRepeaterOnHICANN> recorded_hrepeater;
 	std::vector<VRepeaterOnHICANN> recorded_vrepeater;
@@ -421,24 +416,24 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t&,
 					if (rb_tp_to_c_hr.find(std::make_pair(c_rb, testport)) !=
 					    rb_tp_to_c_hr.end()) {
 						auto c_hr = rb_tp_to_c_hr[std::make_pair(c_rb, testport)];
-						this->result_hr[h->coordinate()][c_hr] =
+						this->result_hr[hicann_on_wafer][HRepeaterOnWafer(c_hr, hicann_on_wafer)] =
 						    std::make_pair(full_flag, received_test_data);
 						LOG4CXX_TRACE(
 						    getLogger(),
-						    h->coordinate()
+						    hicann_on_wafer
 						        << " " << c_hr << " "
-						        << this->result_hr[h->coordinate()][c_hr].first);
+						        << this->result_hr[hicann_on_wafer][HRepeaterOnWafer(c_hr, hicann_on_wafer)].first);
 					}
 					if (rb_tp_to_c_vr.find(std::make_pair(c_rb, testport)) !=
 					    rb_tp_to_c_vr.end()) {
 						auto c_vr = rb_tp_to_c_vr[std::make_pair(c_rb, testport)];
-						this->result_vr[h->coordinate()][c_vr] =
+						this->result_vr[hicann_on_wafer][VRepeaterOnWafer(c_vr, hicann_on_wafer)] =
 						    std::make_pair(full_flag, received_test_data);
 						LOG4CXX_TRACE(
 						    getLogger(),
-						    h->coordinate()
+						    hicann_on_wafer
 						        << " " << c_vr << " "
-						        << this->result_vr[h->coordinate()][c_vr].first);
+						        << this->result_vr[hicann_on_wafer][VRepeaterOnWafer(c_vr, hicann_on_wafer)].first);
 					}
 				}
 

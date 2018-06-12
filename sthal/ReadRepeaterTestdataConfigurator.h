@@ -57,6 +57,16 @@ public:
 
 	void add_passive_vrepeater(::HMF::Coordinate::VRepeaterOnWafer vr);
 
+	// add horizontal repeater that is to be ignored in checks
+	void add_ignore_hrepeater(::HMF::Coordinate::HRepeaterOnWafer hr);
+	// add vertical repeater that is to be ignored in checks
+	void add_ignore_vrepeater(::HMF::Coordinate::VRepeaterOnWafer vr);
+
+	// clear ignoring of horizontal repeaters
+	void clear_ignore_hrepeater();
+	// clear ignoring of vertical repeaters
+	void clear_ignore_vrepeater();
+
 	friend std::ostream& operator<<(std::ostream& out,
 	                                const ReadRepeaterTestdataConfigurator& cfg);
 
@@ -74,6 +84,18 @@ private:
 		std::set< ::HMF::Coordinate::VRepeaterOnWafer>,
 		std::hash< ::HMF::Coordinate::HICANNOnWafer> >
 		passive_vrepeater_map;
+
+	tbb::concurrent_unordered_map<
+		::HMF::Coordinate::HICANNOnWafer,
+		std::set< ::HMF::Coordinate::HRepeaterOnWafer>,
+		std::hash< ::HMF::Coordinate::HICANNOnWafer> >
+		ignore_hrepeater_map;
+
+	tbb::concurrent_unordered_map<
+		::HMF::Coordinate::HICANNOnWafer,
+		std::set< ::HMF::Coordinate::VRepeaterOnWafer>,
+		std::hash< ::HMF::Coordinate::HICANNOnWafer> >
+		ignore_vrepeater_map;
 
 	tbb::concurrent_unordered_map<
 		::HMF::Coordinate::HICANNOnWafer,

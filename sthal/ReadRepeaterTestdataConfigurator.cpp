@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <set>
 #include <vector>
 
@@ -223,6 +224,22 @@ void ReadRepeaterTestdataConfigurator::add_passive_vrepeater(
 	passive_vrepeater_map[vr.toHICANNOnWafer()].insert(vr);
 }
 
+void ReadRepeaterTestdataConfigurator::add_ignore_hrepeater(::HMF::Coordinate::HRepeaterOnWafer hr) {
+	ignore_hrepeater_map[hr.toHICANNOnWafer()].insert(hr);
+}
+
+void ReadRepeaterTestdataConfigurator::add_ignore_vrepeater(::HMF::Coordinate::VRepeaterOnWafer vr) {
+	ignore_vrepeater_map[vr.toHICANNOnWafer()].insert(vr);
+}
+
+void ReadRepeaterTestdataConfigurator::clear_ignore_hrepeater() {
+	ignore_hrepeater_map.clear();
+}
+
+void ReadRepeaterTestdataConfigurator::clear_ignore_vrepeater() {
+	ignore_vrepeater_map.clear();
+}
+
 void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t&,
                                               const hicann_handle_t& h,
                                               const hicann_data_t& hicann) {
@@ -283,22 +300,31 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t&,
 			testport_active[c_rb] = {false, false};
 		}
 
-		auto add_testable =
-		    [&testport_active](auto& testable, auto& to_be_read_repeater, auto& recorded_repeater) {
-			    for (auto c_r : testable) {
-				    auto const c_rb = c_r.toRepeaterBlockOnHICANN();
-				    auto const tp = c_r.toTestPortOnRepeaterBlock().value();
-				    if (std::find(recorded_repeater.begin(), recorded_repeater.end(), c_r) ==
-				            recorded_repeater.end() &&
-				        !testport_active[c_rb][tp]) {
-					    to_be_read_repeater.push_back(c_r);
-					    testport_active[c_rb][tp] = true;
-				    }
-			    }
-		    };
+		auto add_testable = [&hicann_on_wafer, &testport_active](
+		                        auto& testable, auto& to_be_read_repeater, auto& recorded_repeater,
+		                        auto& ignore_repeater_map) {
+			for (auto c_r : testable) {
+				if (ignore_repeater_map.count(hicann_on_wafer) &&
+				    std::find(
+				        ignore_repeater_map[hicann_on_wafer].begin(),
+				        ignore_repeater_map[hicann_on_wafer].end(),
+				        c_r) != ignore_repeater_map[hicann_on_wafer].end()) {
+					continue;
+				}
 
-		add_testable(testable_hrepeater, to_be_read_hrepeater, recorded_hrepeater);
-		add_testable(testable_vrepeater, to_be_read_vrepeater, recorded_vrepeater);
+				auto const c_rb = c_r.toRepeaterBlockOnHICANN();
+				auto const tp = c_r.toTestPortOnRepeaterBlock().value();
+				if (std::find(recorded_repeater.begin(), recorded_repeater.end(), c_r) ==
+				        recorded_repeater.end() &&
+				    !testport_active[c_rb][tp]) {
+					to_be_read_repeater.push_back(c_r);
+					testport_active[c_rb][tp] = true;
+				}
+			}
+		};
+
+		add_testable(testable_hrepeater, to_be_read_hrepeater, recorded_hrepeater, ignore_hrepeater_map);
+		add_testable(testable_vrepeater, to_be_read_vrepeater, recorded_vrepeater, ignore_vrepeater_map);
 
 		std::map<std::pair<RepeaterBlockOnHICANN, size_t>, HRepeaterOnHICANN>
 		    rb_tp_to_c_hr;

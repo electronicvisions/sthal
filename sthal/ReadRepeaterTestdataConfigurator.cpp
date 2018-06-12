@@ -283,32 +283,56 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t&,
 			testport_active[c_rb] = {false, false};
 		}
 
-		for (auto c_hr : testable_hrepeater) {
-			auto c_rb = c_hr.toRepeaterBlockOnHICANN();
-			auto tp = c_hr.toTestPortOnRepeaterBlock().value();
-			if (std::find(recorded_hrepeater.begin(), recorded_hrepeater.end(), c_hr) ==
-			        recorded_hrepeater.end() &&
-			    !testport_active[c_rb][tp]) {
-				to_be_read_hrepeater.push_back(c_hr);
-				testport_active[c_rb][tp] = true;
-			}
-		}
+		auto add_testable =
+		    [&testport_active](auto& testable, auto& to_be_read_repeater, auto& recorded_repeater) {
+			    for (auto c_r : testable) {
+				    auto const c_rb = c_r.toRepeaterBlockOnHICANN();
+				    auto const tp = c_r.toTestPortOnRepeaterBlock().value();
+				    if (std::find(recorded_repeater.begin(), recorded_repeater.end(), c_r) ==
+				            recorded_repeater.end() &&
+				        !testport_active[c_rb][tp]) {
+					    to_be_read_repeater.push_back(c_r);
+					    testport_active[c_rb][tp] = true;
+				    }
+			    }
+		    };
 
-		for (auto c_vr : testable_vrepeater) {
-			auto c_rb = c_vr.toRepeaterBlockOnHICANN();
-			auto tp = c_vr.toTestPortOnRepeaterBlock().value();
-			if (std::find(recorded_vrepeater.begin(), recorded_vrepeater.end(), c_vr) ==
-			        recorded_vrepeater.end() &&
-			    !testport_active[c_rb][tp]) {
-				to_be_read_vrepeater.push_back(c_vr);
-				testport_active[c_rb][tp] = true;
-			}
-		}
+		add_testable(testable_hrepeater, to_be_read_hrepeater, recorded_hrepeater);
+		add_testable(testable_vrepeater, to_be_read_vrepeater, recorded_vrepeater);
 
 		std::map<std::pair<RepeaterBlockOnHICANN, size_t>, HRepeaterOnHICANN>
 		    rb_tp_to_c_hr;
 		std::map<std::pair<RepeaterBlockOnHICANN, size_t>, VRepeaterOnHICANN>
 		    rb_tp_to_c_vr;
+
+		auto set_to_be_read = [&h, &repeaters](
+		                          auto& rb_tp_to_c_r, auto& to_be_read_repeater,
+		                          auto& original_directions, auto& passive_recorded_repeater,
+		                          auto& recorded_repeater) {
+			for (auto c_r : to_be_read_repeater) {
+				LOG4CXX_TRACE(getLogger(), "reading " << c_r);
+
+				auto c_rb = c_r.toRepeaterBlockOnHICANN();
+				auto tp = c_r.toTestPortOnRepeaterBlock().value();
+				rb_tp_to_c_r[std::make_pair(c_rb, tp)] = c_r;
+
+				auto& r = repeaters[c_r];
+				if (r.getMode() == Repeater::FORWARDING) {
+					auto direction = get_forwarding_direction(r);
+					original_directions[c_r] = direction;
+					// set to input mode and program
+					r.setInput(direction);
+				}
+
+				if (r.getMode() == Repeater::IDLE) {
+					r.setInput();
+					passive_recorded_repeater.push_back(c_r);
+				}
+
+				set_repeater(*h, c_r, r);
+				recorded_repeater.push_back(c_r);
+			}
+		};
 
 		if (!to_be_read_hrepeater.empty() || !to_be_read_vrepeater.empty()) {
 			// original forwarding directions
@@ -318,53 +342,13 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t&,
 			std::vector<HRepeaterOnHICANN> passive_recorded_hr;
 			std::vector<VRepeaterOnHICANN> passive_recorded_vr;
 
-			for (auto c_hr : to_be_read_hrepeater) {
-				LOG4CXX_TRACE(getLogger(), "reading " << c_hr);
+			set_to_be_read(
+			    rb_tp_to_c_hr, to_be_read_hrepeater, directions_hr, passive_recorded_hr,
+			    recorded_hrepeater);
 
-				auto c_rb = c_hr.toRepeaterBlockOnHICANN();
-				auto tp = c_hr.toTestPortOnRepeaterBlock().value();
-				rb_tp_to_c_hr[std::make_pair(c_rb, tp)] = c_hr;
-
-				auto& r = repeaters[c_hr];
-				if (r.getMode() == Repeater::FORWARDING) {
-					auto direction = get_forwarding_direction(r);
-					directions_hr[c_hr] = direction;
-					// set to input mode and program
-					r.setInput(direction);
-				}
-
-				if (r.getMode() == Repeater::IDLE) {
-					r.setInput();
-					passive_recorded_hr.push_back(c_hr);
-				}
-
-				set_repeater(*h, c_hr, r);
-				recorded_hrepeater.push_back(c_hr);
-			}
-
-			for (auto c_vr : to_be_read_vrepeater) {
-				LOG4CXX_TRACE(getLogger(), "reading " << c_vr);
-
-				auto c_rb = c_vr.toRepeaterBlockOnHICANN();
-				auto tp = c_vr.toTestPortOnRepeaterBlock().value();
-				rb_tp_to_c_vr[std::make_pair(c_rb, tp)] = c_vr;
-
-				auto& r = repeaters[c_vr];
-				if (r.getMode() == Repeater::FORWARDING) {
-					auto direction = get_forwarding_direction(r);
-					directions_vr[c_vr] = direction;
-					// set to input mode and program
-					r.setInput(direction);
-				}
-
-				if (r.getMode() == Repeater::IDLE) {
-					r.setInput();
-					passive_recorded_vr.push_back(c_vr);
-				}
-
-				set_repeater(*h, c_vr, r);
-				recorded_vrepeater.push_back(c_vr);
-			}
+			set_to_be_read(
+			    rb_tp_to_c_vr, to_be_read_vrepeater, directions_vr, passive_recorded_vr,
+			    recorded_vrepeater);
 
 			std::set<RepeaterBlockOnHICANN> c_rbs;
 			for (auto c_hr : to_be_read_hrepeater) {

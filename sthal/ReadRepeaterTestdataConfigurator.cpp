@@ -107,6 +107,60 @@ ReadRepeaterTestdataConfigurator::get_active_vrepeater(
 	return active_vrepeater;
 }
 
+namespace {
+
+template<class T, class U>
+std::pair<std::vector<T>, std::vector<T> > analyze_repeater(
+    std::vector< ::HMF::HICANN::L1Address> expected_addrs,
+    std::vector<size_t> expected_periods,
+    const U& result)
+{
+	std::vector<T> bad_repeater;
+	std::vector<T> good_repeater;
+
+	// iterate through HICANNs in result
+	for (auto h_kv : result) {
+		// iterate through repeaters on HICANN
+		for (auto r_kv : h_kv.second) {
+			// extract pair of flag and test data
+			auto result = r_kv.second;
+			bool const good = ReadRepeaterTestdataConfigurator::analyze(
+				result.first, result.second, expected_addrs, expected_periods);
+			if (good) {
+				good_repeater.push_back(r_kv.first);
+			} else {
+				bad_repeater.push_back(r_kv.first);
+			}
+		}
+	}
+
+	return std::make_pair(bad_repeater, good_repeater);
+}
+
+}
+
+std::pair<
+    std::vector< ::HMF::Coordinate::HRepeaterOnWafer>,
+    std::vector< ::HMF::Coordinate::HRepeaterOnWafer> >
+ReadRepeaterTestdataConfigurator::analyze_hrepeater(
+    std::vector< ::HMF::HICANN::L1Address> expected_addrs,
+    std::vector<size_t> expected_periods) const
+{
+	return analyze_repeater< ::HMF::Coordinate::HRepeaterOnWafer>(
+	    expected_addrs, expected_periods, result_hr);
+}
+
+std::pair<
+    std::vector< ::HMF::Coordinate::VRepeaterOnWafer>,
+    std::vector< ::HMF::Coordinate::VRepeaterOnWafer> >
+ReadRepeaterTestdataConfigurator::analyze_vrepeater(
+    std::vector< ::HMF::HICANN::L1Address> expected_addrs,
+    std::vector<size_t> expected_periods) const
+{
+	return analyze_repeater< ::HMF::Coordinate::VRepeaterOnWafer>(
+	    expected_addrs, expected_periods, result_vr);
+}
+
 p_s_s_t ReadRepeaterTestdataConfigurator::analyze_all(
     std::vector< ::HMF::HICANN::L1Address> expected_addrs,
     std::vector<size_t> expected_periods) const {
@@ -116,7 +170,7 @@ p_s_s_t ReadRepeaterTestdataConfigurator::analyze_all(
 	for (auto h_kv : this->result_hr) {
 		for (auto r_kv : h_kv.second) {
 			auto result = r_kv.second;
-			const bool good = this->analyze(result.first, result.second, expected_addrs,
+			const bool good = analyze(result.first, result.second, expected_addrs,
 			                                expected_periods);
 			if (good) {
 				n_good += 1;
@@ -133,7 +187,7 @@ p_s_s_t ReadRepeaterTestdataConfigurator::analyze_all(
 	for (auto h_kv : this->result_vr) {
 		for (auto r_kv : h_kv.second) {
 			auto result = r_kv.second;
-			const bool good = this->analyze(result.first, result.second, expected_addrs,
+			const bool good = analyze(result.first, result.second, expected_addrs,
 			                                expected_periods);
 			if (good) {
 				n_good += 1;
@@ -155,7 +209,7 @@ p_s_s_t ReadRepeaterTestdataConfigurator::analyze_all(
 
 bool ReadRepeaterTestdataConfigurator::analyze(
     bool full_flag, ReadRepeaterTestdataConfigurator::test_data_t received_test_data,
-    std::vector<L1Address> expected_addrs, std::vector<size_t> expected_periods) const {
+    std::vector<L1Address> expected_addrs, std::vector<size_t> expected_periods) {
 	// pair of address and time for valid events
 	std::vector<std::pair<size_t, L1Address> > valid_entries;
 

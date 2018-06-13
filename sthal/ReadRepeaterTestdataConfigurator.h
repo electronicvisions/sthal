@@ -46,12 +46,28 @@ public:
 	std::vector< ::HMF::Coordinate::VRepeaterOnHICANN> get_active_vrepeater(
 	    ::HMF::Coordinate::HICANNOnWafer) const;
 
+	// first: bad repeaters, second: good repeaters
+	std::pair<
+	    std::vector< ::HMF::Coordinate::VRepeaterOnWafer>,
+	    std::vector< ::HMF::Coordinate::VRepeaterOnWafer> >
+	analyze_vrepeater(
+	    std::vector< ::HMF::HICANN::L1Address> expected_addrs,
+	    std::vector<size_t> expected_periods) const;
+
+	// first: bad repeaters, second: good repeaters
+	std::pair<
+	    std::vector< ::HMF::Coordinate::HRepeaterOnWafer>,
+	    std::vector< ::HMF::Coordinate::HRepeaterOnWafer> >
+	analyze_hrepeater(
+	    std::vector< ::HMF::HICANN::L1Address> expected_addrs,
+	    std::vector<size_t> expected_periods) const;
+
 	p_s_s_t analyze_all(std::vector< ::HMF::HICANN::L1Address> expected_addrs,
 	                    std::vector<size_t> expected_periods) const;
 
-	bool analyze(bool full_flag, test_data_t received_test_data,
-	             std::vector< ::HMF::HICANN::L1Address> expected_addrs,
-	             std::vector<size_t> expected_periods) const;
+	static bool analyze(bool full_flag, test_data_t received_test_data,
+	                    std::vector< ::HMF::HICANN::L1Address> expected_addrs,
+	                    std::vector<size_t> expected_periods);
 
 	void add_passive_hrepeater(::HMF::Coordinate::HRepeaterOnWafer hr);
 

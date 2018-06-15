@@ -1,0 +1,62 @@
+/* Symwaf2icProject File */
+/* vim: set expandtab ts=4 sw=4 ft=groovy foldmethod=marker foldmarker={,}: */
+// :setlocal fillchars=fold:\  foldtext=getline(v:foldstart)
+
+startup()   // list basic information about the project being created
+//help()    // list available environment
+
+/**
+* Symwaf2ic Project Definition - README.
+*
+* Note that this boils down to groovy code. More information can be found in
+* the files Symwaf2icProject, Symwaf2icJob and Symwaf2icGenerator - ordered by
+* importance to the project-definition scripter.
+*
+* External Documentation: Jenkins JobDSL Plugin
+* 
+* Note that provided shell scipts in this file must follow some groovy escaping
+* rules: ${BASH_VARIABLE} must be written as \${BASH...; if you write
+* ${GROOVY_VAR} it expands to during the dsl/groovy processing already.
+* startup() lists some of the available groovy variables. A complete list is
+* shown by help(). If you want your bash to emit a newline you must write
+* '\\n'.
+*/
+
+software_buildshell = """\
+#UGLY!
+. /afs/kip.uni-heidelberg.de/projects/vision/definst_software/shrc
+module load mongo
+module load yaml-cpp/0.5.3
+
+./waf configure --test-timeout=360 --test-xml-summary=test_results
+./waf install --test-execall
+"""
+
+// *** sthal ***
+
+switch (PROJECT_NAME) {
+    case 'sthal' :
+        sw = SoftwareJob(
+            buildshell      : software_buildshell, // defaults to "waf configure, build and install"
+            clusterbuild    : true,
+        )
+        doc = DocumentationJob(
+            htmldir     : "build/sthal/doc/html",
+            docshell    : "module load mongo\nmodule load yaml-cpp/0.5.2\n./waf configure --disable-doxygen pdf\n./waf doc"
+        )
+        cov = CoverageJob()
+        break
+
+    case 'sthal-ess':
+        sw = SoftwareJob(
+            buildshell      : software_buildshell,
+            test_publisher  : ['sthal'],    // list of repos for which test results should be published
+            blamemail       : false,
+            clusterbuild    : true,
+        )
+        break
+
+    default: assert false : 'the sthal project file is supposed to be used for sthal and sthal-ess only.'
+}
+
+return "Sthal project: ${PROJECT_NAME}."

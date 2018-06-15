@@ -1,0 +1,432 @@
+#!/usr/bin/env python
+
+"""
+Plotting tool for FG programming quality test
+"""
+
+import argparse
+import pickle
+import sys
+import os
+
+import pyhalbe
+from pyhalbe.HICANN import shared_parameter, neuron_parameter, isCurrentParameter
+
+import pandas
+import Coordinate
+
+from pprint import pformat
+
+from junit_xml import TestSuite, TestCase
+
+from pysthal.fg_test import (
+    ControllerResultNotAvailable,
+    TestPattern)
+
+
+def plot_cell_success(results, outdir=None):
+    """
+    Create plots for error flags that are returned by the floating gate
+    controller.
+    """
+    import pylab as p
+    p.figure()
+
+    block_width = 129
+    block_height = 24
+    n_programming_steps = 4
+    n_repetitions = len(results)
+
+    plots = dict()
+
+    outfiles = []
+
+    def new_plot(block, step, value):
+        result = dict()
+        result["bitmap"] = p.zeros((block_width, block_height))
+
+        if value is not None:
+            result["title"] = "{} \nwrite step {}, writeDown: {}".format(
+                str(block),
+                value["step"],
+                value["writeDown"])
+            result["fgconfig"] = value["fgconfig"]
+        else:
+            result["title"] = "{} \nwrite step {}".format(
+                str(block),
+                step)
+
+        return result
+
+    for result in results:
+        controller_results = result.get_fg_controller_result()
+
+        if isinstance(controller_results, ControllerResultNotAvailable):
+            continue
+
+        for value in controller_results:
+            for block, cells in value["result"].items():
+                bmkey = (block, value["step"])
+                if bmkey not in plots:
+                    plots[bmkey] = new_plot(block, value["step"], value)
+
+                for cell in cells:
+                    plots[bmkey]["bitmap"][cell & 0xff, value["row"]] += 1.
+
+    cdict = {
+          'red'   :  ((0.0, 0.0, 0.0), (1.0, 1.0, 1.0)),    #pylint: disable=bad-continuation
+          'green' :  ((0.0, 0.0, 0.0), (1.0, 0.0, 0.0)),    #pylint: disable=bad-continuation
+          'blue'  :  ((0.0, 1.0, 1.0), (1.0, 0.0, 0.0)),    #pylint: disable=bad-continuation
+        }
+
+    cmap = p.mpl.colors.LinearSegmentedColormap('gray_cm', cdict, 1024)
+    cmap.set_under('white', 1.0)
+
+    ylabels = dict()
+
+    for block in Coordinate.iter_all(Coordinate.FGBlockOnHICANN):
+        yl_list = []
+        for i in xrange(block_height):
+            try:
+                idx = (i,
+                       str(pyhalbe.HICANN.getSharedParameter(
+                           block, Coordinate.FGRowOnFGBlock(i)))
+                       + " | "
+                       + str(pyhalbe.HICANN.getNeuronParameter(
+                           block, Coordinate.FGRowOnFGBlock(i))))
+            except IndexError as exc:
+                idx = (i, str(exc))
+
+            yl_list.append(idx)
+
+        ylabels[block] = yl_list
+
+    for step in xrange(n_programming_steps):
+        for block_y in [0, 1]:
+            for block_x in [0, 1]:
+                p.figure()
+
+                block = Coordinate.FGBlockOnHICANN(
+                    Coordinate.X(block_x),
+                    Coordinate.Y(block_y))
+
+                bmkey = (block, step)
+
+                if bmkey not in plots:
+                    continue
+
+                plot_data = plots[bmkey]
+                last_img = p.imshow(
+                    plot_data["bitmap"].T,
+                    cmap=cmap,
+                    interpolation="nearest",
+                    origin="lower",
+                    norm=p.mpl.colors.Normalize(vmin=0.5,
+                                                vmax=n_repetitions,
+                                                clip=False),
+                    aspect='auto')
+                name = str(bmkey[0]) + "_write_cycle_" + str(bmkey[1])
+                p.title(plot_data["title"])
+                p.xlabel("FG column")
+
+                p.yticks(
+                    *zip(*ylabels[block]))
+
+                colorbar = p.colorbar(last_img)
+                colorbar.ax.set_ylabel("error flag set (out of {} rep.)".format(n_repetitions))
+
+                p.grid(True)
+                if outdir is not None:
+                    fname = name + ".png"
+                    outfile = os.path.join(
+                        outdir,
+                        fname)
+                    p.savefig(outfile)
+                    outfiles.append(fname)
+                p.close("all")
+
+    return outfiles
+
+
+def get_ideal_value(neuron_c, test_pattern, parameter):
+    """
+    Returns the DAC value that was set for the given `neuron_c`
+    (NeuronOnHICANN)
+    """
+    if isinstance(parameter, shared_parameter):
+        block = test_pattern.get_block(
+            neuron_c.toSharedFGBlockOnHICANN())
+        value = block.getShared(
+            neuron_c.toSharedFGBlockOnHICANN(),
+            parameter)
+    elif isinstance(parameter, neuron_parameter):
+        block = test_pattern.get_block(
+            neuron_c.toNeuronFGBlock())
+        value = block.getNeuron(
+            neuron_c.toNeuronFGBlock(),
+            neuron_c.toNeuronOnFGBlock(),
+            parameter)
+    else:
+        raise ValueError(parameter)
+
+    if isCurrentParameter(parameter):
+        color = 'red'
+    else:
+        color = 'blue'
+
+    value_ideal = value / 1023. * 1.8
+    return value_ideal, color
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Plotting tool for FG programming quality test.')
+    parser.add_argument('--figtype', type=str, default="png",
+                        help="output filetype. must be supported by matplotlib")
+    parser.add_argument('--outdir', type=str, help="output base directory")
+    parser.add_argument('--samedir', type=bool, default=True,
+                        help="put plots in same directory as data (default)")
+    parser.add_argument('--show', '--interactive', action="store_true",
+                        help="show interactive plot")
+    parser.add_argument('--values-per-figure', type=int, default=50,
+                        help="number of values per plot")
+    parser.add_argument('--xlim-min', type=float, default=0.0)
+    parser.add_argument('--xlim-max', type=float, default=1.8)
+    parser.add_argument('--std-threshold', type=float, default=0.005,
+                        help="maximum allowed trial-to-trial sigma, in Volt.")
+    parser.add_argument('--max-v-deviation', type=float, default=0.2,
+                        help="maximum allowed deviation from ideal value")
+
+    parser.add_argument('infile', type=str,
+                        help="*.pkl as produced by "
+                        "test_fg_programming_precision.py")
+
+    args = parser.parse_args()
+
+    if not args.show:
+        import matplotlib
+        matplotlib.use("Agg")
+    else:
+        import matplotlib
+        matplotlib.use("tkagg")
+
+    import pylab as p
+    p.rcParams['figure.figsize'] = (17, 10)
+
+    data = pickle.load(open(args.infile))
+
+    test_pattern = data["test_pattern"]
+    results = data["results"]
+    measurement_args = data["args"]
+
+    pres = [
+        result.get_param_result()
+        for result in results]
+
+    res_raw = [
+        result.get_param_result_raw()
+        for result in results]
+
+    n_figures = int(p.ceil(len(pres[0]) / float(args.values_per_figure)))
+    figures = []
+
+    result_meanstds = pandas.DataFrame(
+        [r.get_param_result()['mean_v'] for r in results]).transpose()
+
+    testcases = []
+    all_stds = []
+
+    ytick_label = []
+    for row_idx, row in enumerate(res_raw[0]):
+        res_nrn = row[0]
+        res_param = row[2]
+        ytick_label.append(
+            (row_idx,
+             "N({}) - {}".format(str(res_nrn)[len("NeuronOnHICANN("):-1], str(res_param))))
+
+    for figure_idx in xrange(n_figures):
+        newfig = p.figure()
+        figures.append(newfig)
+        sp_first = p.subplot(1, 2, 1)
+        p.grid()
+        p.xlim(args.xlim_min, args.xlim_max)
+        p.xlabel("measured value [V]")
+
+        slice_start = figure_idx * args.values_per_figure
+        slice_end = (figure_idx + 1) * args.values_per_figure
+
+        failed_abs_deviation = set()
+
+        for result_idx, result in enumerate(results):
+            color_v = float(result_idx) / len(results)
+            result_color = (color_v, 0.0, 1. - color_v)
+
+            p.errorbar(pres[result_idx]['mean_v'].tolist()[slice_start:slice_end],
+                       pres[result_idx].index.tolist()[slice_start:slice_end],
+                       xerr=pres[result_idx]['std_v'].tolist()[slice_start:slice_end],
+                       fmt="+", color=result_color)
+
+            for measurement_idx in xrange(slice_start, slice_end):
+                if measurement_idx >= len(res_raw[0]):
+                    break
+
+                meanv_value = pres[result_idx]['mean_v'][measurement_idx]
+                res_nrn = res_raw[result_idx][measurement_idx][0]
+                res_param = res_raw[result_idx][measurement_idx][2]
+                ideal_value, _ = get_ideal_value(
+                    res_nrn,
+                    test_pattern,
+                    res_param)
+                deviation = abs(ideal_value - meanv_value)
+
+                junit_test_case = TestCase(
+                    "Deviation from ideal value of {} V to "
+                    "measured value {} V is {} V "
+                    "for parameter {}, {}".format(
+                        ideal_value,
+                        meanv_value,
+                        deviation,
+                        str(res_param),
+                        str(res_nrn)))
+
+                if deviation > args.max_v_deviation:
+                    failed_abs_deviation.add(measurement_idx)
+                    junit_test_case.add_error_info(
+                        "Deviation exceeds threshold of {} V".format(
+                            args.max_v_deviation))
+
+                testcases.append(junit_test_case)
+
+        # mark measurements which failed the abs-deviation test
+        for failed_idx in failed_abs_deviation:
+            p.axhspan(
+                failed_idx - .5,
+                failed_idx + .5,
+                color='k',
+                alpha=.1)
+
+
+        for row_idx in xrange(slice_start, slice_end):
+            if row_idx >= len(res_raw[0]):
+                break
+            row = res_raw[0][row_idx]
+            value, color = get_ideal_value(row[0], test_pattern, row[2])
+            # p.plot([value], [row_idx], 'o', color=color, alpha=.25)
+            p.errorbar([value], [row_idx], xerr=args.max_v_deviation, fmt='o',
+                       color=color, alpha=.25)
+
+        p.yticks(*zip(*ytick_label[slice_start: slice_end]))
+
+        p.subplot(1, 2, 2, sharey=sp_first)
+        p.grid()
+        p.setp(p.gca().get_yticklabels(), visible=False)
+        p.axvspan(0, args.std_threshold * 1e3, color='r', alpha=.1)
+        p.xlabel("ttt-dev. [mV]")
+        p.ylim(slice_start - .5, slice_end + .5)
+
+
+        for result_id in xrange(slice_start, slice_end):
+            if result_id >= len(result_meanstds):
+                break
+
+            std = p.std(result_meanstds.iloc[result_id])
+            row = res_raw[0][result_id]
+            res_nrn = row[0]
+            res_param = row[2]
+            paramname = "N({}) - {}".format(str(res_nrn)[len("NeuronOnHICANN("):-1], str(res_param))
+
+            junit_test_case = TestCase("Sigma for {} is {} V".format(paramname, std))
+
+            all_stds.append(std)
+
+            if std > args.std_threshold:
+                junit_test_case.add_error_info("Sigma of {} V exceeds threshold of {} V".format(
+                    std,
+                    args.std_threshold))
+            testcases.append(junit_test_case)
+
+            p.plot(
+                [1e3 * std],
+                [result_id],
+                'rx')
+            p.plot(
+                [1e3 * (
+                    max(result_meanstds.iloc[result_id])
+                    - min(result_meanstds.iloc[result_id]))
+                ],
+                [result_id],
+                'b+')
+
+    hist_fig = p.figure()
+    p.hist(all_stds, bins=100, range=(0, .1))
+    p.xlabel("trial-to-trial sigma [V]")
+    p.ylabel("count")
+
+    if args.outdir or args.samedir:
+        if args.outdir:
+            outdir = args.outdir
+        else:
+            basename = os.path.basename(args.infile)
+            if basename.endswith(".pkl"):
+                basename = basename[:-4]
+            else:
+                sys.stderr.write("expected *.pkl input file")
+                exit(-1)
+            outdir = os.path.join(
+                os.path.dirname(
+                    os.path.realpath(args.infile)),
+                basename)
+
+        if not os.path.exists(outdir):
+            os.makedirs(outdir)
+
+        fignames = []
+
+        for idx, relf in enumerate(figures):
+            p.figure(relf.number)
+            p.tight_layout()
+            figname = "measurement_abs_{}.".format(idx) + args.figtype
+            p.savefig(os.path.join(outdir, figname))
+            fignames.append(figname)
+
+        p.figure(hist_fig.number)
+        hist_fname = "sigma_hist.{}".format(args.figtype)
+        p.savefig(os.path.join(outdir, hist_fname))
+
+        cell_err_files = plot_cell_success(results, outdir=outdir)
+
+        imglist = "\n".join(['<img src="{}">'.format(fn)
+                             for fn in [hist_fname] + fignames[::-1] + cell_err_files])
+
+        # NOTE: this can be simplified to pformat(measurement_args) as
+        #       soon as C.HICANNOnWafer produces readable output
+        title = pformat(
+            dict([(key, str(value))
+                  for key, value in measurement_args.items()]))
+
+        html_data = """
+        <html><head></head><body><h1><pre>{}</pre></h1>{}</body></html>
+        """.format(title, imglist)
+
+        f_html = open(os.path.join(outdir, "overview.html"), "w")
+        f_html.write(html_data)
+        f_html.close()
+
+        junit_test_suite = TestSuite(
+            "Hicann 4 FG programming test, {}, {}".format(
+                measurement_args['wafer'],
+                measurement_args['hicann']),
+            testcases)
+
+        fname = "fg_eval_{}_{}.xml".format(
+            measurement_args['wafer'],
+            measurement_args['hicann'])
+        f_xml = open(os.path.join(outdir, fname), "w")
+        f_xml.write(TestSuite.to_xml_string([junit_test_suite]))
+
+    if args.show:
+        p.show()
+
+
+if __name__ == '__main__':
+    main()

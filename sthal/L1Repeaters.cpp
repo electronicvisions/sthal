@@ -1,0 +1,143 @@
+#include "L1Repeaters.h"
+#include "hal/Coordinate/iter_all.h"
+
+namespace sthal {
+
+L1Repeaters::L1Repeaters()
+{}
+
+void L1Repeaters::clearReapeater()
+{
+	std::fill(mHorizontalRepeater.begin(), mHorizontalRepeater.end(),
+			  horizontal_type());
+	std::fill(mVerticalRepeater.begin(), mVerticalRepeater.end(),
+			  vertical_type());
+	std::fill(mBlocks.begin(), mBlocks.end(), block_type());
+}
+
+::HMF::HICANN::VerticalRepeater L1Repeaters::getRepeater(::HMF::Coordinate::VRepeaterOnHICANN c) const
+{
+	return mVerticalRepeater[c.toVLineOnHICANN()];
+}
+
+::HMF::HICANN::HorizontalRepeater L1Repeaters::getRepeater(::HMF::Coordinate::HRepeaterOnHICANN c) const
+{
+	return mHorizontalRepeater[c.toHLineOnHICANN()];
+}
+
+::HMF::HICANN::RepeaterBlock L1Repeaters::getRepeaterBlock(::HMF::Coordinate::RepeaterBlockOnHICANN block) const
+{
+	return mBlocks[block.id()];
+}
+
+void L1Repeaters::setRepeater(::HMF::Coordinate::VRepeaterOnHICANN c, ::HMF::HICANN::VerticalRepeater const& r)
+{
+	mVerticalRepeater[c.toVLineOnHICANN()] = r;
+}
+
+void L1Repeaters::setRepeater(::HMF::Coordinate::HRepeaterOnHICANN c, ::HMF::HICANN::HorizontalRepeater const& r)
+{
+	mHorizontalRepeater[c.toHLineOnHICANN()] = r;
+}
+
+void L1Repeaters::setRepeaterBlock(::HMF::Coordinate::RepeaterBlockOnHICANN block, ::HMF::HICANN::RepeaterBlock const& r)
+{
+	mBlocks[block.id()] = r;
+}
+
+bool L1Repeaters::operator==(const L1Repeaters & other) const
+{
+	return mVerticalRepeater   == other.mVerticalRepeater   &&
+		   mHorizontalRepeater == other.mHorizontalRepeater &&
+		   mBlocks             == other.mBlocks;
+}
+
+bool L1Repeaters::operator!=(const L1Repeaters & other) const
+{
+	return !(*this == other);
+}
+
+std::ostream& operator<<(std::ostream& os, L1Repeaters const& a)
+{
+	os << "active HorizontalRepeaters: " << std::endl;
+	for (auto const& r : a.mHorizontalRepeater) {
+		if (r.getMode() != HMF::HICANN::HorizontalRepeater::IDLE)
+			os << "\t" << r << std::endl;
+	}
+
+	os << "active VerticalRepeaters: " << std::endl;
+	for (auto const& r : a.mVerticalRepeater) {
+		if (r.getMode() != HMF::HICANN::VerticalRepeater::IDLE)
+			os << "\t" << r << std::endl;
+	}
+
+	os << "RepeaterBlocks: " << std::endl;
+	for (auto b_c : ::HMF::Coordinate::iter_all<L1Repeaters::block_coordinate>()) {
+		os << b_c << " " << a.mBlocks[b_c.id()] << std::endl;
+	}
+
+	return os;
+}
+
+size_t L1Repeaters::count_repeaters(
+    ::HMF::Coordinate::RepeaterBlockOnHICANN rb,
+    ::HMF::Coordinate::TestPortOnRepeaterBlock tp,
+    ::HMF::HICANN::Repeater::Mode mode) const
+{
+	size_t active = 0;
+
+	for (auto r_c : ::HMF::Coordinate::iter_all<L1Repeaters::horizontal_coordinate>()) {
+		auto const& r = this->getRepeater(r_c);
+		if (!r_c.isSending() && r.getMode() == mode && r_c.toRepeaterBlockOnHICANN() == rb &&
+		    r_c.toTestPortOnRepeaterBlock() == tp) {
+			active += 1;
+		}
+	}
+
+	for (auto r_c : ::HMF::Coordinate::iter_all<L1Repeaters::vertical_coordinate>()) {
+		auto const& r = this->getRepeater(r_c);
+		if (r.getMode() == mode && r_c.toRepeaterBlockOnHICANN() == rb &&
+		    r_c.toTestPortOnRepeaterBlock() == tp) {
+			active += 1;
+		}
+	}
+
+	return active;
+}
+
+bool L1Repeaters::check_testports(std::ostream& errors) const
+{
+	using namespace ::HMF::Coordinate;
+	using namespace ::HMF::HICANN;
+
+	bool ok = true;
+
+	for (auto rb : iter_all<RepeaterBlockOnHICANN>()) {
+		for (auto tp : iter_all<TestPortOnRepeaterBlock>()) {
+			auto const active_outputs = count_repeaters(rb, tp, Repeater::OUTPUT);
+			if (active_outputs > 1) {
+				ok = false;
+				errors << "Warning: " << active_outputs << " > 1 test outputs enabled on " << rb
+				       << "/" << tp;
+			}
+			auto const active_inputs = count_repeaters(rb, tp, Repeater::INPUT);
+			if (active_inputs > 1) {
+				ok = false;
+				errors << "Warning: " << active_inputs << " > 1 test inputs enabled on " << rb
+				       << "/" << tp;
+			}
+		}
+	}
+
+	return ok;
+}
+
+bool L1Repeaters::check(std::ostream& errors) const
+{
+	bool ok = true;
+	// ok &= check_something_else(errors);
+	ok &= check_testports(errors);
+	return ok;
+}
+
+} // end namespace sthal

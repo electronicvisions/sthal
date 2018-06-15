@@ -1,0 +1,1 @@
+#undef STHAL_ARRAY_OPERATOR

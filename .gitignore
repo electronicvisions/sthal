@@ -1,0 +1,22 @@
+# build / waf files
+build/
+.waf*
+/waf*
+.lock-waf*
+/core
+
+# results
+tests/results
+
+# binary files
+bin/
+lib/
+include/
+
+# Python shit
+*.pyc
+
+# editor shit
+*.sw[pon]
+*.orig
+*.save

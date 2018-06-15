@@ -1,0 +1,112 @@
+#!/usr/bin/env python
+
+import numpy as np
+import argparse
+import sys
+
+import pylogging
+pylogging.default_config(date_format='absolute')
+pylogging.set_loglevel(pylogging.get("sthal"), pylogging.LogLevel.INFO)
+pylogging.set_loglevel(pylogging.get("sthal.HICANNConfigurator.Time"), pylogging.LogLevel.DEBUG)
+pylogging.set_loglevel(pylogging.get("Default"), pylogging.LogLevel.INFO)
+
+import pysthal
+import pyhalbe
+import Coordinate as C
+
+from pysthal.command_line_util import add_default_coordinate_options
+from pysthal.command_line_util import add_logger_options
+from pysthal.command_line_util import init_logger
+
+fg_blocks_left = [C.FGBlockOnHICANN(C.Enum(0)), C.FGBlockOnHICANN(C.Enum(2))]
+fg_blocks_right = [C.FGBlockOnHICANN(C.Enum(1)), C.FGBlockOnHICANN(C.Enum(3))]
+fg_blocks = fg_blocks_left + fg_blocks_right
+
+param = pyhalbe.HICANN.shared_parameter.V_fac
+#param = pyhalbe.HICANN.shared_parameter.int_op_bias
+
+
+class MyConfigurator(pysthal.HICANNConfigurator):
+    """Connects <param> FG cell to analog out"""
+
+    def __init__(self, skip_fg=False):
+        super(MyConfigurator, self).__init__()
+        self.skip_fg = skip_fg
+
+    def config(self, fpga, hicann, h):
+        pyhalbe.HICANN.init(hicann, False)
+
+        if not self.skip_fg:
+            self.config_floating_gates(hicann, h)
+
+        for fg_block in fg_blocks:
+            pyhalbe.HICANN.set_fg_cell(hicann, fg_block, param)
+        self.config_analog_readout(hicann, h)
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='FG cell tool')
+    parser.add_argument('--experiment_duration', type=float, default=500e-6, help="duration of experiment")
+    parser.add_argument('--recording_time', type=float, default=1e-5, help="duration of ADC recording, set to 0 to disable recording")
+    parser.add_argument('--dac_fg_left', type=int, default=1023, help="DAC value for left FG blocks")
+    parser.add_argument('--dac_fg_right', type=int, default=1023, help="DAC value for right FG blocks")
+    parser.add_argument('--hwdb', type=str, default=None, help="full path to hardware database")
+    parser.add_argument('--dump', default=False, help="dump trace to file", action="store_true")
+    parser.add_argument('--skip_fg', help='skip floating gate programming', action="store_true", default=False)
+    add_default_coordinate_options(parser)
+    add_logger_options(parser)
+
+    args, argv = parser.parse_known_args()
+    argv.insert(0, sys.argv[0])
+
+    HICANN = args.hicann
+    WAFER = args.wafer
+
+    settings = pysthal.Settings.get()
+    if args.hwdb:
+        settings.yaml_hardware_database_path = args.hwdb
+        print "using non-default hardware database {}".format(args.hwdb)
+
+    print "using wafer {} and hicann {}".format(WAFER, HICANN)
+
+    if HICANN == None or WAFER == None:
+        print "error: wafer and hicann have to be specified, e.g. --wafer 0 --hicann 276"
+        exit(1)
+
+    w = pysthal.Wafer(C.Wafer(WAFER))
+    h = w[C.HICANNOnWafer(HICANN)]
+
+    h.analog.set_fg_left(C.AnalogOnHICANN(0))
+    h.analog.set_fg_right(C.AnalogOnHICANN(1))
+
+    fgc = h.floating_gates
+
+    for fg_block in fg_blocks_left:
+        fgc.setShared(fg_block, param, args.dac_fg_left)
+
+    for fg_block in fg_blocks_right:
+        fgc.setShared(fg_block, param, args.dac_fg_right)
+
+    cfg = MyConfigurator(args.skip_fg)
+    w.connect(pysthal.MagicHardwareDatabase())
+    w.configure(cfg)
+
+    runner = pysthal.ExperimentRunner(args.experiment_duration)
+    w.start(runner)
+
+    # record ADC
+    if args.recording_time:
+        for (ANALOG, value) in [(0, args.dac_fg_left), (1, args.dac_fg_right)]:
+            try:
+                adc = h.analogRecorder(C.AnalogOnHICANN(ANALOG))
+                adc.setRecordingTime(args.recording_time)
+                adc.record()
+                v = adc.trace()
+                adc.freeHandle()
+                print "FG [DAC]: {}, Analog({}): mean={}, std={}".format(value, ANALOG, np.mean(v), np.std(v))
+
+                if args.dump:
+                    t = adc.getTimestamps()
+                    np.savetxt("analog_{}_value_{}.dat".format(ANALOG, value), np.c_[t,v])
+            except Exception as e:
+                print e

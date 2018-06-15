@@ -1,0 +1,58 @@
+import argparse
+
+from Coordinate import iter_all
+from Coordinate import FGRowOnFGBlock
+
+from pyhalbe import HICANN
+
+class FGRowAction(argparse.Action):
+    """Parse arguments for FGRowOnFGBlock allowed values are:
+        - all
+        - comma seperated list of number or ranges (e.g 1,3-4,7)
+    """
+    def __init__(self, option_strings, dest, nargs=None, **kwargs):
+        if nargs is not None:
+            raise ValueError("nargs not allowed")
+        super(FGRowAction, self).__init__(option_strings, dest, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        args = getattr(namespace, self.dest, None)
+        if args is None:
+            args = []
+        self.parse(values, args)
+        setattr(namespace, self.dest, args)
+
+    @staticmethod
+    def parse(rows, args):
+        """parse the text argument
+        Returns:
+            [FGRowOnFGBlock]
+        """
+        if rows == 'all':
+            args.extend(row for row in iter_all(FGRowOnFGBlock))
+        else:
+            for value in rows.split(','):
+                if '-' in value:
+                    begin, end = value.split('-')
+                    vrange = range(int(begin), int(end)+1)
+                    args.extend(FGRowOnFGBlock(x) for x in vrange)
+                else:
+                    coord = value
+                    args.append(FGRowOnFGBlock(int(coord)))
+
+
+def get_row_parameter_names(block, row):
+    """Returns tuple (shared paramter name, neuron parameter name)"""
+    try:
+        shared_parameter = HICANN.getSharedParameter(block, row)
+        shared_name = shared_parameter.name
+    except IndexError:
+        shared_name = "n.c."
+
+    try:
+        neuron_parameter = HICANN.getNeuronParameter(block, row)
+        neuron_name = neuron_parameter.name
+    except IndexError:
+        neuron_name = "n.c."
+
+    return shared_name, neuron_name

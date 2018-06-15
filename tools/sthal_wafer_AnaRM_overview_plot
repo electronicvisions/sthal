@@ -1,0 +1,878 @@
+#!/usr/bin/env python
+# -*- encoding: utf-8 -*-
+
+import argparse
+import errno
+import glob
+import json
+import os
+import re
+
+from collections import namedtuple
+from distutils.version import StrictVersion
+from xml.etree import ElementTree
+
+import jinja2
+import numpy
+import pandas
+
+from bokeh.embed import autoload_static
+from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.plotting import figure
+from bokeh.resources import CDN
+
+if StrictVersion(pandas.__version__) < StrictVersion('0.17.1'):
+    raise ImportError("pandas version >= 0.17.1 required")
+
+
+ANAB_NAME = {1: 'top/slave', 2: 'bottom/master'}
+WAFER_PLOT_DATA = pandas.DataFrame(
+    columns=['dnc', 'dnc_x', 'dnc_y', 'fpga', 'has hs',
+             'AnaB', 'P1', 'P2', 'PowerBoard'],
+    data=[
+        [ 0, 3, 0, 12,  True, 1, 2, 5, 2],
+        [ 1, 4, 0, 13,  True, 1, 2, 5, 1],
+        [ 2, 5, 0, 11,  True, 1, 2, 5, 1],
+        [ 3, 2, 1, 16,  True, 1, 1, 4, 2],
+        [ 4, 3, 1, 14,  True, 1, 2, 5, 2],
+        [ 5, 4, 1, 15,  True, 1, 2, 5, 1],
+        [ 6, 5, 1, 10,  True, 1, 2, 5, 1],
+        [ 7, 6, 1,  9,  True, 1, 2, 5, 1],
+        [ 8, 1, 2, 20,  True, 1, 1, 4, 2],
+        [ 9, 2, 2, 17,  True, 1, 1, 4, 2],
+        [10, 3, 2, 19,  True, 1, 1, 4, 2],
+        [11, 4, 2,  7,  True, 1, 3, 6, 1],
+        [12, 5, 2,  6,  True, 1, 3, 6, 1],
+        [13, 6, 2,  8,  True, 1, 2, 5, 1],
+        [14, 7, 2,  3,  True, 1, 3, 6, 1],
+        [15, 0, 3, 22,  True, 1, 1, 4, 2],
+        [16, 1, 3, 21,  True, 1, 1, 4, 2],
+        [17, 2, 3, 23,  True, 1, 1, 4, 2],
+        [18, 3, 3, 18,  True, 1, 1, 4, 2],
+        [19, 4, 3,  5, False, 1, 3, 6, 2],
+        [20, 5, 3,  4,  True, 1, 3, 6, 1],
+        [21, 6, 3,  0,  True, 1, 3, 6, 1],
+        [22, 7, 3,  2,  True, 1, 3, 6, 1],
+        [23, 8, 3,  1,  True, 1, 3, 6, 1],
+        [24, 0, 4, 25,  True, 2, 3, 6, 2],
+        [25, 1, 4, 26,  True, 2, 3, 6, 2],
+        [26, 2, 4, 24,  True, 2, 3, 6, 2],
+        [27, 3, 4, 28,  True, 2, 3, 6, 2],
+        [28, 4, 4, 43, False, 2, 1, 4, 1],
+        [29, 5, 4, 42,  True, 2, 1, 4, 1],
+        [30, 6, 4, 47,  True, 2, 1, 4, 1],
+        [31, 7, 4, 45,  True, 2, 1, 4, 1],
+        [32, 8, 4, 46,  True, 2, 1, 4, 1],
+        [33, 1, 5, 27,  True, 2, 3, 6, 2],
+        [34, 2, 5, 29,  True, 2, 3, 6, 2],
+        [35, 3, 5, 30,  True, 2, 3, 6, 2],
+        [36, 4, 5, 41,  True, 2, 1, 4, 1],
+        [37, 5, 5, 40,  True, 2, 1, 4, 1],
+        [38, 6, 5, 38,  True, 2, 2, 5, 1],
+        [39, 7, 5, 44,  True, 2, 1, 4, 1],
+        [40, 2, 6, 31,  True, 2, 3, 6, 2],
+        [41, 3, 6, 32,  True, 2, 2, 5, 2],
+        [42, 4, 6, 39,  True, 2, 2, 5, 1],
+        [43, 5, 6, 37,  True, 2, 2, 5, 1],
+        [44, 6, 6, 36,  True, 2, 2, 5, 1],
+        [45, 3, 7, 33,  True, 2, 2, 5, 2],
+        [46, 4, 7, 34,  True, 2, 2, 5, 1],
+        [47, 5, 7, 35,  True, 2, 2, 5, 1]]
+)
+
+DNC_TO_FPGA = {row.dnc: row.fpga
+               for row in WAFER_PLOT_DATA.itertuples()}
+DNC_TO_PINS = {row.dnc: "P{}/P{}".format(row.P1, row.P2)
+               for row in WAFER_PLOT_DATA.itertuples()}
+
+
+def dnc_to_anarm(dnc):
+    """return AnaRM board corresponding to the DNC"""
+    return 'top/slave' if dnc < 24 else 'bottom/master'
+
+
+# Create a ninja environment containing our conversion tables and other useful
+# stuff
+JINJA_ENV = jinja2.Environment()
+JINJA_ENV.globals.update(
+    DNC_TO_FPGA=DNC_TO_FPGA,
+    dnc_to_anarm=dnc_to_anarm,
+    DNC_TO_PINS=DNC_TO_PINS,
+    zip=zip,
+)
+
+TRACES_TEMPLATE = JINJA_ENV.from_string(u"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>AnaRM Test Raw Traces Wafer {{ wafer.wafer }}</title>
+<meta charset="UTF-8">
+</head>
+<body>
+<h1>Raw traces Wafer {{ wafer.wafer }}</h1>
+<a href="overview.html">Overview</a>
+{% for dnc, plotfile in wafer.list_plots() %}
+    {% set id = "raw_plot_" ~ wafer.wafer ~ "_" ~ dnc %}
+    <h3 id="{{ id }}">
+        Raw traces for wafer {{ wafer.wafer }} DNC {{ dnc }}
+        (FPGA {{ DNC_TO_FPGA[dnc] }}) via AnaRM {{ dnc_to_anarm(dnc) }}
+        ({{ DNC_TO_PINS[dnc] | join('/') }})
+    <a href="#{{ id }}" title="Permalink to this headline">¶</a>
+    </h3>
+    <p>
+    {% if plotfile %}
+        <img src="{{ plotfile }}"></img>
+    {% else %}
+        No trace could be recorded.
+    {% endif %}
+    </p>
+{% endfor %}
+</body>
+""")
+
+OVERVIEW_TEMPLATE = JINJA_ENV.from_string(u"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<title>AnaRM Test results</title>
+<meta charset="UTF-8">
+<style>
+.overview_table {
+   border-collapse: collapse;
+}
+.overview_table, .overview_table td, .overview_table th {
+    border: 1px solid black;
+}
+
+.legend {
+    float: left;
+    width: 10%;
+}
+
+.legend table {
+    margin-top: 20%;
+}
+
+.legend_box {
+    width: 30px;
+    height: 30px;
+    margin: 5px;
+    border-width: 2px;
+    border-style: solid;
+    border-color: darkgray;
+}
+</style>
+</head>
+<body>
+<h1>AnaRM Test results</h1>
+<div>
+<a href=#overview>Overview</a>
+<a href=#raw_traces>Raw Traces</a>
+</div>
+<div>
+<h2 id="overview">Overview</h2>
+<table class="overview_table">
+{% for wafer in wafers %}
+    {% if loop.first %}
+    <tr>
+        <th>Wafer</th>
+        <th>Total channels</th>
+        {% for row in wafer.error_counts['label'] %}
+            <th> {{ row }} </th>
+        {% endfor %}
+        <th></th>
+    </tr>
+    {% endif %}
+
+    {% set values = wafer.error_counts['values'] %}
+    {% set links = [
+        None, None, "noise_historgrams_", None,
+        "adc_errors_", None, "runtime_errors_", None] %}
+    <tr>
+        <td>{{ wafer.wafer }}</td>
+        <td>{{ wafer.total_channels }}</td>
+        {% for value, link in zip(values, links) %}
+            <td>
+            {{ value }}
+            {% if link %}
+            <a href="#{{ link ~ wafer.wafer}}">▼</a>
+            {% endif %}
+            </td>
+        {% endfor %}
+        <td><a href="{{ wafer.trace_overview }}">raw traces</a></td>
+    </tr>
+{% endfor %}
+</table>
+</div>
+
+<div>
+<h2 id="overview">Overview</h2>
+{% for wafer in wafers %}
+    {% if loop.first %}
+    <div class="legend">
+    <table>
+        {% for label, color in wafer.legends['overview'] %}
+        <tr>
+        <td><div class="legend_box", style="background-color: {{ color }};" /></td>
+        <td>{{ label }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+    {% endif %}
+    <div style="float: left; width=300px">
+    <div class="bk-root">{{ wafer.plots['overview'] }}</div>
+    </div>
+{% endfor %}
+<div style="clear: left;"></div>
+</div>
+
+<div>
+<h2 id="noise">Noise Histograms</h2>
+<div>
+Noise on the Analog readout...
+</div>
+{% for wafer in wafers %}
+    {% set id = "noise_histograms_" ~ wafer.wafer %}
+    <h3 id="{{ id }}"> Wafer {{ wafer.wafer }}</h3>
+    <div class="legend">
+    <table>
+        {% for label, color in wafer.legends['noise_histogram'] %}
+        <tr>
+        <td><div class="legend_box", style="background-color: {{ color }};" /></td>
+        <td>{{ label }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+    <div style="float: left; width=300px">
+    <div class="bk-root">{{ wafer.plots['noise_histogram_l_0'] }}</div>
+    </div>
+    <div style="float: left; width=300px">
+    <div class="bk-root">{{ wafer.plots['noise_histogram_l_1'] }}</div>
+    </div>
+    <div style="float: left; width=300px">
+    <div class="bk-root">{{ wafer.plots['noise_histogram_h_0'] }}</div>
+    </div>
+    <div style="float: left; width=300px">
+    <div class="bk-root">{{ wafer.plots['noise_histogram_h_1'] }}</div>
+    </div>
+    <div style="clear: left;"></div>
+{% endfor %}
+</div>
+
+<div>
+<h2 id="adc_errors">ADC Errors</h2>
+{% for wafer in wafers %}
+    {% set id = "adc_errors_" ~ wafer.wafer %}
+    <h3 id="{{ id }}"> Wafer {{ wafer.wafer }}</h3>
+    <ul>
+    {% for count, error, adcs in wafer.list_adc_errors() %}
+        <li>{{ adcs | join(", ") }}: {{count}} ✕ {{ error }}</li>
+    {% else %}
+        <li><em>No errors</em></li>
+    {% endfor %}
+    </ul>
+{% endfor %}
+</div>
+
+<div>
+<h2 id="runtime_errors">Runtime Errors</h2>
+<div>
+Unexpected runtime errors, collected from junit-xml files.
+<br>
+<em>Note:</em> These result can be based on old runs, if the test output
+folder was not clean.
+</div>
+{% for wafer in wafers %}
+    {% set id = "runtime_errors_" ~ wafer.wafer %}
+    <h3 id="{{ id }}"> Wafer {{ wafer.wafer }}</h3>
+    <div class="legend">
+    <table>
+        {% for label, color in wafer.legends['runtime_errors'] %}
+        <tr>
+        <td><div class="legend_box", style="background-color: {{ color }};" />
+        </td>
+        <td>{{ label }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+    <div style="float: left; width=1024px">
+    <div class="bk-root">{{ wafer.plots['runtime_errors'] }}</div>
+    </div>
+    <div>
+    <ul style="margin-top: 20%;">
+    {% for count, error, msg, dncs in wafer.list_runtime_errors() %}
+        <li>
+        {{count}} ✕ <em>{{ error }}</em>: {{ msg }} (on DNC(s): {{ dncs | join(", ") }})
+        </li>
+    {% else %}
+        <li><em>No errors</em></li>
+    {% endfor %}
+    </ul>
+    </div>
+    <div style="clear: left;"></div>
+{% endfor %}
+</div>
+
+</body>
+</html>
+""")
+
+
+ADCEntry = namedtuple(
+    'ADCEntry',
+    ['wafer', 'dnc', 'hicann', 'analog', 'adc', 'channel'])
+
+
+# Utility functions to parse junit-xml files generate. I didn't find a nice
+# module for that yet
+def parse_xml_file(xmlfile):
+    """
+    Parses a XML file an return the tree or None on error
+    """
+    try:
+        tree = ElementTree.parse(xmlfile)
+        return tree.getroot()
+    except IOError as exc:
+        if exc.errno != errno.ENOENT:
+            raise
+    except ElementTree.ParseError:
+        pass
+    return None
+
+
+def search_latest_unittest(folder, suffix=None):
+    """
+    Finds xml-unittest reports in the given folder.
+
+    If suffix is None, the latest report (based on the report filename suffix)
+    is returned. If suffix is a string the report with the matching suffix is
+    returned. If no report was found None is returned.
+    """
+    matches = [re.match(r'(TEST-[\w_.]+-(?P<DATE>\d*).xml)', f)
+               for f in os.listdir(folder)]
+    reports = [(int(m.group('DATE')), m.group(0))
+               for m in matches
+               if m and (suffix is None or m.group('DATE') == suffix)]
+    reports.sort()
+    if reports:
+        return os.path.join(folder, reports[-1][1])
+    else:
+        return None
+
+
+def read_errors_from_junit_xml(folder, suffix=None):
+    """Collects all errors from junit-xml-unittest reports"""
+
+    report = search_latest_unittest(folder, suffix)
+    if report is None:
+        return (
+            "FatalError", "No XML Report found",
+            "Most likly the test ist still runnung or crashed "
+            "(with recvfrom=11 error)")
+
+    xmlroot = parse_xml_file(report)
+    if xmlroot is None:
+        return ("FatalError", "Could not read XML Report", "")
+
+    errors = []
+    for error in xmlroot.findall('*/error'):
+        error_type = error.attrib.get("type")
+        error_message = error.attrib.get("message")
+        errors.append((error_type, error_message, error.text))
+    if errors:
+        assert len(errors) == 1, "test-wafer-aout.py has only one test"
+        return errors[0]
+    else:
+        return None
+
+
+class WaferData(object):
+    """
+    Hold the test results for a single wafer.
+    Is class is passed to jinja to provide data and generate the plots.
+    """
+    NOISE_THRESHOLD = 0.010  # Threshold for noise histogram in V
+    NOISE_LABEL = "noise >{:g}mV (std)".format(1000.0*NOISE_THRESHOLD)
+
+    def __init__(self, wafer):
+        self.wafer = wafer
+        self.js_folder = os.path.join('static', 'w_{}'.format(wafer))
+        self.trace_overview = 'raw_traces_w_{}.html'.format(wafer)
+
+        self.total_channels = 384 * 2  # HICANNs * Analog channels
+        self.channels_tested = 0
+        self.adc_error_count = 0
+        self.error_counts = 0
+
+        self.adcs = []
+        self.dncs = []
+        self.adc_errors = []
+        self.results = []
+        self.raw_trace_plots = []
+        self.junit_xml_errors = []
+        self.hicann_to_adc = {}
+
+        self.plots = {}
+        self.legends = {}
+
+    @property
+    def tested_channels(self):
+        """Return total number of HICANN analog channels tested"""
+        return len(self.dncs) * 16  # 2 analog outputs per reticle
+
+    @property
+    def nc_channels(self):
+        """
+        Returns the number of HICANN analog channes, that don't have an ADC
+        assigned in the database.
+        """
+        return len(self.adcs) - self.adcs['adc'].count()
+
+    @property
+    def runtime_errors(self):
+        """
+        Return the number of channels, that couldn't be tested due to fatal
+        errors during test execution.
+        """
+        return self.tested_channels - len(self.adcs)
+
+    @staticmethod
+    def collect_results(basefolder):
+        """
+        Collect unit test results an add them to the data structures
+
+        Returns:
+            A list of finalized wafer objects
+        """
+
+        wafers = {}
+
+        for folder in glob.glob(os.path.join(basefolder, "wafer*_dnc??")):
+            data_file = os.path.join(folder, 'data.json')
+            result_file = os.path.join(folder, 'traces.hdf')
+            plot_file = os.path.join(folder, 'plot.png')
+            if not os.path.exists(data_file):
+                continue
+
+            with open(data_file) as infile:
+                rawdata = json.load(infile)
+
+            wafer = rawdata['wafer']
+            dnc = rawdata['dnc']
+            completed = rawdata['completed']
+            adcs = [ADCEntry(*(item[:-1])) for item in rawdata['adcs']]
+
+            if wafer not in wafers:
+                wafers[wafer] = WaferData(wafer)
+            data = wafers[wafer]
+
+            data.dncs.append(dnc)
+            data.adcs.extend(adcs)
+
+            if completed:
+                with pandas.HDFStore(result_file) as store:
+                    data.results.append(store['result'])
+
+            if os.path.exists(plot_file):
+                plot_file_path = os.path.relpath(plot_file, start=basefolder)
+            else:
+                plot_file_path = None
+            data.raw_trace_plots.append((dnc, plot_file_path))
+
+            suffix = rawdata.get('runner_outsuffix', None)
+            err = read_errors_from_junit_xml(folder, suffix)
+            if err is None:  # Test did run succesful
+                data.junit_xml_errors.append((dnc, "", "", ""))
+            else:
+                data.junit_xml_errors.append((dnc, ) + err)
+
+        wafers = sorted(wafers.values())
+        for wafer in wafers:
+            wafer.finalize_data()
+        return wafers
+
+    def __lt__(self, other):
+        return self.wafer < other.wafer
+
+    def finalize_data(self):
+        """
+        finalize the data, and prepares it for the plots
+        """
+        self.adcs = pandas.DataFrame(self.adcs, columns=ADCEntry._fields)
+        if self.results:
+            self.results = pandas.concat(self.results, ignore_index=True)
+            self.hicann_to_adc = {
+                k: adc.item()
+                for k, adc in self.adcs.groupby(['hicann', 'analog'])['adc']}
+            self.results['adc'] = self.results.apply(
+                lambda row: self.hicann_to_adc.get(
+                    (row['hicann'], row['analog']), None),
+                axis='columns')
+        else:
+            self.results = None
+
+        self.junit_xml_errors = pandas.DataFrame(
+            columns=["dnc", "error", "message", "text"],
+            data=self.junit_xml_errors)
+        self.error_counts = self.calculate_error_counts()
+
+    def calculate_error_counts(self):
+        """
+        Sort result data into error categories
+        """
+
+        # Sort data into error categories and count them
+        # Sum will concatenate all error strings
+        def error_cat(row):
+            "Determine the error category of this row"
+            if row.adc_error:
+                return "ADC"
+            elif row.fg_error and row.noise_error:
+                return "both"
+            elif row.fg_error:
+                return "FG"
+            elif row.noise_error:
+                return "noise"
+            else:
+                return "OK"
+
+        # Create plot data table with default values
+        data = pandas.DataFrame(
+            columns=['values', 'label', 'color'],
+            index=['OK', 'FG', 'noise', 'both', 'ADC', 'nc', 'error', 'nt'],
+            data=[
+                [0, 'OK', 'green'],
+                [0, 'FG value mismatch', 'crimson'],
+                [0, self.NOISE_LABEL, 'tomato'],
+                [0, self.NOISE_LABEL + ' & FG value mismatch', 'red'],
+                [0, 'ADC error', 'orange'],
+                [0, 'no ADC', 'black'],
+                [0, 'Test error', 'darkred'],
+                [0, 'Not tested', '#A0A0A0'],
+            ])
+
+        if self.results is not None:
+            error_columns = ['adc_error', 'fg_error', 'noise_error']
+            error_cats = self.results.groupby(
+                ['hicann', 'analog'])[error_columns].sum().apply(
+                    error_cat, axis='columns').value_counts()
+            data.loc[error_cats.index, 'values'] = error_cats
+        data.loc['ADC', 'values'] = (
+            data.loc['ADC', 'values'] - self.nc_channels)
+        data.loc['nc', 'values'] = self.nc_channels
+        data.loc['error', 'values'] = self.runtime_errors
+        data.loc['nt', 'values'] = self.total_channels - self.tested_channels
+
+        assert self.total_channels == data['values'].sum(), \
+            "Missing values {}".format(data)
+        return data
+
+    def make_plots(self, basepath):
+        """Create all plots"""
+        if not os.path.exists(os.path.join(basepath, self.js_folder)):
+            os.makedirs(os.path.join(basepath, self.js_folder))
+        self.make_result_chart(basepath)
+        self.make_noise_histograms(basepath)
+        self.make_runtime_error_plot(basepath)
+
+    def create_bokeh_plot(self, basepath, name, plot, legend=None):
+        """
+        Makes an embedded bokeh plot, the plot <div> is stored in self.plots,
+        the data is written in a separated file under self.js_folder
+        """
+        path = os.path.join(self.js_folder, name + '.js')
+        script, div = autoload_static(plot, CDN, path)
+        self.plots[name] = div
+        with open(os.path.join(basepath, path), 'w') as js_file:
+            js_file.write(script)
+        if legend:
+            self.legends[name] = legend
+
+    def make_result_chart(self, basepath):
+        """
+        Creates an pie chart visualising the state of the AnaRM boards
+        """
+
+        data = self.error_counts.copy()
+        data = data[data['values'] > 0]
+
+        normby = data['values'].sum() / (2.0 * numpy.pi)
+        data['end_angle'] = data['values'].cumsum() / normby
+        data['start_angle'] = data['end_angle'] - data['values'] / normby
+
+        fig = figure(
+            title="Wafer {}".format(self.wafer),
+            width=350, height=350,
+            toolbar_location="left",
+            x_range=(-1.1, 1.1), y_range=(-1.1, 1.1),
+            x_axis_type=None, y_axis_type=None,
+        )
+        fig.annular_wedge(
+            x=0.0, y=0.0,
+            inner_radius=0.0, outer_radius=1.0,
+            start_angle=data['start_angle'], end_angle=data['end_angle'],
+            fill_color=data['color'], line_color='white', line_width=1,
+        )
+
+        # Comment in to create label in the plot
+        # angle = (data['start_angle'] +
+        #          (data['end_angle'] - data['start_angle']) / 2.0)
+        # text = pandas.DataFrame({
+        #    'x': 0.55 * numpy.cos(angle),
+        #    'y': 0.55 * numpy.sin(angle),
+        #    'angle': (numpy.fmod(angle + numpy.pi/2.0, numpy.pi) -
+        #              numpy.pi/2.0),
+        # })
+        # fig.text(
+        #     x=text['x'], y=text['y'],
+        #     text=data['label'], angle=text['angle'],
+        #     text_align='center', text_baseline='middle',
+        # )
+
+        legend = data[['label', 'color']].values.tolist()
+        self.create_bokeh_plot(basepath, 'overview', fig, legend)
+
+    def make_noise_histograms(self, basepath):
+        """
+        Creates a histogram showing the noise on the different analog channels.
+        """
+
+        if self.results is None:
+            return
+
+        hicanns = 384
+        bins = [0.0, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5]
+        colors = ['red' if b > self.NOISE_THRESHOLD else 'green'
+                  for b in bins[1:]]
+        ticks = ["<{:.3f}V ".format(b) for b in bins[1:]]
+
+        for grp, grpdata in self.results.groupby(['analog', 'DAC']):
+            analog, dac = grp
+            name = 'noise_histogram_{}_{}'.format(
+                'l' if dac == 0 else 'h', analog)
+
+            tmp = grpdata['std'].clip(bins[0], bins[-1])
+            counts, bins = numpy.histogram(tmp.dropna(), bins=bins)
+            hist = numpy.cumsum(counts)
+            xvalues = numpy.arange(0, hist.size) + 1.0
+
+            fig = figure(
+                title='Analog {} DAC {}'.format(analog, dac),
+                width=280, height=350,
+                toolbar_location='left',
+                x_range=ticks, y_range=(0, hicanns),
+            )
+            fig.quad(
+                top=hist, bottom=0,
+                left=xvalues - 0.5, right=xvalues + 0.5,
+                fill_color=colors, line_color='darkgrey')
+            fig.quad(
+                top=384, bottom=hist,
+                left=xvalues - 0.5, right=xvalues + 0.5,
+                fill_color='grey', line_color='darkgrey')
+
+            offset = [v + 2 if v < 320 else v - 30 for v in hist]
+            fig.text(x=xvalues, y=offset,
+                     text=[str(v) if v else '' for v in hist],
+                     text_font_size="10pt",
+                     text_baseline='bottom', text_align='center')
+
+            fig.xaxis.axis_label = 'Noise (std) threshold'
+            fig.yaxis.axis_label = 'Channel count'
+            fig.grid.grid_line_color = None
+            fig.axis.axis_line_color = None
+            fig.axis.major_tick_line_color = None
+            fig.axis.major_label_text_font_size = "8pt"
+            fig.axis.major_label_standoff = 0
+            fig.xaxis.major_label_orientation = numpy.pi / 3.0
+            self.create_bokeh_plot(basepath, name, fig)
+
+        self.legends['noise_histogram'] = [
+            ['OK', 'green'],
+            ['BAD', 'red'],
+            ['unknown', 'grey'],
+        ]
+
+    def make_runtime_error_plot(self, basepath):
+        """
+        Creates a wafer plot showing on which reticles runtime errors occured
+        """
+
+        colors = {
+            '': '#008000',
+            'NotTested': 'black',
+            'FatalError': 'darkred',
+            'RuntimeError': 'red',
+            'AssertionError': '#FFCC33'
+        }
+
+        legend = [
+            ['ok', '#008000'],
+            ['not tested', 'black'],
+            ['fatal execution error', 'darkred'],
+            ['RuntimeError', 'red'],
+            ['FG/noise/ADC error (details above)', '#FFCC33'],
+            ['other errors', 'OrangeRed'],
+        ]
+
+        # Use 'dnc' column to merge the Datasets correctly
+        data = pandas.concat([
+            WAFER_PLOT_DATA.set_index('dnc'),
+            self.junit_xml_errors.set_index('dnc'),
+            ], axis='columns').reset_index()
+        data['error'].fillna('NotTested', inplace=True)
+        data.fillna('', inplace=True)
+
+        # Plot coordinates start at bottom left corner, halbe coordinates at
+        # top left corner. We have to mirror the y values
+        data['x'] = data['dnc_x']
+        data['y'] = 7.5 - data['dnc_y']
+
+        # Sort ADC mesurements into catogories
+        # Sum will concatenate all error strings
+        def get_adc_error_color(row):
+            "Determine the error category of this row"
+            if row.any():
+                return '#FFCC33'
+            else:
+                return '#008000'
+
+        error_columns = ['adc_error', 'fg_error', 'noise_error']
+        adc_error_colors = self.results.groupby(
+            ['analog', 'dnc'])[error_columns].sum().apply(
+                get_adc_error_color, axis='columns')
+
+        adc_boards = self.results.groupby(
+            ['analog', 'dnc'])['adc'].unique().apply(lambda x: x[0])
+
+        adc_box_size = 0.25
+
+        data_adc0 = data.reset_index(['dnc'])
+        data_adc0['label'] = "0"
+        data_adc0['x'] -= 0.25
+        data_adc0['y'] -= 0.3
+        data_adc0['color'] = adc_error_colors.xs(0)
+        data_adc0['message'] = adc_boards.xs(0)
+        data_adc0.dropna(inplace=True)
+        adc0_source = ColumnDataSource(data_adc0)
+
+        data_adc1 = data.reset_index(['dnc'])
+        data_adc1['label'] = "1"
+        data_adc1['x'] += 0.25
+        data_adc1['y'] -= 0.3
+        data_adc1['color'] = adc_error_colors.xs(1)
+        data_adc1['message'] = adc_boards.xs(1)
+        data_adc1.dropna(inplace=True)
+        adc1_source = ColumnDataSource(data_adc1)
+
+        data['color'] = data['error'].apply(
+            lambda error: colors.get(error, 'OrangeRed'))
+        data['label'] = data.apply(
+            lambda r: "D {dnc:0>2} F {fpga:0>2}".format(**r), axis='columns')
+        data['short_msg'] = data['message'].apply(
+            lambda msg: msg[:12] + '...' if len(msg) > 15 else msg)
+
+        source = ColumnDataSource(data)
+        tooltip = HoverTool(
+            tooltips='<div style="word-wrap: break-word; width: 640px">'
+                     '@message</div>')
+        fig = figure(
+            width=1024, height=1024,
+            title="Wafer {}".format(self.wafer),
+            x_range=(-1, 9), y_range=(-1, 9),
+            x_axis_type=None, y_axis_type=None,
+            tools=[tooltip],
+        )
+
+        fig.rect('x', 'y', 1.0, 1.0,
+                 line_color='black', fill_color='color', source=source)
+        fig.rect('x', 'y', adc_box_size, adc_box_size,
+                 line_color='grey', fill_color='color', source=adc0_source)
+        fig.rect('x', 'y', adc_box_size, adc_box_size,
+                 line_color='grey', fill_color='color', source=adc1_source)
+
+        fig.text(data['x'] - 0.5, data['y'] + 0.45, data['label'],
+                 text_align='left', text_baseline='top')
+        fig.text(data['x'] - 0.5, data['y'] + 0.25, data['short_msg'],
+                 text_align='left', text_baseline='top',
+                 text_font_size="8pt")
+        fig.text(data_adc0['x'], data_adc0['y'], data_adc0['label'],
+                 text_align='center', text_baseline='middle')
+        fig.text(data_adc1['x'], data_adc1['y'], data_adc1['label'],
+                 text_align='center', text_baseline='middle')
+
+        self.create_bokeh_plot(basepath, 'runtime_errors', fig, legend)
+
+    def list_plots(self):
+        """
+        returns a list of the raw_traces_plots
+        """
+        return sorted(self.raw_trace_plots)
+
+    def list_adc_errors(self):
+        """
+        Generator for adc errors:
+
+        Yields:
+            (error count, error message, ADCs on which the error occured)
+        """
+        if self.results is None:
+            return
+        data = self.results.copy()
+        adc_errors = data['adc_error'].value_counts()
+        for msg, count in adc_errors.iteritems():
+            if msg:
+                adcs = numpy.unique(data[data['adc_error'] == msg]['adc'])
+                yield count, msg, numpy.unique(adcs)
+
+    def list_runtime_errors(self):
+        """
+        Generator for a list of runtime errors:
+
+        Yields:
+            tuple containing:
+                (error count, error type,
+                 error message, DNCs on which the error occured)
+        """
+        data = self.junit_xml_errors.set_index('dnc')
+        data = data[data['error'] != 'AssertionError']
+        messages = data['message'].value_counts()
+        for msg, count in messages.iteritems():
+            dncs = data[data['message'] == msg].index.values
+            error = data.loc[dncs[0], 'error']
+            if error:
+                yield count, error, msg, dncs
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description='Plot results from test-wafer-aout.py tests')
+    parser.add_argument(
+        '--data-output-dir', type=str, required=True,
+        help="Test output folder")
+    args = parser.parse_args()
+
+    if not os.path.isdir(args.data_output_dir):
+        exit(0)
+
+    maindoc = os.path.join(args.data_output_dir, 'overview.html')
+
+    wafers = WaferData.collect_results(args.data_output_dir)
+    for wafer in wafers:
+        wafer.make_plots(args.data_output_dir)
+    rendered = OVERVIEW_TEMPLATE.render(wafers=wafers)
+    with open(maindoc, 'w') as outfile:
+        outfile.write(rendered.encode('utf-8'))
+
+    for wafer in wafers:
+        tracefile = os.path.join(args.data_output_dir, wafer.trace_overview)
+        rendered = TRACES_TEMPLATE.render(wafer=wafer)
+        with open(tracefile, 'w') as outfile:
+            outfile.write(rendered.encode('utf-8'))
+
+
+if __name__ == '__main__':
+    main()

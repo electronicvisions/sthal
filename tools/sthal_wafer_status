@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+
+import argparse
+import pysthal
+import pylogging
+
+from pysthal.command_line_util import add_default_coordinate_options
+from pysthal.command_line_util import add_logger_options
+from pysthal.command_line_util import init_logger
+
+if __name__ == "__main__":
+
+    init_logger(pylogging.LogLevel.INFO)
+
+    description='Print basic information after connect, e.g. bitfile versions'
+    parser = argparse.ArgumentParser(description=description)
+    add_default_coordinate_options(parser)
+    add_logger_options(parser)
+
+    args, argv = parser.parse_known_args()
+
+    w = pysthal.Wafer(args.wafer)
+    h = w[args.hicann]
+
+    w.connect(pysthal.MagicHardwareDatabase())
+
+    print w

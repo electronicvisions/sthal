@@ -1,0 +1,123 @@
+
+#!/bin/env python
+# -*- coding: utf8 -*-
+# pylint: disable=missing-docstring
+
+import argparse
+import numpy
+import cPickle
+
+import Coordinate
+import pysthal
+import pyhalbe
+import pylogging
+
+from Coordinate import iter_all
+from Coordinate import FGCellOnFGBlock
+
+loggername = __name__.replace('_', '')
+logger = pylogging.get(loggername)
+
+class CFG(pysthal.ProgrammAndReadFloatingGatesConfigurator):
+    def do_readout(self, pass_, passes):
+        return pass_ == passes - 1
+
+class FastReset(pysthal.HICANNConfigurator):
+    def config(self, fpga, handle, data):
+        pyhalbe.HICANN.init(handle, False)
+
+
+def get_fg_values(value, sigma):
+    if sigma == 0.0:
+        values = numpy.ones((FGCellOnFGBlock.enum_type.size)) * value
+    else:
+        values = numpy.random.normal(
+            value, sigma, size=(FGCellOnFGBlock.enum_type.size))
+    values = numpy.digitize(values, numpy.arange(0, 1024))
+    values = values.reshape(
+        (FGCellOnFGBlock.x_type.size, FGCellOnFGBlock.y_type.size))
+    return values
+
+def set_fg_values(fg_block, values):
+    for cell in iter_all(FGCellOnFGBlock):
+        x, y = int(cell.x()), int(cell.y())
+        fg_block.setRaw(cell, int(values[x][y]))
+
+def run(wafer, hicann, block, rows, value, sigma, repetitions):
+
+    results = dict((row, []) for row in rows)
+    values = get_fg_values(value, sigma)
+    set_fg_values(hicann.floating_gates[block], values)
+
+    wafer.connect(pysthal.MagicHardwareDatabase())
+    wafer.configure(FastReset())
+    for rep in xrange(repetitions):
+        cfg = CFG(False)
+        for row in rows:
+            cfg.meassure(block, row)
+        wafer.configure(cfg)
+        for row in rows:
+            row_measurements = cfg.getMeasurment(block, row).results
+            results[row].append(numpy.array(row_measurements[-1].means))
+    wafer.disconnect()
+
+    results = dict((int(r), numpy.array(d)) for r, d in results.iteritems())
+    return {
+        'results': results,
+        'value': value,
+        'sigma': sigma,
+        'values': values,
+    }
+
+
+def add_options(parser):
+    from measure_floating_gates_common import FGRowAction
+    from pysthal.command_line_util import folder
+
+    group = parser.add_argument_group("Select rows and block to meassures:")
+    group.add_argument(
+        '--block', action='store',
+        type=lambda x: Coordinate.FGBlockOnHICANN(Coordinate.Enum(int(x))),
+        help='specify floating gate block')
+    group.add_argument(
+        '--rows', action=FGRowAction,
+        dest='rows', help='specify Row on fg block')
+    group.add_argument(
+        '--value', type=float, help="Target value of floating gates")
+    group.add_argument(
+        '--sigma', type=float, help="Variance around target value")
+    group.add_argument(
+        '--N', type=int, help="Number of measuremnts")
+    group.add_argument(
+        '--out', type=argparse.FileType('w'), help="outfile")
+
+def main():
+    from pysthal.command_line_util import add_default_coordinate_options
+    from pysthal.command_line_util import add_logger_options
+    from pysthal.command_line_util import init_logger
+
+    init_logger('WARN', [
+        (loggername, 'INFO'),
+        ('RecordJob', 'INFO'),
+        ('RecordTraces', 'INFO'),
+        ('sthal', 'INFO'),
+        ('sthal.ProgrammAndReadFloatingGatesConfigurator', 'DEBUG'),
+        ('sthal.AnalogRecorder', 'WARN'),
+        ('halbe.fgwriter', 'ERROR')])
+
+    parser = argparse.ArgumentParser(
+        description='Floating Gate Measurment Tool')
+    add_default_coordinate_options(parser)
+    add_logger_options(parser)
+    add_options(parser)
+    args, _ = parser.parse_known_args()
+
+    wafer = pysthal.Wafer(args.wafer)
+    hicann = wafer[args.hicann]
+    result = run(
+        wafer, hicann, args.block, args.rows, args.value, args.sigma, args.N)
+    cPickle.dump(result, args.out)
+
+if __name__ == '__main__':
+    main()
+

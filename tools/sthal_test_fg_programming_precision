@@ -1,0 +1,539 @@
+#!/usr/bin/env python
+
+"""
+
+Usage example:
+
+    $ cube_srun --wafer 5 --hicann 116 -- sthal_test_fg_programming_precision \\
+          --recording-time 1e-7 --configurator SequentialTestConfigurator \\
+          --repetitions 10 --test-pattern-nrn-params \\
+          --test-pattern-shared-params --set-essential-shared True \\
+          --test-pattern-nrn neuron_parameter.E_synx outdir
+
+Analyze the resulting *.pkl file using `sthal_test_fg_plot`, e.g.
+
+    $ sthal_test_fg_plot 'test_fg_results_Wafer(4)_HICANNOnWafer(X(25), Y(6)).pkl'
+
+
+Paul Mueller, <pmueller@kip.uni-heidelberg.de>
+
+"""
+
+import os
+import numpy as np
+import argparse
+import sys
+from copy import copy
+import pickle
+import pylogging
+import pysthal
+import pyhalbe
+import Coordinate as C
+
+from pysthal.command_line_util import add_default_coordinate_options
+from pysthal.command_line_util import add_logger_options
+from pysthal.command_line_util import init_logger
+
+from pyhalbe.HICANN import shared_parameter, neuron_parameter
+
+from pysthal.fg_test import TestResult, TestPattern
+from pysthal.fg_test.fg_programming_configurators import (
+    SequentialTestConfigurator,
+    IconvLowTestConfigurator)
+
+
+def parse_parameter_string(param_str):
+    """
+    param_str: (str) string such as 'shared_parameter.V_reset' or
+        'neuron_parameter.V_t'.
+
+    Returns the shared or neuron parameter
+    """
+    sp_prefix = "shared_parameter."
+    np_prefix = "neuron_parameter."
+    if param_str.startswith(sp_prefix):
+        parameter_name = param_str[len(sp_prefix):]
+        return getattr(shared_parameter, parameter_name)
+    elif param_str.startswith(np_prefix):
+        parameter_name = param_str[len(np_prefix):]
+        return getattr(neuron_parameter, parameter_name)
+    else:
+        raise ValueError
+
+
+CONFIGURATOR_NAMES = dict(
+    SequentialTestConfigurator=SequentialTestConfigurator,
+    IconvLowTestConfigurator=IconvLowTestConfigurator,
+    HICANNv4Configurator=pysthal.HICANNv4Configurator,
+    HICANNConfigurator=pysthal.HICANNConfigurator)
+
+
+def get_configurator_class(configurator_name):
+    """
+    Return the class that corresponds to the given `configurator_name`
+    """
+    if configurator_name not in CONFIGURATOR_NAMES:
+        raise KeyError("Unknown configurator name: '{}'".format(
+            configurator_name))
+    return CONFIGURATOR_NAMES[configurator_name]
+
+
+class SwitchFGOutputConfigurator(pysthal.HICANNv4Configurator):
+    """
+    Configurator that only switches the analog output to the FG cell
+    that holds the value for the parameter of a given neuron.
+
+    The switch(...) method can be used to change the neuron and the
+    parameter.
+    """
+    def __init__(self):
+        super(SwitchFGOutputConfigurator, self).__init__()
+        self.param = None
+        self.neuron = None
+
+    def switch(self, neuron, parameter):
+        """
+        Set the read-out parameter for the next read to `neuron`, `parameter`
+        """
+        self.param = parameter
+        self.neuron = neuron
+
+    def read_write_read_fgconfig(self, _, hhandle, hdata):
+        """
+        Read the digital configuration of the FG controller for all
+        FG blocks. Assert that the values of fg_bias and fg_biasn
+        are equal to the values that are set for the last programming
+        pass.
+        """
+        fgc = hdata.floating_gates
+        num_passes = fgc.getNoProgrammingPasses()
+
+        logger = pylogging.get("test_fg_writing_precision")
+        for blk in C.iter_all(C.FGBlockOnHICANN):
+            read_cfg = pyhalbe.HICANN.get_fg_config(hhandle, blk)
+            fgcfg = fgc.getFGConfig(C.Enum(num_passes.value() - 1))
+
+            logger.debug(read_cfg)
+
+            assert read_cfg.fg_bias == fgcfg.fg_bias, \
+                "FG configuration changed"
+            assert read_cfg.fg_biasn == fgcfg.fg_biasn, \
+                "FG configuration changed"
+
+    def config_fpga(self, *args):
+        """
+        Skip fpga re-configuration to prevent HICANN reset
+        """
+        pass
+
+    def config(self, fpga, hicann, hicann_data):
+        logger = pylogging.get("test_fg_writing_precision")
+        logger.info(str(self.param) + " " + str(self.neuron))
+
+        if isinstance(self.param, shared_parameter):
+            pyhalbe.HICANN.set_fg_cell(
+                hicann,
+                self.neuron.toSharedFGBlockOnHICANN(),
+                self.param)
+        elif isinstance(self.param, neuron_parameter):
+            pyhalbe.HICANN.set_fg_cell(
+                hicann,
+                self.neuron,
+                self.param)
+        else:
+            raise RuntimeError()
+
+        self.config_analog_readout(hicann, hicann_data)
+
+        self.read_write_read_fgconfig(fpga, hicann, hicann_data)
+
+        self.flush_hicann(hicann)
+
+
+def write_and_measure_fg_cells(test_pattern, values_to_measure, args):
+    """
+    test_pattern: TestPattern instance
+
+    values_to_measure:
+        set of tuples:
+            set([
+                (Coordinate.NeuronOnHICANN n1, <parameter> p1),
+                (Coordinate.NeuronOnHICANN n2, <parameter> p2),
+                ...,
+            ])
+         where <parameter> is either pyhalbe.HICANN.shared_parameter
+         or pyhalbe.HICANN.neuron_parameter.
+
+    args: object that contains
+            args.hicann : HICANNOnWafer
+            args.wafer : WaferGlobal
+            args.recording_time : (float) adc recording time, in seconds
+
+        optional:
+            args.hwdb : str - path to yaml hwdb
+    """
+    hicann_c = args.hicann
+    wafer_c = args.wafer
+
+    logger = pylogging.get("test_fg_writing_precision")
+
+    settings = pysthal.Settings.get()
+    if args.hwdb:
+        settings.yaml_hardware_database_path = args.hwdb
+        logger.info("using non-default hardware database {}".format(args.hwdb))
+
+    logger.info("using wafer {} and hicann {}".format(wafer_c, hicann_c))
+
+    if hicann_c is None or wafer_c is None:
+        sys.stderr.write("ERROR: wafer and hicann have to be specified, e.g."
+                         "--wafer 0 --hicann 276\n")
+        exit(os.EX_USAGE)
+
+    wafer = pysthal.Wafer(C.Wafer(wafer_c))
+    hicann = wafer[C.HICANNOnWafer(hicann_c)]
+
+    fgc = hicann.floating_gates
+
+    logger.info("FG block data after writing:")
+    for blk in C.iter_all(C.FGBlockOnHICANN):
+        fgc.setBlock(blk, test_pattern.get_block(blk))
+        logger.info(hicann.floating_gates.getBlock(blk))
+
+    for idx in xrange(fgc.getNoProgrammingPasses()):
+        cfg = fgc.getFGConfig(C.Enum(idx))
+
+        if args.fg_biasn is not None:
+            cfg.fg_biasn = args.fg_biasn
+
+        if args.fg_bias is not None:
+            cfg.fg_bias = args.fg_bias
+
+        logger.info("Modified CFG {} to:".format(idx))
+        logger.info(cfg)
+
+        fgc.setFGConfig(C.Enum(idx), cfg)
+
+    wafer.connect(pysthal.MagicHardwareDatabase())
+
+    switch_cfg = SwitchFGOutputConfigurator()
+
+    if args.NOREWRITE:
+        logger.warn("NOT writing cells: NOREWRITE option set")
+    else:
+        fg_programming_conf_class = get_configurator_class(args.configurator)
+        fg_programming_configurator = fg_programming_conf_class()
+
+        logger.info("Using configurator {} for full configuration".format(
+            type(fg_programming_configurator)))
+        wafer.configure(fg_programming_configurator)
+
+    result = TestResult()
+
+    if hasattr(fg_programming_configurator, 'get_most_recent_write_results'):
+        result.set_fg_controller_result(
+            fg_programming_configurator.get_most_recent_write_results())
+    else:
+        result.set_fg_controller_result_not_available()
+
+    if args.recording_time:
+        for neuron_c, parameter in values_to_measure:
+
+            logger.info("ITERATION: {}, {}".format(
+                str(neuron_c), str(parameter)))
+
+            if isinstance(parameter, shared_parameter):
+                block_c = neuron_c.toSharedFGBlockOnHICANN()
+            elif isinstance(parameter, neuron_parameter):
+                block_c = neuron_c.toNeuronFGBlock()
+            else:
+                raise RuntimeError()
+
+            if block_c.y() == C.top:
+                analog = C.AnalogOnHICANN(0)
+            else:
+                analog = C.AnalogOnHICANN(1)
+
+            if block_c.x() == C.left:
+                hicann.analog.set_fg_left(analog)
+            else:
+                hicann.analog.set_fg_right(analog)
+
+            switch_cfg.switch(neuron_c, parameter)
+
+            wafer.configure(switch_cfg)
+
+            adc = hicann.analogRecorder(analog)
+
+            adc.setRecordingTime(args.recording_time)
+            adc.record()
+            voltage = adc.trace()
+            adc.freeHandle()
+
+            result.add_param_result(
+                neuron_c,
+                parameter,
+                np.mean(voltage),
+                np.std(voltage))
+
+    return result
+
+
+def write_results(results, test_pattern, args):
+    """
+    Write the given `results` and `test_pattern` to the output directory which
+    is inferred from `args.outdir`.
+    """
+    if not os.path.exists(args.outdir):
+        os.makedirs(args.outdir)
+
+    base_outfile = os.path.join(args.outdir, "test_fg_results_{}_{}".format(
+        str(args.wafer), str(args.hicann)))
+
+    # remove unpicklable arguments from args
+    args_copy = copy(args.__dict__)
+    del args_copy['loglevel']
+
+    pickle.dump(
+        dict(
+            results=results,
+            test_pattern=test_pattern,
+            args=args_copy),
+        open(base_outfile + ".pkl", "w"))
+
+
+def lookup_inc(value):
+    """
+    Lookup function with increasing values
+    """
+    assert 0. <= value <= 1.
+    return 1023 * value
+
+
+def lookup_dec(value):
+    """
+    Lookup function with decreasing values
+    """
+    assert 0. <= value <= 1.
+    return 1023 * (1. - value)
+
+
+def lookup_hat(value):
+    """
+    Lookup function with increasing, then decreasing values
+    """
+    assert 0. <= value <= 1.
+    return 1023. * 2 * min(value, 1. - value)
+
+
+def lookup_vee(value):
+    """
+    Lookup function with decreasing, then increasing values
+    """
+    assert 0. <= value <= 1.
+    return 1023. - lookup_hat(value)
+
+
+def lookup_const(value):
+    """
+    Constant value lookup function
+    """
+    return lambda v: value
+
+
+def scale_lookup(func, min_dac_value, max_dac_value):
+    """
+    Return a scaled version of the lookup function `func` which takes on
+    values between `min_dac_value` and `max_dac_value` assuming that
+    `func` takes on values between 0. and 1023.
+    """
+    return lambda x: ((func(x) / 1023.) * (max_dac_value - min_dac_value)
+                      + min_dac_value)
+
+
+def add_list_to_test_pattern(test_pattern_str, test_pattern):
+    """
+    Given a string `test_pattern_str` and a TestPattern object
+    `test_pattern`, parse the pattern string and add all
+    extracted values to test_pattern.
+
+    The format of test_pattern_str is
+
+        '<nrn_idx>,<parameter_name>,<dac_value>;<nrn_idx>,...'
+
+    i.e. semicolon separates values, commas separate data
+    within the description of a single value.
+    """
+    for data in test_pattern_str.split(';'):
+        nrn_str, param_str, dac_str = data.split(',')
+
+        nrn = C.NeuronOnHICANN(C.Enum(int(nrn_str)))
+        param = parse_parameter_string(param_str)
+        dac_str = int(dac_str)
+
+        test_pattern.set_value(nrn, param, dac_str)
+
+
+def main():
+    """
+    Parse command line arguments and start test.
+    """
+    parser = argparse.ArgumentParser(
+        description='FG programming quality test.',
+        epilog=__doc__,
+        formatter_class=argparse.RawTextHelpFormatter)
+    parser.add_argument(
+        '--experiment_duration',
+        type=float,
+        default=500e-6,
+        help="duration of experiment")
+    parser.add_argument(
+        '--recording-time',
+        type=float,
+        default=1e-5,
+        help='duration of ADC recording, set to 0 to disable recording')
+    parser.add_argument(
+        '--hwdb',
+        type=str,
+        default=None,
+        help='full path to hardware database')
+    parser.add_argument(
+        '--configurator',
+        type=str,
+        default='HICANNv4Configurator',
+        help='Which configurator to use. Valid names: {}'.format(
+            CONFIGURATOR_NAMES.keys()))
+    parser.add_argument(
+        '--repetitions',
+        type=int,
+        default=3,
+        help="Number of repetitions")
+    parser.add_argument(
+        '--pre-write-repetitions',
+        type=int,
+        default=1,
+        help="Number of repetitions before actual experiment")
+    parser.add_argument(
+        '--NOREWRITE',
+        action='store_true',
+        help='Never write cells, only measure')
+
+    parser.add_argument(
+        '--fg_bias',
+        type=int,
+        default=None,
+        help='override fg_bias parameter')
+    parser.add_argument(
+        '--fg_biasn',
+        type=int,
+        default=None,
+        help="override fg_biasn parameter")
+
+    parser.add_argument(
+        '--min-dac-value',
+        type=int,
+        default=120,
+        help="minimum DAC value for pattern creation")
+
+    parser.add_argument(
+        '--max-dac-value',
+        type=int,
+        default=730,
+        help="maximum DAC value for pattern creation")
+
+    parser.add_argument(
+        '--test-pattern-nrn',
+        nargs=3,
+        type=str,
+        metavar='parameter',
+        help='test a range of values for the given parameter, e.g. '
+        '"shared_parameter.V_reset". The second and third parameters'
+        'are the start and end index of the neurons used for the pattern.')
+    parser.add_argument(
+        '--test-pattern-list',
+        type=str,
+        help='a list of separated (neuron,parameter,dac-value) pairs, like '
+        '"12,shared_parameter.V_reset,12;13,shared_parameter.V_reset;1020"')
+    parser.add_argument(
+        '--test-pattern-nrn-params',
+        action='store_true',
+        help='test pattern over all neuron parameters')
+    parser.add_argument(
+        '--test-pattern-shared-params',
+        action='store_true',
+        help='test pattern over all shared neuron parameters')
+
+    parser.add_argument(
+        '--zero-all-iconv',
+        action='store_true',
+        help='set all I_conv values to zero')
+
+    parser.add_argument(
+        '--set-essential-shared',
+        type=bool,
+        default=True,
+        help='Set essential shared parameters to predefined values')
+    parser.add_argument(
+        '--halbe-default',
+        action="store_true",
+        help="Use default FG values that are provided by halbe. "
+        "Overrides ---test-pattern-[...] arguments.")
+
+    parser.add_argument('outdir', type=str,
+                        help="Directory for pickled result output")
+
+    add_default_coordinate_options(parser)
+    add_logger_options(parser)
+
+    args = parser.parse_args()
+
+    init_logger()
+
+    test_pattern = TestPattern()
+
+    if args.test_pattern_nrn:
+        parameter = parse_parameter_string(args.test_pattern_nrn[0])
+        start_idx = int(args.test_pattern_nrn[1])
+        end_idx = int(args.test_pattern_nrn[2])
+        test_pattern.add_nrn_pattern(
+            num_nrns=end_idx - start_idx,
+            start_nrn=start_idx,
+            lookup_func=scale_lookup(lookup_inc, args.min_dac_value,
+                                     args.max_dac_value),
+            parameter=parameter)
+    if args.test_pattern_nrn_params:
+        test_pattern.add_nrn_param_pattern(
+            scale_lookup(lookup_inc, args.min_dac_value, args.max_dac_value))
+    if args.test_pattern_shared_params:
+        test_pattern.add_shared_param_pattern(
+            scale_lookup(lookup_inc, args.min_dac_value,
+                         args.max_dac_value))
+
+    if args.set_essential_shared:
+        test_pattern.set_essential_shared()
+
+    if args.zero_all_iconv:
+        test_pattern.zero_all_iconv()
+
+    if args.test_pattern_list:
+        add_list_to_test_pattern(args.test_pattern_list, test_pattern)
+
+    use_pattern = test_pattern
+
+    if args.halbe_default:
+        use_pattern = TestPattern()
+
+    pre_write_pattern = TestPattern()
+    results = []
+    for _ in xrange(args.repetitions):
+        for pre_write in xrange(args.pre_write_repetitions):
+            result = write_and_measure_fg_cells(pre_write_pattern, [], args)
+
+        result = write_and_measure_fg_cells(
+            use_pattern, test_pattern.get_modified_values(),
+            args)
+        results.append(result)
+    write_results(results, use_pattern, args)
+
+
+if __name__ == '__main__':
+    main()

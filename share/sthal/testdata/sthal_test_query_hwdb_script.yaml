@@ -1,0 +1,154 @@
+wafer: 1337
+setuptype: facetswafer
+hicanns:
+  version: 2
+---
+wafer: 1338
+setuptype: cubesetup
+---
+wafer: 1339
+setuptype: bsswafer
+fpgas:
+  - fpga: 0
+    ip: 192.168.21.1
+  - fpga: 1
+    ip: 192.168.21.2
+  - fpga: 2
+    ip: 192.168.21.3
+  - fpga: 3
+    ip: 192.168.21.4
+  - fpga: 4
+    ip: 192.168.21.5
+  - fpga: 5
+    ip: 192.168.21.6
+    highspeed: false
+  - fpga: 6
+    ip: 192.168.21.7
+  - fpga: 7
+    ip: 192.168.21.8
+  - fpga: 8
+    ip: 192.168.21.9
+  - fpga: 9
+    ip: 192.168.21.10
+  - fpga: 10
+    ip: 192.168.21.11
+  - fpga: 11
+    ip: 192.168.21.12
+  - fpga: 12
+    ip: 192.168.21.33
+  - fpga: 13
+    ip: 192.168.21.34
+  - fpga: 14
+    ip: 192.168.21.35
+  - fpga: 15
+    ip: 192.168.21.36
+  - fpga: 16
+    ip: 192.168.21.37
+  - fpga: 17
+    ip: 192.168.21.38
+  - fpga: 18
+    ip: 192.168.21.39
+  - fpga: 19
+    ip: 192.168.21.40
+  - fpga: 20
+    ip: 192.168.21.41
+  - fpga: 21
+    ip: 192.168.21.42
+  - fpga: 22
+    ip: 192.168.21.43
+  - fpga: 23
+    ip: 192.168.21.44
+  - fpga: 24
+    ip: 192.168.21.65
+  - fpga: 25
+    ip: 192.168.21.66
+  - fpga: 26
+    ip: 192.168.21.67
+  - fpga: 27
+    ip: 192.168.21.68
+  - fpga: 28
+    ip: 192.168.21.69
+  - fpga: 29
+    ip: 192.168.21.70
+  - fpga: 30
+    ip: 192.168.21.71
+  - fpga: 31
+    ip: 192.168.21.72
+  - fpga: 32
+    ip: 192.168.21.73
+  - fpga: 33
+    ip: 192.168.21.74
+  - fpga: 34
+    ip: 192.168.21.75
+  - fpga: 35
+    ip: 192.168.21.76
+  - fpga: 36
+    ip: 192.168.21.97
+  - fpga: 37
+    ip: 192.168.21.98
+  - fpga: 38
+    ip: 192.168.21.99
+  - fpga: 39
+    ip: 192.168.21.100
+  - fpga: 40
+    ip: 192.168.21.101
+  - fpga: 41
+    ip: 192.168.21.102
+  - fpga: 42
+    ip: 192.168.21.103
+  - fpga: 43
+    ip: 192.168.21.104
+    highspeed: false
+  - fpga: 44
+    ip: 192.168.21.105
+  - fpga: 45
+    ip: 192.168.21.106
+  - fpga: 46
+    ip: 192.168.21.107
+  - fpga: 47
+    ip: 192.168.21.108
+hicanns:
+  version: 2
+---
+wafer: 1340
+setuptype: cubesetup
+fpgas:
+  - fpga: 0
+    ip: 192.168.4.1
+  - fpga: 3
+    ip: 192.168.4.4
+adcs:
+  - fpga: 0
+    analog: 0
+    adc: B201287
+    channel: 1
+    trigger: 0
+  - fpga: 0
+    analog: 1
+    adc: B201287
+    channel: 0
+    trigger: 0
+  - fpga: 3
+    analog: 0
+    adc: B201254
+    channel: 0
+    trigger: 0
+  - fpga: 3
+    analog: 1
+    adc: B201254
+    channel: 1
+    trigger: 0
+hicanns:
+  - hicann: 88
+    version: 2
+  - hicann: 89
+    version: 4
+    label: v4-5
+  - hicann: 90
+    version: 2
+    label: somehicannv2label
+  - hicann: 116
+    version: 2
+  - hicann: 145
+    version: 4
+macu: 1.2.3.4

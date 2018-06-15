@@ -1,0 +1,53 @@
+#! /usr/bin/python
+# -*- coding: utf-8 -*-
+
+"""
+Used timeit module to determine the overhead cause by ADC calibration
+"""
+
+import argparse
+import timeit
+
+import Coordinate
+import pysthal
+import pycalibtic
+import numpy
+
+from pysthal.command_line_util import add_logger_options
+from pysthal.command_line_util import init_logger
+
+def main():
+    global recorder
+
+    init_logger('INFO')
+    parser = argparse.ArgumentParser(
+            description='Configure HICANN to stimulate a neuron via a second neuron')
+    parser.add_argument('--adc', type=str, required=True)
+    parser.add_argument('--samples', type=int, default=1e7)
+    parser.add_argument('--repeat', type=int, default=10)
+    add_logger_options(parser)
+    args = parser.parse_args()
+
+    recorder = pysthal.AnalogRecorder.getAnalogRecorder(Coordinate.ADC(args.adc))
+    recorder.record(args.samples/96e6)
+    print recorder.getCalibration()
+
+    setup="from __main__ import recorder"
+    raw_transfers = timeit.repeat(
+        stmt='recorder.traceRaw()',
+        setup=setup,
+        repeat=args.repeat,
+        number=1)
+    calibrated_transfers = timeit.repeat(
+        stmt='recorder.trace()',
+        setup=setup,
+        repeat=args.repeat,
+        number=1)
+    print "RAW:   fastest: {:>7.2}s  mean: {:>7.2}s".format(
+            numpy.min(raw_transfers), numpy.mean(raw_transfers))
+    print "CALIB: fastest: {:>7.2}s  mean: {:>7.2}s".format(
+            numpy.min(calibrated_transfers), numpy.mean(calibrated_transfers))
+
+
+if __name__ == '__main__':
+    main()

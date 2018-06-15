@@ -1,0 +1,168 @@
+#!/bin/env python
+# -*- coding: utf8 -*-
+# pylint: disable=missing-docstring
+
+import numpy
+import cPickle
+import collections
+import time
+
+import Coordinate
+import pysthal
+import pyhalbe
+import pylogging
+
+from Coordinate import iter_all
+from Coordinate import Enum
+from Coordinate import FGBlockOnHICANN
+from Coordinate import FGCellOnFGBlock
+from Coordinate import FGRowOnFGBlock
+
+logger = pylogging.get(__name__.replace('_', ''))
+
+def get_zero_fg_cfg():
+    cfg = pysthal.FGConfig()
+    cfg.voltagewritetime = 63
+    cfg.currentwritetime = 63
+    cfg.maxcycle = 8
+    cfg.pulselength = 12
+    cfg.readtime = 30
+    cfg.acceleratorstep = 63
+    cfg.fg_bias = 0
+    cfg.fg_biasn = 0
+    cfg.writeDown = cfg.WRITE_DOWN
+
+    fgc = pysthal.FloatingGates()
+    fgc.setNoProgrammingPasses(Enum(1))
+    fgc.setFGConfig(Enum(0), cfg)
+
+    for block in iter_all(FGBlockOnHICANN):
+        blk = fgc[block]
+        for cell in iter_all(FGCellOnFGBlock):
+            blk.setRaw(cell, 0)
+    return fgc
+
+def get_meassure_fg_cfg(pulselength, writetime, readtime):
+    target = 1023
+
+    cfg = pysthal.FGConfig()
+    cfg.voltagewritetime = writetime
+    cfg.currentwritetime = writetime
+    cfg.maxcycle = 1
+    cfg.pulselength = pulselength
+    cfg.readtime = readtime
+    cfg.acceleratorstep = 63
+    cfg.fg_bias = 0
+    cfg.fg_biasn = 0
+    cfg.writeDown = cfg.WRITE_UP
+
+    fgc = pysthal.FloatingGates()
+    fgc.setNoProgrammingPasses(Enum(1))
+    fgc.setFGConfig(Enum(0), cfg)
+
+    for block in iter_all(FGBlockOnHICANN):
+        blk = fgc[block]
+        for cell in iter_all(FGCellOnFGBlock):
+            blk.setRaw(cell, target)
+    return cfg, fgc
+
+def zero_fg(wafer, hicann):
+    # Zero fgs
+    hicann.floating_gates = get_zero_fg_cfg()
+    cfg = pysthal.ProgrammAndReadFloatingGatesConfigurator()
+    for block, row in iter_all(FGBlockOnHICANN, FGRowOnFGBlock):
+        cfg.meassure(block, row)
+    wafer.configure(cfg)
+
+def run(wafer, hicann, block, rows, pulselength, writetime, runs):
+    print "Run on: ", Coordinate.HICANNGlobal(hicann.index(), wafer.index())
+    print "    on: ", ",  ".join([str(r) for r in rows])
+    print "    with pulselength:", pulselength, "and writetime:", writetime
+    wafer.connect(pysthal.MagicHardwareDatabase())
+    zero_fg(wafer, hicann)
+
+    cfg, hicann.floating_gates = get_meassure_fg_cfg(pulselength, writetime, 60)
+
+    data = {
+        'floating_gates' : hicann.floating_gates,
+        'steps' : [],
+        'rows' : rows,
+        'means' : collections.defaultdict(list),
+        'variances' : collections.defaultdict(list),
+        'pulselength' : cfg.pulselength.to_ulong(),
+        'writetime' : cfg.voltagewritetime.to_ulong(),
+        'readtime' : cfg.readtime.to_ulong(),
+    }
+    means = data['means']
+    variances = data['variances']
+
+    cfg = pysthal.ProgrammAndReadFloatingGatesConfigurator(False)
+    for row in rows:
+        cfg.meassure(block, row)
+    for run in range(runs):
+        print "Meassure step", run
+        wafer.configure(cfg)
+    wafer.disconnect()
+
+    for row in rows:
+        measurment = cfg.getMeasurment(block, row)
+        means[(block, row)].append(
+                numpy.array([r.means for r in measurment.results]))
+        variances[(block, row)].append(
+                numpy.array([r.variances for r in measurment.results]))
+    return data
+
+
+def add_options(parser):
+    from measure_floating_gates_common import FGRowAction
+
+    group = parser.add_argument_group("Select rows and block to meassures:")
+    group.add_argument(
+        '--block', action='store',
+        type=lambda x: Coordinate.FGBlockOnHICANN(Coordinate.Enum(int(x))),
+        help='specify floating gate block')
+    group.add_argument(
+        '--rows', action=FGRowAction,
+        dest='rows', help='specify Row on fg block')
+    group.add_argument(
+        '--writetime', type=int, default=1,
+        dest='writetime', help='')
+    group.add_argument(
+        '--pulselength', type=int, default=1,
+        dest='pulselength', help='')
+    group.add_argument(
+        '--fgc-runs', type=int, default=10,
+        dest='fgcruns', help='specify Row on fg block')
+
+def main():
+    import argparse
+    from pysthal.command_line_util import add_default_coordinate_options
+    from pysthal.command_line_util import add_logger_options
+    from pysthal.command_line_util import init_logger
+
+    init_logger('WARN', [
+        (logger.getName(), 'INFO'),
+        ('RecordJob', 'INFO'),
+        ('RecordTraces', 'INFO'),
+        ('sthal', 'INFO'),
+        ('sthal.ProgrammAndReadFloatingGatesConfigurator', 'DEBUG'),
+        ('sthal.AnalogRecorder', 'WARN'),
+        ('halbe.fgwriter', 'ERROR')])
+
+    parser = argparse.ArgumentParser(
+        description='Floating Gate Measurment Tool')
+    add_default_coordinate_options(parser)
+    add_logger_options(parser)
+    add_options(parser)
+    args, _ = parser.parse_known_args()
+
+    wafer = pysthal.Wafer(args.wafer)
+    hicann = wafer[args.hicann]
+    x = run(wafer, hicann, args.block, args.rows, args.pulselength, args.writetime, args.fgcruns)
+
+    outfilename = "data_{}.pkl".format(time.time())
+    with open(outfilename, 'w') as outfile:
+        cPickle.dump(x, outfile, cPickle.HIGHEST_PROTOCOL)
+
+if __name__ == '__main__':
+    main()

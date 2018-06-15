@@ -1,0 +1,118 @@
+#!/usr/bin/env python
+
+import argparse
+import numpy
+import time
+import cPickle
+
+import Coordinate
+import pysthal
+import pyhalbe
+import pylogging
+
+from pysthal.command_line_util import add_default_coordinate_options
+from pysthal.command_line_util import add_logger_options
+from pysthal.command_line_util import init_logger
+
+logger = pylogging.get('main')
+
+class FastConfigurator(pysthal.HICANNConfigurator):
+    def hicann_init(self, handle):
+        pyhalbe.HICANN.init(handle, False)
+
+def print_pulse(pulse):
+    return "PulseEvent(0x{:0>8x}, {:0>8x})".format(
+        pulse.getLabel(), pulse.getTime())
+def print_events(events):
+    size = events.size()
+    return ", ".join(print_pulse(events.get(ii)) for ii in range(size))
+
+
+def main():
+    init_logger('INFO', (
+        ('sthal', 'ERROR'), ('Default', 'WARN'), ('halbe', 'warn'),))
+
+    layout = pylogging.ColorLayout(False, 'absolute')
+    layout.activateOptions()
+    pylogging.get("sthal.ExperimentRunner").addAppender(
+        pylogging.FileAppender(layout, "experiment.log", True))
+
+    parser = argparse.ArgumentParser()
+    add_default_coordinate_options(parser)
+    add_logger_options(parser)
+    parser.add_argument("--load-spiketrains", type=argparse.FileType())
+    args = parser.parse_args()
+
+    wafer_c = args.wafer
+    hicann_c = args.hicann
+
+    wafer = pysthal.Wafer(wafer_c)
+    hicann = wafer[hicann_c]
+    fpga = wafer[hicann_c.fpga()]
+
+    # Configure mergers and DNC to output spikes to the dnc
+    for merger in Coordinate.iter_all(Coordinate.DNCMergerOnHICANN):
+        odd = bool(merger.value() % 2)
+        merger = hicann.layer1[merger]
+        merger.config = merger.MERGE
+        merger.slow = False
+        merger.loopback = not odd
+
+    for channel in Coordinate.iter_all(Coordinate.GbitLinkOnHICANN):
+        if (channel.value()%2): # 1, 3, 5, 7
+            hicann.layer1[channel] = pyhalbe.HICANN.GbitLink.Direction.TO_DNC
+        else:
+            hicann.layer1[channel] = pyhalbe.HICANN.GbitLink.Direction.TO_HICANN
+
+    wafer.connect(pysthal.MagicHardwareDatabase())
+    print wafer.status()
+    wafer.configure(FastConfigurator())
+
+    log = open('in_out.log', 'w')
+    spike_log = open('spikes.log', 'w')
+
+    addr = pyhalbe.HICANN.L1Address(0)
+    link_in = Coordinate.GbitLinkOnHICANN(6)
+    link_out = Coordinate.GbitLinkOnHICANN(7)
+    analog = Coordinate.AnalogOnHICANN(0)
+
+    if args.load_spiketrains:
+        spiketrains = cPickle.load(args.load_spiketrains)
+    else:
+        spiketrains = []
+        for ii in range(50):
+            spike_times = numpy.cumsum(numpy.random.exponential(5e-05, size=10))
+            spike_times += 5e-05
+            spikes = pysthal.Vector_Spike()
+            for t in spike_times:
+                spikes.append(pysthal.Spike(addr, t))
+            spiketrains.append(spikes)
+        with open("spiketrains.pkl", 'w') as outfile:
+            cPickle.dump(spiketrains, outfile)
+
+    for ii, spiketrain in enumerate(spiketrains):
+        wafer.clearSpikes()
+        hicann.sendSpikes(link_in, spiketrain)
+
+        adc = hicann.analogRecorder(analog)
+        adc.activateTrigger(0.0004)
+        wafer.start(pysthal.ExperimentRunner(spiketrain[-1].time))
+        no_in, no_out = len(spiketrain), len(hicann.receivedSpikes(link_out))
+        msg = "{: >3}: {}, {}\n".format(ii, no_in, no_out)
+        log.write(msg)
+        logger.error(msg)
+        spike_log.write("received {: >3} ouf of {: >3} {: >4} {}\n".format(
+            no_out,
+            no_in,
+            "ok:  " if no_in == no_out else "bad: ",
+            print_events(fpga.getSendSpikes())))
+        try:
+            trace = adc.trace()
+        except RuntimeError as err:
+            logger.error(str(err))
+        finally:
+            adc.freeHandle()
+        # time.sleep(2.0)
+
+if __name__ == '__main__':
+    main()

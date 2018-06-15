@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+
+import argparse
+import pysthal
+import pyhalbe.Coordinate as C
+import numpy as np
+
+parser = argparse.ArgumentParser()
+parser.add_argument('file', type=argparse.FileType('r'))
+parser.add_argument('hicann', type=int, help="HICANNOnWafer")
+parser.add_argument('--wafer', type=int, default=0)
+parser.add_argument('--dump_sent_spikes', type=argparse.FileType('w'))
+parser.add_argument('--collapse_to_addr', type=int, default=None)
+args = parser.parse_args()
+
+w = pysthal.Wafer(C .Wafer(C.Enum(args.wafer)))
+w.load(args.file.name)
+hicann = w[C.HICANNGlobal(C.Enum(args.hicann))]
+
+print hicann
+
+sent_spikes = hicann.sentSpikes(C.GbitLinkOnHICANN(7))
+
+if len(sent_spikes):
+
+    print "{} input spikes".format(len(sent_spikes))
+
+    print "time addr:"
+
+    for s in sorted(sent_spikes, lambda s1,s2: int(s1[0] < s2[0])):
+        print s[0], s[1]
+
+    if args.collapse_to_addr:
+        sent_spikes[:,1] = [args.collapse_to_addr]*len(sent_spikes)
+
+    if args.dump_sent_spikes:
+        np.savetxt(args.dump_sent_spikes, sent_spikes[:,[1,0]])
+
+else:
+
+    print "no input spikes"
+
+print hicann.crossbar_switches
+print hicann.synapse_switches
+print hicann.layer1
+print hicann.layer1.mDNCMergers
+print hicann.repeater

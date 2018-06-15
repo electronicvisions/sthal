@@ -1,0 +1,428 @@
+#!/usr/bin/python
+'''
+Author: Christian Mauch
+
+Tool to analyze and plot perfromance log data.
+
+Give either the traffic or the function call log and the tool will parse both
+corresponding to the log id (w<WaferId>h<HicannNr>_<YY><MM><DD><hh><mm><ss>)
+
+Can take multpile performance logs and plots them for comparrison
+
+Highly suggests to run on cluster due to massive memmory usage
+
+example call
+srun --mem=15G -c8 --pty ./perflogger_analyze.py -f ../../profiler/func_time_w3h146_201508181142.log -s test.png -l W3H146
+
+'''
+import sys
+import argparse
+import time
+import numpy as np
+import matplotlib as mpl
+from fnmatch import fnmatch
+
+# check version of numpy
+import pkg_resources
+npvers = pkg_resources.get_distribution("numpy").version.split(".")
+if (int(npvers[0]) <1 or int(npvers[1])<7):
+    print "Numpy version to old {0}. min Verison 1.7".format(".".join(npvers))
+    sys.exit(1)
+
+# extract a "column" from a 2 dimensional list
+def column(matrix, i):
+    return [row[i] for row in matrix]
+
+# check if value is in list
+def is_in_list(mylist, value):
+    i = 0
+    for entry in mylist:
+        if value == entry:
+            return i
+        else:
+            i += 1
+    return -1
+
+now = time.localtime(time.time())
+default_name = "profile_{0:02d}{1:02d}{2:02d}{3:02d}{4:02d}{5:02d}.png".format(now[0], now[1], now[2],now[3], now[4], now[5])
+
+# parsing
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--file_name", nargs="+", action="store",
+                    type=str, dest="file_name", required = True,
+                    help="give filename of either traffic or function log. multiple files possible")
+parser.add_argument("-l", "--label", nargs="+", action="store",
+                    type=str, dest="label", required = False,
+                    help="give labels for all given performance profiles")
+parser.add_argument("-s", "--save", action="store", dest="save",
+                    type = str, default = default_name,
+                    help="filename and path of plot. Default: local path + 'profile_YYMMDDmmss.png'")
+parser.add_argument("--life", action="store_true", dest="life",
+                    help="if active, x-server is used and plot is not saved. Not recommended")
+parser.add_argument("-p", "--min_p", action="store", dest="min_runtime_perc",
+                    type = float, default = 1.,
+                    help="smallest percent of runtime to be plotted. Default 1")
+parser.add_argument("-tr", "--time_res", action="store", dest="time_res",
+                    type = float, default = .5,
+                    help="Time resolution of traffic calculation in s. Default 0.5 s")
+parser.add_argument("-t", "--titel", action="store", dest="titel", type = str,
+                    default = "Perflog",
+                    help="Titel of whole plot")
+parser.add_argument("-pr", "--plot_res", action="store", dest="plot_res",
+                    type = int, default = 1080,
+                    help="Resolution of saved plot. Default 1080p")
+parser.add_argument("-o","--overhead", action="store_true", dest="overhead",
+                    help="Traffic is shown with overhead (ARQ, UDP, ...)")
+parser.add_argument("-rt","--raw_traffic", action="store_true", dest="raw_traffic",
+                    help="Use raw traffic log from wireshark")
+args = parser.parse_args()
+
+if not args.life:
+    # don't use x-server
+    mpl.use('Agg')
+
+import matplotlib.pyplot as plt
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+
+number_of_profiles = len(args.file_name)
+function_runtimes = [[] for x in range(number_of_profiles)]
+
+if not args.label:
+    args.label = ["Profile {0}".format(x) for x in range(number_of_profiles)]
+if len(args.label) < number_of_profiles:
+    print "Too few labels given..."
+
+mpl.rcParams.update({'font.size': 14})
+
+fig = plt.figure(figsize=(24.89,14))
+axis= []
+axis.append(plt.subplot2grid((number_of_profiles * 2, 4), (0,0), colspan = 3))
+for i in range(1,number_of_profiles * 2):
+    axis.append(plt.subplot2grid((number_of_profiles * 2, 4), (i,0), colspan = 3 ,sharex = axis[0]))
+axis[0].set_title(args.titel)
+# color sequence for plotted functions
+color_sequence = ['b', 'g', 'm', 'r', 'y', 'c', 'k']
+
+# main for loop for different logger profiles
+for plotn in range(0, number_of_profiles*2, 2):
+
+    # parse traffic data from file
+    file_id = "".join(args.file_name[plotn/2].partition(".log")[0].rpartition("w")[1:])
+    file_path = "".join(args.file_name[plotn/2].rpartition("/")[:2])
+
+    traffic_start_time = float(open(file_path + "pure_traffic_" + file_id + ".log", "r").readline().split()[2]) * 1e-6
+
+
+    usb_total_data = 0
+    eth_total_data = 0
+    eth_packets = 0
+    usb_packets = 0
+
+    if args.raw_traffic:
+        log_type = "raw_traffic_"
+    else:
+        log_type = "pure_traffic_"
+
+    # count number of lines to generate empty array
+    log_file = open(file_path + log_type + file_id + ".log", "r")
+    num_lines = sum(1 for line in log_file)
+    usb_log = np.empty([num_lines, 2])
+    eth_log = np.empty([num_lines, 2])
+    log_file = open(file_path + log_type + file_id + ".log", "r")
+
+    if args.raw_traffic:
+        LOGGER_INDEX = 1
+        TIME_INDEX = 0
+        DATA_INDEX = 5
+        for line in log_file.readlines():
+            split_line = line.split()
+            # test for broken lines
+            if len(split_line) < 7 :
+                continue
+            # usb packet
+            if split_line[LOGGER_INDEX] == "host":
+                line_time = float(split_line[TIME_INDEX])
+                line_data_volume = long(split_line[DATA_INDEX])
+                usb_log[usb_packets][0] = line_time - traffic_start_time
+                usb_log[usb_packets][1] = line_data_volume
+                usb_total_data += line_data_volume
+                usb_packets += 1
+            # eth packet
+            if fnmatch(split_line[LOGGER_INDEX] , "192.168.*"):
+                line_time = float(split_line[TIME_INDEX])
+                line_data_volume = long(split_line[DATA_INDEX])
+                eth_log[eth_packets][0] = line_time - traffic_start_time
+                eth_log[eth_packets][1] = line_data_volume
+                eth_total_data += line_data_volume
+                eth_packets += 1
+    else:
+        LOGGER_INDEX = 1
+        TIME_INDEX = 2
+        for line in log_file:
+            split_line = line.split()
+            DATA_INDEX = 3
+            if split_line[LOGGER_INDEX] == "hicann-system.CtrlModulePerf":
+                if len(split_line) < 4 :
+                    continue
+                line_time = float(split_line[TIME_INDEX]) * 1e-6
+                line_data_volume = long(split_line[DATA_INDEX])
+                eth_log[eth_packets][0] = line_time - traffic_start_time
+                eth_log[eth_packets][1] = line_data_volume
+                eth_total_data += line_data_volume
+                eth_packets += 1
+
+            if split_line[LOGGER_INDEX] == "vmodule.usbcomPerf":
+                if len(split_line) < 5 :
+                    continue
+                if args.overhead:
+                    DATA_INDEX = 4
+                line_time = float(split_line[TIME_INDEX]) * 1e-6
+                line_data_volume = long(split_line[DATA_INDEX])
+                usb_log[usb_packets][0] = line_time - traffic_start_time
+                usb_log[usb_packets][1] = line_data_volume
+                usb_total_data += line_data_volume
+                usb_packets += 1
+
+    # cut off empty entries
+    usb_log = usb_log[:usb_packets]
+    eth_log = eth_log[:eth_packets]
+    log_file.close()
+
+    usb_runtime = usb_log[-1][0]
+    usb_traffic = np.zeros(usb_runtime // args.time_res + 1)
+
+    for line in usb_log:
+        usb_traffic[line[0]//args.time_res] += line[1] / args.time_res
+
+    del usb_log
+
+    eth_runtime = eth_log[-1][0]
+    eth_traffic = np.zeros(eth_runtime//args.time_res + 1)
+
+    for line in eth_log:
+        eth_traffic[line[0]//args.time_res] += line[1] / args.time_res
+
+    del eth_log
+
+    # zeropad traffic
+    max_traffic_len = max(len(eth_traffic),len(usb_traffic))
+    eth_traffic = np.lib.pad(eth_traffic, (0, (max_traffic_len - len(eth_traffic))), "constant", constant_values = 0 )
+    usb_traffic = np.lib.pad(usb_traffic, (0, (max_traffic_len - len(usb_traffic))), "constant", constant_values = 0 )
+    max_traffic_time = max_traffic_len * args.time_res
+
+    # convert into MB/s
+    eth_traffic = eth_traffic/1024./1024.
+    usb_traffic = usb_traffic/1024./1024.
+
+    # count number of lines to generate empty array
+    profiler_log_file = open(file_path + "func_time_" + file_id + ".log", "r")
+    profiler_num_lines = sum(1 for line in profiler_log_file)
+    profiler_data = [[0 for x in range(3)] for x in range(profiler_num_lines)]
+
+    print "Traffic analyze done"
+
+    # parsing profiler data
+    profiler_log_file = open(file_path + "func_time_" + file_id + ".log", "r")
+    i = 0
+    for line in profiler_log_file.readlines():
+        split_line = line.split("\t")
+        profiler_data[i][0] = split_line[1]
+        profiler_data[i][1] = float(split_line[2]) * 1e-9
+        profiler_data[i][2] = float(split_line[3]) * 1e-9
+        i += 1
+
+    profiler_start_time = float(profiler_data[0][1])
+    profiler_end_time = float(profiler_data[-1][2])
+    global_start_time = float(min(profiler_start_time, traffic_start_time))
+    global_end_time = float(max(profiler_end_time, max_traffic_time))
+    total_runtime = global_end_time - global_start_time
+    traffic_time_offset = traffic_start_time - global_start_time
+    traffic_time = np.zeros(max_traffic_len)
+
+    for i in range(0,max_traffic_len):
+        traffic_time[i] = i*args.time_res + traffic_time_offset
+
+    # accumulate stats for profiled functions
+    function_sum = []
+    curr_column = column(function_sum,0)
+    i=0
+    for line in profiler_data:
+        function_index = is_in_list(curr_column, line[0].partition("(")[0].rpartition("::")[-1])
+        i += 1
+        # new function
+        if function_index == -1:
+            function_sum.append([line[0].partition("(")[0].rpartition("::")[-1], (line[2] - line[1]), 1, 0])
+            curr_column = column(function_sum,0)
+        # function known
+        else:
+            time_diff = line[2] - line[1]
+            # accumulate runtime
+            function_sum[function_index][1] += time_diff
+            # accumulate # offunction calls
+            function_sum[function_index][2] += 1
+
+    # sort list of functions according to % of total runtime
+    for i in range(len(function_sum)):
+        function_sum[i][3] = function_sum[i][1]*100.0/float(total_runtime)
+    function_sum = sorted(function_sum, key = lambda x: x[3], reverse=True)
+
+    # create dictionary for functions
+    func_dict = { function_sum[i][0] : i for i in range(0,len(function_sum))}
+
+    # list for
+    function_data =[[] for i in range(len(func_dict))]
+    for i in range(len(profiler_data)):
+        relative_start_time = profiler_data[i][1] - global_start_time
+        relative_end_time = profiler_data[i][2] - global_start_time
+        function_data[func_dict[profiler_data[i][0].partition("(")[0].rpartition("::")[-1]]].append([relative_start_time, relative_end_time])
+
+    del profiler_data
+
+    #TODO: give multiple options for various orders of functions, e.g. max runtime, chronological...
+    functions_to_plot = []
+    for func_stat in function_sum:
+        if func_stat[3] >= args.min_runtime_perc:
+            functions_to_plot.append(func_stat[0])
+    functions_to_plot = ["config_fpga", "hicann_init", "config_floating_gates", "config_synapse_array", "config_synapse_drivers",
+                         "config_neuron_config", "config_neuron_quads", "config_fg_stimulus", "flush_fpga", "record", "trace", "status"]
+
+    print "Function analyze done"
+
+    # ploting traffic
+    axis[plotn].set_ylabel('Transfer Rate [MB/s]')
+    axis[plotn].fill_between(traffic_time, [0]*len(eth_traffic), eth_traffic, facecolor='red', alpha=0.3)
+    axis[plotn].fill_between(traffic_time, [0]*len(usb_traffic), usb_traffic, facecolor='green', alpha=0.3)
+    axis[plotn].plot(traffic_time, eth_traffic, "r-", label="FCP")
+    axis[plotn].plot(traffic_time, usb_traffic, "g-", label="AnaRM")
+    #axis[plotn].set_ylim(-0.05,50)
+    axis[plotn].xaxis.set_minor_locator(MultipleLocator(100))
+    axis[plotn].tick_params(labelbottom = False)
+    axis[plotn].xaxis.grid(True, which='minor')
+    axis[plotn].text(0.5, 0.95, args.label[plotn//2], verticalalignment='top', horizontalalignment='center',
+            transform=axis[plotn].transAxes, fontsize=13, bbox={'facecolor':"white", "edgecolor":"black", "pad":10})
+    axis[plotn].legend()
+
+    # plotting code profile
+
+    # generating hlines for each function
+    i = 0
+    all_start_values = []
+    all_end_values = []
+    for function in functions_to_plot:
+        start_values = column(function_data[func_dict[function]], 0)
+        end_values = column(function_data[func_dict[function]], 1)
+        function_index_list = [(len(functions_to_plot) - i)]*len(function_data[func_dict[function]])
+        axis[plotn+1].hlines(function_index_list, start_values, end_values, lw=5, label=function, color = color_sequence[i%len(color_sequence)])
+        i += 1
+        all_start_values.extend(start_values)
+        all_end_values.extend(end_values)
+
+    # generate hlines for sum of all functions
+    function_index_list = [(i+1)]*len(all_start_values)
+    axis[plotn+1].hlines(function_index_list, all_start_values, all_end_values, lw=5, label="all functions", color = color_sequence[i%len(color_sequence)])
+
+    # make some statistics of function call times and generate label for functions
+    function_label = list(reversed(functions_to_plot))
+    sum_percent_runtime = 0
+    sum_runtime = 0
+    for i in range(len(function_label)):
+        runtime = function_sum[ func_dict[ function_label[i] ] ] [1]
+        sum_runtime += runtime
+        function_runtimes[plotn/2].append(runtime)
+        percent_runtime = function_sum[ func_dict[ function_label[i] ] ] [3]
+        sum_percent_runtime += percent_runtime
+        function_label[i] += " ({0:7.2f}s {1:5.2f}%)".format(runtime, percent_runtime)
+
+    function_label.append("all functions ({0:7.2f}s {1:5.2f}%)".format(sum_runtime, sum_percent_runtime))
+    function_runtimes[plotn/2].insert(0, total_runtime - sum_runtime)
+
+    #set axis attributes
+    axis[plotn+1].set_yticks(range(1,len(function_label) + 2))
+    axis[plotn+1].set_yticklabels(function_label, name = "monospace", fontweight='bold')
+    axis[plotn+1].tick_params(left = 0, right = 0)
+    axis[plotn+1].set_ylim(0, len(function_label) + 1 )
+    axis[plotn+1].xaxis.set_minor_locator(MultipleLocator(100))
+    axis[plotn+1].xaxis.grid(True, which='minor')
+    axis[plotn+1].set_xlabel('Time [s]')
+
+    traffic_text = "Total USB traffic: {0} MB\n Average: {1:.2f} MB/s\nTotal Ethernet traffic: {2} MB\n Average: {3:.2f} MB/s".format(usb_total_data/1024/1024, usb_total_data/usb_runtime/1024/1024, eth_total_data/1024/1024, eth_total_data/eth_runtime/1024/1024)
+
+
+    axis[plotn].text(-.15, 0.5, traffic_text, verticalalignment='top', horizontalalignment='center',
+            transform=axis[plotn].transAxes, fontsize=13, bbox={'facecolor':"white", "edgecolor":"black", "pad":10})
+    # print stats of functions
+    acc_time = 0
+    acc_percent = 0
+    total_function_calls = 0
+    max_len = len(max(column(function_sum,0), key=len)) + 1
+    print "{0: <{max_len}}".format("function name", max_len = max_len)+"  functiontime [s]  # function calls  % of total runntime"
+    print "-----------------------------------------------------------------------------------"
+    for row in function_sum:
+        acc_time += row[1]
+        total_function_calls += row[2]
+        acc_percent += row[3]
+        print "{0:<{max_len}}  {1:16.2f}  {2:16d}  {3:19.2f}".format(row[0], row[1], row[2], row[3], max_len = max_len)
+
+    print "Total usb traffic: {0} MB Average transfer rate: {1:.4f} MB/s".format(usb_total_data/1024/1024, usb_total_data/usb_runtime/1024/1024)
+    print "Total eth traffic: {0} MB Average transfer rate: {1:.4f} MB/s".format(eth_total_data/1024/1024, eth_total_data/eth_runtime/1024/1024)
+    print "Total time: {0:.2f} s".format(total_runtime)
+    print "Total acc time in: {0:.2f} s".format(acc_time)
+    print "Total number of function calls: {0}".format(total_function_calls)
+    print "Accumulated percentage of all functions: {0:.2f} %".format(acc_percent)
+
+# deactivate x-axis labels centered plots
+for i in range(number_of_profiles-1):
+    plt.setp(axis[1].get_xaxis(),visible = False)
+
+# adjust orientation fo the plot
+plt.subplots_adjust(hspace = 0, left = 0.20, right = 0.98, bottom = 0.1, top = 0.95)
+
+# hbar plot to compare absolute runtime of functions
+bar_axis = plt.subplot2grid((number_of_profiles,4),(0,3), rowspan = 4)
+ind = np.arange(len(function_runtimes[0]))
+bar_height = (.9)/number_of_profiles
+hbars = [0 for x in range(number_of_profiles)]
+
+# generate runtime bars for each perf profile
+for i in range(number_of_profiles):
+    k = number_of_profiles - i -1
+    hbars[i] = bar_axis.barh(ind + i * bar_height, function_runtimes[k], bar_height, color=color_sequence[k%len(color_sequence)], label = args.label[k])
+
+bar_axis.set_yticks(ind + bar_height)
+bar_axis.set_ylim(-.2, len(ind))
+bar_axis.set_yticklabels( list(reversed( functions_to_plot + ["remainder"])), rotation = 75, ha = "right",va ="top",fontweight='bold'  )
+bar_axis.legend()
+bar_axis.xaxis.set_minor_locator(MultipleLocator(100))
+bar_axis.xaxis.grid(True, which='minor')
+bar_axis.set_xlabel('Time [s]')
+
+# get max width of all bars
+max_width = 0
+for hbar in hbars:
+    for bar in hbar:
+        max_width = max(max_width, bar.get_width())
+
+# auto label for runtime bars
+def autolabel(hbar):
+    for bar in hbar:
+        width = bar.get_width()
+        if width < max_width*.75:
+            ha = "left"
+            color = 'k'
+            offset = .01*max_width
+        else:
+            ha = "right"
+            color = 'w'
+            offset = -0.01*max_width
+        bar_axis.text(width + offset, bar.get_y()+bar.get_height()*.5, "{0:.2f}".format(width),
+                ha = ha , va = 'center', color = color)
+for bar in hbars:
+    autolabel(bar)
+
+if not args.life:
+        plt.savefig(args.save, dpi = args.plot_res/14)
+else:
+    plt.show()
+
+
+

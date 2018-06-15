@@ -1,0 +1,104 @@
+#!/usr/bin/env python
+
+import argparse
+import pysthal
+import Coordinate as C
+
+import pysthal.command_line_util
+
+
+def get_db(args):
+    return pysthal.YAMLHardwareDatabase(args.hwdb)
+
+
+def func_hicann_version(args):
+    db = get_db(args)
+    hc = C.HICANNGlobal(args.hicann, args.wafer)
+
+    print db.get_hicann_version(hc)
+
+
+def func_hicann_label(args):
+    db = get_db(args)
+    hc = C.HICANNGlobal(args.hicann, args.wafer)
+
+    print db.get_hicann_label(hc)
+
+
+def func_ipc(args):
+    db = get_db(args)
+    hc = C.HICANNGlobal(args.hicann, args.wafer)
+
+    ip = db.get_fpga_ip(hc.toFPGAGlobal())
+
+    print "/dev/shm/{}".format(ip.to_string())
+
+def func_devtype(args):
+    db = get_db(args)
+
+    print db.get_setup_type(args.wafer)
+
+def func_macu(args):
+    db = get_db(args)
+
+    print db.get_macu(args.wafer).to_string()
+
+def func_adc(args):
+    db = get_db(args)
+
+    hicann_global = C.HICANNGlobal(args.hicann, args.wafer)
+
+    for analog in C.iter_all(C.AnalogOnHICANN):
+        try:
+            print "{}: {}".format(analog,
+                                  db.get_adc_of_hicann(hicann_global, analog))
+        except Exception as e:
+            print e
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Lookup script for HICANN and device properties')
+
+    parser.add_argument(
+        '--hwdb',
+        type=str,
+        default=pysthal.Settings.get().yaml_hardware_database_path,
+        help="path to HWdb")
+
+    subparsers = parser.add_subparsers()
+    parser_hicann_version = subparsers.add_parser('hicann-version', help='Print the HICANN version for the given hicann and wafer.')
+    parser_hicann_version.set_defaults(func=func_hicann_version)
+
+    parser_hicann_label = subparsers.add_parser('hicann-label', help='Print the label of the HICANN for the given hicann and wafer.')
+    parser_hicann_label.set_defaults(func=func_hicann_label)
+
+    parser_ipc = subparsers.add_parser('ipc-filename', help='Print the name of the shared memory file that is used for inter-process-communication.')
+    parser_ipc.set_defaults(func=func_ipc)
+
+    parser_devtype = subparsers.add_parser('device-type', help='Print the device type, e.g. CubeSetup, BSSWafer')
+    parser_devtype.set_defaults(func=func_devtype)
+
+    parser_macu = subparsers.add_parser('macu', help='Print the IP of the Master Control Unit (MaCU)')
+    parser_macu.set_defaults(func=func_macu)
+
+    parser_adc = subparsers.add_parser('adc', help='Print the associated ADCs')
+    parser_adc.set_defaults(func=func_adc)
+
+    for pr in (parser_hicann_version, parser_hicann_label, parser_ipc, parser_adc):
+        pr.add_argument(
+            '--hicann', action='store',
+            metavar='<enum>|<x>,<y>', dest='hicann',
+            type=pysthal.command_line_util.parse_hicann,
+            help='specify HICANN (FPGA-local enum)',
+            required=True)
+
+    for pr in (parser_devtype, parser_hicann_version, parser_hicann_label, parser_ipc, parser_macu, parser_adc):
+        pr.add_argument(
+            '--w', '--wafer', action='store',
+            dest='wafer',
+            type=pysthal.command_line_util.parse_wafer,
+            help='specify the Wafer system to use, choose 0 on vertical setups',
+            required=True)
+
+    args = parser.parse_args()
+
+    args.func(args)

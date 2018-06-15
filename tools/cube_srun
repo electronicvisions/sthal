@@ -1,0 +1,262 @@
+#!/usr/bin/env python
+"""
+This tool will launch jobs on cube setups and initialize the iboard correctly.
+
+It chooses the correct setup based on the handed --hicann and --wafer
+arguments, and will append them to the given command.
+
+If run on a frontend node it will dispatch the command to srun/sbatch, if run
+on a cluster node, the slurm arguments are discarded, but it will check if
+the correct slurm resources are available.
+"""
+
+import argparse
+import errno
+import os
+import subprocess
+import sys
+import tempfile
+
+EPILOG = """
+Usage examples:
+
+Run a calibration
+   cube_srun --wafer 4 --hicann 88  --mem 15G -c8 -- \\
+        run_calibration.py cake/config/v4_params.py
+
+Start a bash on the cluster node and discard the wafer and hicann option:
+   cube_srun --discard --wafer 4 --hicann 144 --pty -- bash
+"""
+
+SSH_KEY = """-----BEGIN RSA PRIVATE KEY-----
+MIIEogIBAAKCAQEAuxEFRCJccus6WAQHwGfR+npugCuXTa3D3vO7Mt4TuZkwIwRN
+L0aP8Jg87tscbu7l4ZGT1GvxlXM29x2nfeTEmOGYG25l7KGYJ7u491m0fON3mKZQ
+fe3Ivh9Gtz6h1RM+eo5aTuYDSMWfp1blb/wnhF3lHzETTcHywafInQv/ncw+sBUg
+OIkvcT4Rq5ZOv5e78vQW8iTTHJC/WH7Bdlv+tfyujogY0fJgKY7le0IJruPmkt5g
+JBpR3/FEFao3mMZcL0PTFQZRCArq22U653jIxY56+s3Yzvit5Js62HN9gnJd8ncG
+1ENStcvbYY2gJoC7xguHcNzn4uP18q79pxo13QIDAQABAoIBAFudGlcj/OLLEOfK
+EYHJVqy1CSj8MD16vFKUSzm+SSq8OzbrBGICzLun0y+nX2V02mB+S0fdFZN7uY+M
+llqxjxbQZQ4KIyCgg0PyS8PXyuze+dNooEMMESQLbTaRFfCkXBTpYpEBVNpu7qGl
+jPgrJa9NzMhZ4HpUYe81nKpNFgLRDYUvS2NgVduEyMYQQqljtajb2xzMMAjGDQnL
+mKPBdPeMPkOTcy+NxZ8JfPAXuE3nMOSf66KR/1Hls23O7/1R9nFUhe/J4I6X1Blh
+Ni5iabhRgcZ1mTYS5KEZZmjyWPi0dlyfPFucF9Ou7xy1Rsm7u58bVh2GMniWiS/p
+NXmt4AECgYEA6pBMM0qUXz7Sc6yuEWmQzByoVOIkvovehPaxwgbrbR6whZEaTDaA
+/gsZ+0bYBkYENQgjuZxsEeo9eDw2Cdh+T18TDvO0PM1Aufd0O0+IRT4tmod0PLKz
+3u48ZuZuTHnu0LNiOPfcb4O8Vvyb3yF1mk5mW2DiQEMOFSXDeaqMVB0CgYEAzCmC
+WUFTDHcfAzy6vQD7ttHRNsNfLi074W8ht1Y39vmNlNPwjYpVpioTs+QbFDXUumGA
+lSd56Wd/LPAmmuTDrlmsn9o9RlDM+iIMcIm0mMFazFnlOcCLCkXDleedCmeb7x6/
+3ftYcHgyNOxwUoLal+/uw/vYU2gfXxcL4yp4PMECgYBVA7GqkWhPUQyjwj1gsDs7
+z1MvWLtqmHUxCdyJb0qaxRnDf0DhyIteCBYFnbqkI3JY6jdQiaIdqCFZV7FaRi4Z
+hGL681crBlVkUYy+BmhkeFG9BUUazsYkkYIw5WmqrDLjT3DVJvitLjjv6iRwbccb
+AzlT+zxlgCg1f/dmPGsZ/QKBgHod2fnJOQObvNES4h9rFySjG6DF+4iDRe3xqxke
+WRtA6Y67toby14gsYtyW9BuCl1tkNqUAl8skPM2EV5MOgn0m5jo3L69/ZRu4gfhO
+Zdd4z/arTpDcuk3KrNJdV3GBx6OfoOQGE0AypNVDF2xDGL0IpqhTW3GINjuKbXHT
+VVgBAoGACm6g5NmGD3PIRmkVMqSGzuAiDe83hS3XJNN5GMUtq9ykno+RkNYbDcEf
++SXFTmZIfOsAepoUje8ojk3gujXqLdqGGy1GqlzofTL0GKpgrhjSYXxO4DXNLzce
+0kB9ZtXP1NE9H5oCqyzeXLutFrderYeVy4U+6DsOhc+zemJvwjg=
+-----END RSA PRIVATE KEY-----
+"""
+
+SLURM_CMD = os.path.basename(sys.argv[0]).replace('cube_', '')
+# When running in batch mode the commmand is executed in a script called
+# slurm_script
+assert SLURM_CMD in ('srun', 'sbatch', 'slurm_script')
+
+# TODO replace static list by hwdb lookup
+# slurm cube resources
+CUBES = {
+    4: 1,
+    5: 2,
+    6: 3,
+}
+
+# iboard, analog mux on iboard
+HICANNS = {
+    # FPGA 0: (board, analog mux)
+    144: (0, 1, 0),
+    145: (0, 1, 2),
+    146: (0, 1, 4),
+    147: (0, 1, 6),
+    180: (0, 1, 1),
+    181: (0, 1, 3),
+    182: (0, 1, 5),
+    183: (0, 1, 7),
+    # FPGA 3
+    88:  (3, 2, 0),
+    89:  (3, 2, 2),
+    90:  (3, 2, 4),
+    91:  (3, 2, 6),
+    116: (3, 2, 1),
+    117: (3, 2, 3),
+    118: (3, 2, 5),
+    119: (3, 2, 7),
+}
+
+
+def execvp(cmd):
+    """
+    calls os.execvp, after flushing stdout and stderr
+    """
+    sys.stderr.flush()
+    sys.stdout.flush()
+    os.execvp(cmd[0], cmd)
+
+
+def iboard_ctrl(cube, iboard, quiet, iboard_ctlr_cmd):
+    """
+    Execute iboard_control commands on raspi
+    """
+
+    with tempfile.NamedTemporaryFile() as keyfile:
+        keyfile.write(SSH_KEY)
+        keyfile.flush()
+
+        cmd = [
+            'ssh',
+            '-o', 'StrictHostKeyChecking=no',
+            '-o', 'PubkeyAuthentication=yes',
+            '-o', 'PasswordAuthentication=no',
+            '-o', 'BatchMode=yes',
+            '-o', ' UserKnownHostsFile=/dev/null',
+            '-i', keyfile.name,
+            'cube@mcube{}'.format(cube),
+            'sw-cube/enable-cube.py',
+            '--iboard', str(iboard)
+        ]
+        cmd += iboard_ctlr_cmd
+        stdout = open(os.devnull, 'w') if quiet else None
+        stderr = open(os.devnull, 'w') if quiet else None
+        subprocess.check_call(cmd, stdout=stdout, stderr=stderr)
+
+
+def get_args(for_help=False):
+    """
+    Process command line.
+
+    In help mode pseudo options are appended to generated a nicer help
+    message for users.
+    """
+
+    try:
+        index = sys.argv.index('--')
+        cube_srun_args, cmd = sys.argv[:index], sys.argv[index + 1:]
+    except ValueError:
+        cube_srun_args, cmd = sys.argv[:], []
+
+    if for_help:
+        # Fill arguments with dummies
+        cube_srun_args += ['X', 'X']
+
+    parser = argparse.ArgumentParser(
+        description=sys.modules[__name__].__doc__,
+        epilog=EPILOG,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        '--quiet', '-Q', action='store_true',
+        help="Suppress output (passed to srun)")
+    parser.add_argument(
+        '--discard', action='store_true',
+        help='dont pass the hicann/wafer argument to the programm')
+    parser.add_argument(
+        '--hicann', type=int, required=True, choices=sorted(HICANNS.keys()),
+        help="HICANN to use, this option will be appended to the command. "
+             "Use --discard option to prevent this.")
+    parser.add_argument(
+        '--wafer', type=int, required=True, choices=sorted(CUBES.keys()),
+        help="Cube setup to use, this option will be appended to the command. "
+             "Use --discard option to prevent this.")
+    parser.add_argument(
+        '--voltage', nargs=2, action='append',
+        help="Set a voltage on the iboard to a non default value. "
+             "The arguments are passed to iboard_ctrl.py set_voltage")
+
+    # Fake help entries
+    if for_help:
+        parser.add_argument(
+            'A', metavar='[srun_options...]',
+            help="Options to pass to srun")
+        parser.add_argument(
+            'B', metavar='-- COMMAND ...',
+            help="command to run on cube setup, omit --hicann and --wafer")
+
+    # Split commands, everything after '--' belongs to the user command
+    args, slurm_opt = parser.parse_known_args(cube_srun_args)
+    if args.quiet:
+        slurm_opt.append('-Q')
+
+    if args.voltage is None:
+        args.voltage = [['vdd11', '11.5']]
+
+    return args, slurm_opt, cmd
+
+
+def main():
+    # Parse args twice, the first call is to generate a nicer help message
+    get_args(for_help=True)
+    args, slurm_opt, cmd = get_args()
+
+    # Check if we are already on the right node
+    # SLURM_SUBMIT_DIR is set by srun/sbatch, see man page
+    in_slurm = 'SLURM_SUBMIT_DIR' in os.environ
+
+    # Construct resource name
+    cube = CUBES[args.wafer]
+    fpga, iboard, mux = HICANNS[args.hicann]
+    cube_res = "cube{}".format(cube)
+    iboard_res = "{}iboard{}".format(cube_res, iboard)
+    license = "W{}F{}".format(args.wafer, fpga)
+
+    if not in_slurm:
+        # Rerun the program using slurm
+        slurm_cmd = [SLURM_CMD]
+        slurm_cmd += slurm_opt[1:]
+        slurm_cmd += [
+            '-p', 'cubic',
+            '--gres={}'.format(iboard_res),
+            '-L', license]
+        slurm_cmd += ['--']
+        slurm_cmd += sys.argv
+        if not args.quiet:
+            print "Executing slurm call: '{}'".format(' '.join(slurm_cmd))
+        execvp(slurm_cmd)
+    else:
+        if not args.discard:
+            cmd.extend(
+                ['--wafer', str(args.wafer), '--hicann', str(args.hicann)])
+
+    my_slurm_gres = os.environ.get('MY_SLURM_GRES', '').split(',')
+    if iboard_res not in my_slurm_gres:
+        print "You don't have the correct slurm resources allocated."
+        print "HICANN {} on cube {} requires the resource {}".format(
+            args.hicann, cube, iboard_res)
+        print "Your resources are:"
+        for gres in my_slurm_gres:
+            print "  -", gres
+        sys.exit(os.EX_NOPERM)
+
+    if not args.quiet:
+        print "Init iboard..."
+
+    def _iboard_ctrl(cmd):
+        iboard_ctrl(cube, iboard, args.quiet, cmd)
+
+    try:
+        _iboard_ctrl(['on'])
+        _iboard_ctrl(['switch_mux', str(mux)])
+        for voltage, value in args.voltage:
+            if not args.quiet:
+                print "Set voltage {} to {}V".format(voltage, value)
+            _iboard_ctrl(['set_voltage', voltage, value])
+    except OSError as exc:
+        exit(exc.errno)
+
+    if not args.quiet:
+        print
+        print "Iboard {} initialized.".format(iboard)
+        print "Will hand over to:", " ".join(cmd)
+
+    execvp(cmd)
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,285 @@
+#!/usr/bin/env python
+"""test receiving of L1 packets
+
+each sending repeater receives input from one background generator
+
+it sends it to all vertical repeaters (one at a time) that
+are accessible by setting one crossbar switch
+
+variables prefixed with c_ are halbe coordinates
+
+"""
+
+import numpy
+import argparse
+import sys
+import time
+
+import pylogging
+import pysthal
+import pyhalbe
+import Coordinate
+import Coordinate as C
+
+from pyhalbe import HICANN
+
+from pysthal.command_line_util import add_default_coordinate_options
+from pysthal.command_line_util import add_logger_options
+from pysthal.command_line_util import init_logger
+
+logger = pylogging.get(__name__.replace('_', ''))
+
+def print_received(full_flag, test):
+    """
+    pretty prints received test data
+    """
+
+    print "Received from vertical repeater: "
+    if full_flag:
+        logger.info("Full flag is set")
+    else:
+        logger.error("Full flag is NOT set")
+
+    for t in test:
+
+        if t.time != 0:
+            time = t.time
+        elif t.time == 0 and full_flag == True:
+            time = "counter overflow"
+        elif t.time == 0 and full_flag == False:
+            time = "not received"
+
+        logger.info("Neuron number {} at time {}".format(t.address, time))
+
+def eval_testdata(full_flag, test):
+    ret
+
+
+class L1HICANNConfigurator(pysthal.HICANNConfigurator):
+    def hicann_init(self, hicann):
+        pyhalbe.HICANN.init(hicann, False)
+
+    def config_synapse_array(self, *args):
+        pass
+
+    def config_fpga(self, *args):
+        pass
+
+    def config_floating_gates(self, *args):
+        pass
+
+class HICANNConfigurator(pysthal.HICANNConfigurator):
+    """
+    """
+    def hicann_init(self, hicann):
+        pyhalbe.HICANN.init(hicann, False)
+
+class HICANNReadConfigurator(pysthal.HICANNConfigurator):
+    def __init__(self, block, registertype):
+        pysthal.HICANNConfigurator.__init__(self)
+        self.block = block
+        self.registertype = registertype
+        self.result = None
+
+    def config_fpga(self, *args):
+        pass
+
+    def config(self, fpga, handle, h):
+
+        #configure receiving repeater block
+        rb = HICANN.RepeaterBlock()
+
+        #reset the full flag
+        rb.start_tdi[self.registertype] = False
+        HICANN.set_repeater_block(handle, self.block, rb)
+
+        #start recording test data
+        rb.start_tdi[self.registertype] = True
+        HICANN.set_repeater_block(handle, self.block, rb)
+
+        HICANN.flush(handle)
+        time.sleep(0.2)
+
+        # readout received events
+        rb = HICANN.get_repeater_block(handle, self.block)
+        received_test_data = rb.tdi_data[self.registertype]
+        full_flag = rb.full_flag[self.registertype]
+
+        print_received(full_flag, received_test_data)
+
+        valid_entries = []
+        for t in received_test_data:
+            if t.time != 0 and full_flag == True:
+                valid_entries.append((int(t.address), t.time))
+        if valid_entries:
+            valid_entries = numpy.array(valid_entries)
+            self.result = (
+                full_flag, valid_entries[:,0], numpy.diff(valid_entries[:,1]))
+        else:
+            self.result = (full_flag, [], [])
+
+
+class HICANNL1Test(object):
+
+    def __init__(self, wafer, hicann, hwdb=None):
+        self.wafer = pysthal.Wafer(wafer)
+        self.hicann = self.wafer[hicann]
+
+    def getSwitchableVLines(self, c_hl):
+        """
+        c_hl: coordinate of horizontal line
+
+        returns verticales lines that are accessible by setting one crossbar switch
+        """
+        return [c_vl for c_vl in C.iter_all(C.VLineOnHICANN)
+                if pyhalbe.HICANN.Crossbar.exists(c_vl, c_hl)]
+
+    # send address bg_addr every bg_period clock cycles
+    # default bg_period = 49 -> expected distance is 50 clks
+    def run(self, hwdb=None, vdllres=None, bg_period = 49, bg_addr = HICANN.L1Address(0)):
+
+        if hwdb is None:
+            self.wafer.connect(pysthal.MagicHardwareDatabase())
+        else:
+            self.wafer.connect(pysthal.YAMLHardwareDatabase(hwdb))
+
+        # Init HICANN and FGs
+        logger.info("Initial HICANN configuration")
+        if vdllres is not None:
+            for c_fgblock in C.iter_all(C.FGBlockOnHICANN):
+                self.hicann.floating_gates.setShared(
+                    c_fgblock, HICANN.V_dllres, vdllres)
+        self.wafer.configure(HICANNConfigurator())
+
+        # Results
+        good, bad = 0, 0
+        received_addresses = []
+        measured_bg_periods = []
+
+        # iterate over all sending repeaters
+        results = []
+        for c_sr in C.iter_all(C.SendingRepeaterOnHICANN):
+            c_hl = c_sr.toHLineOnHICANN()
+
+            # iterate over all reachable vertical repeaters
+            for c_vl in self.getSwitchableVLines(c_hl):
+                c_vr = c_vl.toVRepeaterOnHICANN()
+                logger.info("testing {} -> {}".format(c_sr, c_vr))
+                full, addrs, tdiff = self.L1TransmissionTest(
+                    c_sr, c_vr, bg_period, bg_addr)
+
+                if full:
+                    good += 1
+                else:
+                    bad +=1
+                received_addresses.extend(addrs)
+                measured_bg_periods.extend(tdiff)
+
+        self.wafer.disconnect()
+
+        logger.info("Measured background periods:")
+        counted = numpy.unique(measured_bg_periods, return_counts=True)
+        for tdiff, count in zip(*counted):
+            logger.info("  - {:>2}: {}".format(tdiff, count))
+
+        counted = numpy.unique(received_addresses, return_counts=True)
+        logger.info("Received addressed:")
+        for addr, count in zip(*counted):
+            logger.info("  - {:>2}: {}".format(addr, count))
+
+        logger_f = logger.info if bad == 0 else logger.error
+        logger_f("Summary: {} working, {} defect".format(good, bad))
+        return good, bad
+
+    def L1TransmissionTest(self, c_sr, c_vr, bg_period, bg_addr):
+        """
+        c_sr: coordinate of sending repeater
+        c_vr: coordinate of vertical repeater
+        bg_period: background generator period
+
+        it is not checked if the combination is possible
+
+        tests if vertical repeater receives L1 packets
+        """
+
+        c_bg = C.BackgroundGeneratorOnHICANN(c_sr.toDNCMergerOnHICANN().value())
+        c_gbit = c_sr.toGbitLinkOnHICANN()
+        c_hl = c_sr.toHLineOnHICANN()
+        c_vl = c_vr.toVLineOnHICANN()
+        c_block = c_vr.toRepeaterBlockOnHICANN()
+
+        # Reset
+        self.hicann.clear_complete_l1_routing()
+
+        #configure background generator
+        for bg in C.iter_all(C.BackgroundGeneratorOnHICANN):
+            self.hicann.layer1[bg].enable(False)
+
+        # enable THE one
+        self.hicann.layer1[c_bg].period(bg_period)
+        self.hicann.layer1[c_bg].address(bg_addr)
+        self.hicann.layer1[c_bg].enable(True)
+
+        #configure DNC mergers
+        mergers = HICANN.DNCMergerLine()
+        for c_mer in C.iter_all(C.DNCMergerOnHICANN):
+            self.hicann.layer1[c_mer].config = HICANN.Merger.MERGE
+            self.hicann.layer1[c_mer].slow = True
+            self.hicann.layer1[c_mer].loopback = False
+
+        # DNC and dnc_if:
+        # self.hicann.layer1[c_gbit].timestamp_enable = True TODO???
+        self.hicann.layer1[c_gbit] = HICANN.GbitLink.Direction.TO_HICANN
+
+        # configure sending repeater
+        self.hicann.repeater[c_sr.toHRepeaterOnHICANN()].setOutput(Coordinate.right)
+
+        # set crossbar to connect sending repeater with vertical repeater
+        self.hicann.crossbar_switches.set(c_vl, c_hl, True)
+
+        # configure vertical repeater
+        if c_vr.y() == C.top:
+            direction = C.top
+            registertype = HICANN.RepeaterBlock.ODD
+        elif c_vr.y() == C.bottom:
+            direction = C.bottom
+            registertype = HICANN.RepeaterBlock.EVEN
+        else:
+            raise RuntimeError("cannot figure out direction and registertype for {}".format(c_vr))
+
+        self.hicann.repeater[c_vr].setInput(direction)
+
+        cfg = L1HICANNConfigurator()
+        self.wafer.configure(cfg)
+
+        # lock vertical repeater
+        time.sleep(0.2)
+
+        receive = HICANNReadConfigurator(c_block, registertype)
+        self.wafer.configure(receive)
+        return receive.result
+
+
+def main():
+    init_logger(pylogging.LogLevel.WARN)
+    pylogging.set_loglevel(logger, pylogging.LogLevel.INFO)
+
+    parser = argparse.ArgumentParser(description='Single HICANN Layer 1 test tool')
+    add_default_coordinate_options(parser)
+    add_logger_options(parser)
+    parser.add_argument('--hwdb', type=str, default=None, help="full path to hardware database")
+    parser.add_argument('--vdllres', type=int, default=None, help="DAC value for V_dllres")
+
+    args, argv = parser.parse_known_args()
+    argv.insert(0, sys.argv[0])
+
+    if None in (args.hicann, args.wafer):
+        print "error: wafer and hicann have to be specified, e.g. --wafer 0 --hicann 276"
+        exit(1)
+
+    test = HICANNL1Test(args.wafer, args.hicann)
+    test.run(hwdb=args.hwdb, vdllres=args.vdllres)
+
+
+if __name__ == '__main__':
+    main()

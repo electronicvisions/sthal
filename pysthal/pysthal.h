@@ -25,6 +25,7 @@
 #include "sthal/ProgrammAndReadFloatingGatesConfigurator.h"
 #include "sthal/VerifyConfigurator.h"
 #include "sthal/ReadRepeaterTestdataConfigurator.h"
+#include "sthal/OnlyNeuronNoResetNoFGConfigurator.h"
 
 #include "sthal/MagicHardwareDatabase.h"
 #include "sthal/YAMLHardwareDatabase.h"

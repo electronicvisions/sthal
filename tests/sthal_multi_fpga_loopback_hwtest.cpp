@@ -173,17 +173,28 @@ int main(int argc, char* argv[]) {
 		}
 		size_t const num_print_max = received_spikes.size()>max_num_print?max_num_print:received_spikes.size();
 		size_t num_print = 0;
+		typed_array<size_t, HICANNOnDNC> hicann_failures;
 		for( size_t spikenum = 0; spikenum < std::min(received_spikes.size(), sent_spikes.size()) ; spikenum++) {
 			uint64_t is_time = received_spikes[spikenum].getTime();
 			uint64_t ought_time = sent_spikes[spikenum].getTime();
 			int64_t diff = static_cast<int64_t>(is_time) - static_cast<int64_t>(ought_time);
-			if (static_cast<unsigned int>(abs(diff)) > maximum_allowed_diff && num_print < num_print_max) {
-				LOG4CXX_ERROR(test_logger, "Spikenum: " << spikenum << "; IS: " << is_time << "; OUGHT: " << ought_time << "; DIFF: " << diff);
-				num_print++;
+			if (static_cast<unsigned int>(abs(diff)) > maximum_allowed_diff) {
+				hicann_failures.at(sent_spikes[spikenum].getChipAddress())++;
+				if (num_print < num_print_max) {
+					LOG4CXX_ERROR(
+					    test_logger, "Spikenum: " << spikenum << "; IS: " << is_time << "; OUGHT: "
+					                              << ought_time << "; DIFF: " << diff);
+					num_print++;
+				}
 			}
 		}
 		if (num_print > 0) {
 			test_failed = true;
+			for (auto hicann_on_dnc : iter_all<HICANNOnDNC>()) {
+				LOG4CXX_ERROR(
+				    test_logger,
+				    "HICANN : " << hicann_on_dnc << " " << hicann_failures.at(hicann_on_dnc));
+			}
 		}
 		if (log_to_file) {
 			std::stringstream spike_data;

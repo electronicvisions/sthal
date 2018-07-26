@@ -52,6 +52,8 @@ public:
 
 	virtual ::HMF::Coordinate::IPv4 get_fpga_ip(
 				const global_fpga_coord & fpga) const = 0;
+
+	virtual boost::shared_ptr<HardwareDatabase> clone() const = 0;
 };
 
 }

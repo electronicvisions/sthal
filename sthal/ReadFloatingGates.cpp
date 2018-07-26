@@ -104,7 +104,7 @@ void ReadFloatingGates::config(
 			ac.set_fg_right(analog);
 
 		::HMF::HICANN::set_analog(*h, ac);
-		AnalogRecorder record = dynamic_cast<const HICANN&>(*hicann).analogRecorder(analog);
+		AnalogRecorder record = dynamic_cast<HICANN&>(*hicann).analogRecorder(analog);
 
 		for (cell_t cell : iter_all<cell_t>())
 		{

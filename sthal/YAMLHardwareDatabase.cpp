@@ -255,4 +255,9 @@ void YAMLHardwareDatabase::store(std::ostream& out) const
 	mData.dump(out);
 }
 
+boost::shared_ptr<HardwareDatabase> YAMLHardwareDatabase::clone() const
+{
+	return boost::shared_ptr<HardwareDatabase>(new YAMLHardwareDatabase(*this));
+}
+
 } // end namespace sthal

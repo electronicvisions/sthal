@@ -89,6 +89,8 @@ public:
 	/// Store the database in file
 	void store(std::string path) const;
 
+	boost::shared_ptr<HardwareDatabase> clone() const;
+
 	friend std::ostream& operator<<(std::ostream& out, const YAMLHardwareDatabase& database);
 
 private:

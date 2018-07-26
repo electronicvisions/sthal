@@ -140,7 +140,7 @@ void HICANNReadoutConfigurator::read_floating_gates(
 
 		::HMF::HICANN::set_analog(*h, ac);
 		AnalogRecorder record =
-			dynamic_cast<const HICANN&>(*original_hicann).analogRecorder(analog);
+			dynamic_cast<HICANN&>(*original_hicann).analogRecorder(analog);
 		Timer t_block;
 		for (auto cell : iter_all<FGCellOnFGBlock>())
 		{

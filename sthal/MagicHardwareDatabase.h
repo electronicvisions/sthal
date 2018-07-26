@@ -30,6 +30,8 @@ public:
 	virtual ::HMF::Coordinate::IPv4 get_fpga_ip(
 				const global_fpga_coord & fpga) const;
 
+	boost::shared_ptr<HardwareDatabase> clone() const;
+
 private:
 	boost::shared_ptr<HardwareDatabase> mDatabase;
 };

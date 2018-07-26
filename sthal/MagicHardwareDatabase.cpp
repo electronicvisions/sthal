@@ -56,4 +56,9 @@ MagicHardwareDatabase::get_fpga_ip(const global_hicann_coord & hicann) const
 	return mDatabase->get_fpga_ip(hicann);
 }
 
+boost::shared_ptr<HardwareDatabase> MagicHardwareDatabase::clone() const
+{
+	return boost::shared_ptr<HardwareDatabase>(new MagicHardwareDatabase(*this));
+}
+
 } // namespace sthal

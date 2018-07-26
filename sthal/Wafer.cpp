@@ -202,8 +202,28 @@ namespace {
 	}
 }
 
+void Wafer::populate_adc_config(hicann_coord const& hicann, analog_coord const& analog)
+{
+	auto h = mHICANN[hicann.id()];
+
+	if(!mHardwareDatabase) {
+		throw std::runtime_error("Wafer::populate_adc_config(): connect to HardwareDatabase first");
+	}
+	LOG4CXX_DEBUG(logger, "Retrieving ADC config for " << hicann << " " << analog);
+	auto conf = mHardwareDatabase->get_adc_of_hicann(HICANNGlobal(hicann, index()), analog);
+	h->setADCConfig(analog, conf);
+	auto& adc_channel = mADCChannels[hicann.toDNCOnWafer().id()][analog.value()];
+	conf.loadCalibration = ADCConfig::CalibrationMode::DEFAULT_CALIBRATION;
+	adc_channel.board_id = conf.coord;
+	adc_channel.channel = conf.channel;
+	AnalogRecorder const r(conf);
+	adc_channel.bitfile_version = r.version();
+}
+
 void Wafer::connect(const HardwareDatabase & db)
 {
+	mHardwareDatabase = db.clone();
+
 	const size_t num_fpgas = std::count_if(
 	    mFPGA.begin(), mFPGA.end(), [](const boost::shared_ptr<FPGA>& f) { return f != nullptr; });
 	for (auto coord : getAllocatedFpgaCoordinates() )
@@ -226,24 +246,6 @@ void Wafer::connect(const HardwareDatabase & db)
 		HICANNGlobal hicann(ii, mWafer);
 		auto & h = mHICANN[hicann.toHICANNOnWafer().id()];
 		h->set_version(db.get_hicann_version(hicann));
-		for (auto analog : iter_all<AnalogOnHICANN>() )
-		{
-			if (db.has_adc_of_hicann(hicann, analog)) {
-				LOG4CXX_DEBUG(logger, "Retrieving ADC config for " << hicann << " "
-				                                                   << analog);
-				auto conf = db.get_adc_of_hicann(hicann, analog);
-				h->setADCConfig(analog, conf);
-				auto & adc_channel = mADCChannels[ii.toDNCOnWafer().id()][analog.value()];
-				conf.loadCalibration = ADCConfig::CalibrationMode::DEFAULT_CALIBRATION;
-				adc_channel.board_id = conf.coord;
-				adc_channel.channel = conf.channel;
-				AnalogRecorder const r(conf);
-				adc_channel.bitfile_version = r.version();
-			} else {
-				LOG4CXX_WARN(
-					logger, "Connecting to HICANN " << hicann << " which has no ADC at " << analog);
-			}
-		}
 	}
 	LOG4CXX_INFO(plogger, "Connected to hardware");
 }

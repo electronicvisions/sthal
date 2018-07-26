@@ -108,6 +108,8 @@ public:
 	hicann_handle_t get_hicann_handle(hicann_coord const& hicann);
 #endif
 
+	void populate_adc_config(hicann_coord const& hicann, analog_coord const& analog);
+
 private:
 	void allocate(const hicann_coord & hicann);
 
@@ -119,6 +121,9 @@ private:
 	size_t mNumHICANNs;
 	bool mForceListenLocal;
 	boost::shared_ptr<FPGAShared> mSharedSettings;
+#ifndef PYPLUSPLUS
+	boost::shared_ptr<const HardwareDatabase> mHardwareDatabase;
+#endif
 
 	friend class boost::serialization::access;
 	template<typename Archiver>

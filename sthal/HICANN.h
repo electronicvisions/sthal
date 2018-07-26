@@ -4,6 +4,9 @@
 #include <boost/weak_ptr.hpp>
 #include <boost/serialization/weak_ptr.hpp>
 
+#ifndef PYPLUSPLUS
+#include "hal/Coordinate/typed_array.h"
+#endif
 #include "sthal/AnalogRecorder.h"
 #include "sthal/HICANNData.h"
 #include "sthal/Spike.h"
@@ -65,7 +68,7 @@ public:
 	/// TODO size_t get_minor_version() const;
 
 	// Return new analog recorder with lifetime managment and lock
-	AnalogRecorder analogRecorder(const analog_coord & ii) const;
+	AnalogRecorder analogRecorder(const analog_coord & ii);
 
 	void setCurrentStimulus(const neuron_coord & ii, const FGStimulus & stim);
 #ifndef PYPLUSPLUS
@@ -225,7 +228,9 @@ private:
 	boost::optional<Wafer&> mWafer;
 #endif
 	typedef boost::shared_ptr<ADCConfig> aout_t;
-	std::array<aout_t, 2> mADCConfig;
+#ifndef PYPLUSPLUS
+	halco::common::typed_array<std::optional<aout_t>, analog_coord> mADCConfig;
+#endif
 	PYPP_INIT(size_t mVersion, 0);
 	PYPP_INIT(size_t mMinorVersion, 0);
 

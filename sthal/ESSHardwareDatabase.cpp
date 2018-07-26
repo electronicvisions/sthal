@@ -71,4 +71,9 @@ ESSHardwareDatabase::get_fpga_ip(global_fpga_coord const&) const
 	return ::HMF::Coordinate::IPv4();
 }
 
+boost::shared_ptr<HardwareDatabase> ESSHardwareDatabase::clone() const
+{
+	return boost::shared_ptr<HardwareDatabase>(new ESSHardwareDatabase(*this));
+}
+
 } // sthal

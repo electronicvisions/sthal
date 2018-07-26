@@ -32,6 +32,8 @@ public:
 
     void freeHandle();
 
+	boost::shared_ptr<HardwareDatabase> clone() const;
+
 private:
 	boost::shared_ptr<HMF::Handle::Ess> mESS;
 };

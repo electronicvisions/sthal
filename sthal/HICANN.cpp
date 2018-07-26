@@ -77,8 +77,12 @@ bool operator==(const HICANN & a, const HICANN & b)
 
 ADCConfig HICANN::getADCConfig(const ::HMF::Coordinate::AnalogOnHICANN & ii)
 {
-	if (mADCConfig[ii]) {
-		return *mADCConfig[ii];
+	if(!mADCConfig[ii].has_value()) {
+		wafer().populate_adc_config(index().toHICANNOnWafer(), ii);
+	}
+
+	if (mADCConfig[ii].has_value()) {
+		return *(mADCConfig[ii].value());
 	} else {
 		std::stringstream err;
 		err << "No ADC found for " << ii << " on " << index();
@@ -89,7 +93,7 @@ ADCConfig HICANN::getADCConfig(const ::HMF::Coordinate::AnalogOnHICANN & ii)
 void HICANN::setADCConfig(const ::HMF::Coordinate::AnalogOnHICANN & ii,
 		const ADCConfig & adc)
 {
-	mADCConfig[ii].reset(new ADCConfig(adc));
+	mADCConfig[ii].emplace(boost::make_shared<ADCConfig>(adc));
 }
 
 /// Clear adc config
@@ -99,6 +103,9 @@ void HICANN::resetADCConfig()
     {
         cfg.reset();
     }
+	for (auto analog : iter_all<AnalogOnHICANN>() ) {
+		mADCConfig[analog].reset();
+	}
 }
 
 void HICANN::set_version(size_t version) {
@@ -115,9 +122,13 @@ size_t HICANN::get_version() const
 }
 
 AnalogRecorder
-HICANN::analogRecorder(const ::HMF::Coordinate::AnalogOnHICANN & ii) const
+HICANN::analogRecorder(const ::HMF::Coordinate::AnalogOnHICANN & ii)
 {
-	if (mADCConfig[ii])
+	if(!mADCConfig[ii].has_value()) {
+		wafer().populate_adc_config(index().toHICANNOnWafer(), ii);
+	}
+
+	if (mADCConfig[ii].has_value())
 	{
 		if (!analog.enabled(ii))
 		{
@@ -125,7 +136,7 @@ HICANN::analogRecorder(const ::HMF::Coordinate::AnalogOnHICANN & ii) const
 					     << index() << " for " << ii << ", but this analog "
 						 "output is not enabled");
 		}
-		return AnalogRecorder(*mADCConfig[ii]);
+		return AnalogRecorder(*(mADCConfig[ii].value()));
 	}
 	else
 		throw std::runtime_error("Could not get AnalogRecorder. AnalogRecorder can be only used after"

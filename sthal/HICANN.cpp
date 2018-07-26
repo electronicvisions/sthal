@@ -5,6 +5,7 @@
 
 #include "sthal/HICANN.h"
 #include "sthal/FPGA.h"
+#include "sthal/Wafer.h"
 #include "sthal/Settings.h"
 #include "sthal_exception.h"
 
@@ -29,14 +30,7 @@ static log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger("sthal.HICANN");
 
 namespace sthal {
 
-HICANN::HICANN() :
-	HICANN(HICANNGlobal(), boost::shared_ptr<FPGA>())
-{
-}
-
-HICANN::HICANN(const hicann_coord & hicann, const boost::shared_ptr<FPGA> & fpga) :
-	mCoordinate(hicann),
-	mFPGA(fpga)
+HICANN::HICANN()
 {
 	// Enable membrane reset and firing
 	enable_firing();
@@ -51,6 +45,19 @@ HICANN::HICANN(const hicann_coord & hicann, const boost::shared_ptr<FPGA> & fpga
 	// TODO check default
 	use_big_capacitors(true);
 	set_fg_speed_up_scaling(NORMAL);
+}
+
+HICANN::HICANN(const hicann_coord& hicann, const boost::shared_ptr<FPGA>& fpga)
+    : HICANN()
+{
+	mCoordinate = hicann;
+	mFPGA = fpga;
+}
+
+HICANN::HICANN(const hicann_coord& hicann, const boost::shared_ptr<FPGA>& fpga, Wafer& wafer)
+    : HICANN(hicann, fpga)
+{
+	mWafer = wafer;
 }
 
 HICANN::~HICANN()
@@ -605,6 +612,22 @@ boost::shared_ptr<const FPGA> HICANN::fpga() const
 		return fpga;
 	}
 	throw std::runtime_error("Incomplete initialized HICANN has no FPGA");
+}
+
+Wafer& HICANN::wafer()
+{
+	if (mWafer) {
+		return *mWafer;
+	}
+	throw std::runtime_error("Incomplete initialized HICANN has no Wafer");
+}
+
+const Wafer& HICANN::wafer() const
+{
+	if (mWafer) {
+		return *mWafer;
+	}
+	throw std::runtime_error("Incomplete initialized HICANN has no Wafer");
 }
 
 std::ostream& operator<<(std::ostream& os, const sthal::HICANN & h)

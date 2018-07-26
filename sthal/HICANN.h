@@ -13,6 +13,8 @@
 
 namespace sthal {
 
+class Wafer;
+
 // TODO set activate_firing true for all neurons
 
 struct HICANN : public HICANNData {
@@ -32,7 +34,13 @@ public:
 
 
 	HICANN();
-	HICANN(const hicann_coord & hicann, const boost::shared_ptr<FPGA> & fpga);
+	HICANN(
+	    const hicann_coord& hicann,
+	    const boost::shared_ptr<FPGA>& fpga);
+	HICANN(
+	    const hicann_coord& hicann,
+	    const boost::shared_ptr<FPGA>& fpga,
+	    Wafer& wafer);
 	~HICANN();
 
 	hicann_coord const& index() const;
@@ -213,6 +221,9 @@ public:
 private:
 	hicann_coord                  mCoordinate;
 	boost::weak_ptr<FPGA>		  mFPGA;
+#ifndef PYPLUSPLUS
+	boost::optional<Wafer&> mWafer;
+#endif
 	typedef boost::shared_ptr<ADCConfig> aout_t;
 	std::array<aout_t, 2> mADCConfig;
 	PYPP_INIT(size_t mVersion, 0);
@@ -220,6 +231,11 @@ private:
 
 	boost::shared_ptr<FPGA> fpga();
 	boost::shared_ptr<const FPGA> fpga() const;
+
+#ifndef PYPLUSPLUS
+	Wafer& wafer();
+	const Wafer& wafer() const;
+#endif
 
 	friend std::ostream& operator<<(std::ostream& os, const HICANN & h);
 

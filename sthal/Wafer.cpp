@@ -161,7 +161,7 @@ void Wafer::allocate(const hicann_coord & c)
 		{
 			fpga.reset(new FPGA(f, mSharedSettings));
 		}
-		hicann.reset(new HICANN(hicann_global, fpga));
+		hicann.reset(new HICANN(hicann_global, fpga, *this));
 		fpga->add_hicann(hicann_global, hicann);
 		LOG4CXX_INFO(logger, "allocate HICANN: " << hicann_global);
 

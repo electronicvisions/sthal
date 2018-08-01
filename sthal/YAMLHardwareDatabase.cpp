@@ -228,12 +228,12 @@ bool YAMLHardwareDatabase::has_adc(global_fpga_coord fpga, analog_coord analog) 
 	return mData.has_adc_entry(::hwdb4cpp::GlobalAnalog_t{fpga, analog});
 }
 
-YAMLHardwareDatabase::WaferEntry& YAMLHardwareDatabase::get_wafer(Wafer wafer)
+YAMLHardwareDatabase::WaferEntry& YAMLHardwareDatabase::get_wafer(wafer_coord wafer)
 {
 	return mData.get_wafer_entry(wafer);
 }
 
-const YAMLHardwareDatabase::WaferEntry& YAMLHardwareDatabase::get_wafer(Wafer wafer) const
+const YAMLHardwareDatabase::WaferEntry& YAMLHardwareDatabase::get_wafer(wafer_coord wafer) const
 {
 	return mData.get_wafer_entry(wafer);
 }

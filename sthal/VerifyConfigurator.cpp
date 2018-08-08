@@ -163,7 +163,7 @@ log4cxx::LoggerPtr VerifyConfigurator::getTimeLogger()
 	return _logger;
 }
 
-VerifyConfigurator::VerifyConfigurator()
+VerifyConfigurator::VerifyConfigurator(bool voe) : m_verify_only_enabled(voe)
 {
 }
 
@@ -329,8 +329,18 @@ void VerifyConfigurator::read_synapse_drivers(
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
 		LOG4CXX_TRACE(getLogger(), "read back: " << syndrv);
 		if (!not_usable(expected, syndrv)) {
-			errors.push_back(check(
-				syndrv, expected.synapses[syndrv], ::HMF::HICANN::get_synapse_driver(*h, syndrv)));
+			::HMF::HICANN::SynapseDriver expected_synapse_driver = expected.synapses[syndrv];
+			::HMF::HICANN::SynapseDriver configured_synapse_driver = ::HMF::HICANN::get_synapse_driver(*h, syndrv);
+
+			// expected: disabled but configured enabled
+
+			if(m_verify_only_enabled &&
+			   !expected_synapse_driver.is_enabled() &&
+			   !configured_synapse_driver.is_enabled()) {
+				continue;
+			}
+
+			errors.push_back(check(syndrv, expected_synapse_driver, configured_synapse_driver));
 		} else {
 			errors.push_back(std::string());
 		}
@@ -350,18 +360,37 @@ void VerifyConfigurator::read_synapse_weights(
 
 	SynapseArray values;
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
-		for (auto side : iter_all<SideVertical>()) {
-			SynapseRowOnHICANN row(syndrv, RowOnSynapseDriver(side));
-			LOG4CXX_TRACE(getLogger(), "read back: " << row);
-			values[row].weights = ::HMF::HICANN::get_weights_row(*h, row);
+
+		::HMF::HICANN::SynapseDriver expected_synapse_driver = expected.synapses[syndrv];
+		::HMF::HICANN::SynapseDriver configured_synapse_driver = ::HMF::HICANN::get_synapse_driver(*h, syndrv);
+
+		if(m_verify_only_enabled &&
+		   !expected_synapse_driver.is_enabled() &&
+		   !configured_synapse_driver.is_enabled()) {
+			continue;
 		}
-	}
-	for (auto synapse : iter_all<SynapseOnHICANN>()) {
-		if (!not_usable(expected, synapse)) {
-			errors.push_back(
-			    check(synapse, expected.synapses[synapse].weight, values[synapse].weight));
-		} else {
-			errors.push_back(std::string());
+
+		for (auto side_vertical : iter_all<SideVertical>()) {
+			SynapseRowOnHICANN row(syndrv, RowOnSynapseDriver(side_vertical));
+			LOG4CXX_TRACE(getLogger(), "read back: " << row);
+			::HMF::HICANN::WeightRow const weights =
+				  ::HMF::HICANN::get_weights_row(*h, row);
+			for (auto column : iter_all<SynapseColumnOnHICANN>()) {
+				SynapseOnHICANN synapse(row, column);
+				if (!not_usable(expected, synapse)) {
+					std::stringstream prefix;
+					prefix << synapse << " (" << synapse.toSynapseDriverOnHICANN() << ", "
+					       << synapse.toSynapseRowOnHICANN() << ", "
+					       << synapse.toSynapseColumnOnHICANN() << ", "
+					       << synapse.toNeuronOnHICANN() << ")";
+
+					errors.push_back(check(prefix.str(),
+					                       expected.synapses[synapse].weight,
+					                       weights[column]));
+				} else {
+					errors.push_back(std::string());
+				}
+			}
 		}
 	}
 	post_merge_errors(h->coordinate(), "synapse_weights", errors, true);

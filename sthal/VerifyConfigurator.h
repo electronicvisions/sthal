@@ -34,7 +34,9 @@ struct VerificationResult
 class VerifyConfigurator : public HICANNConfigurator
 {
 public:
-	VerifyConfigurator();
+	/// "verify only enabled" only compares the settings of enabled components but also
+	/// checks if disabled component are wrongfully configured to be enabled
+	VerifyConfigurator(bool verify_only_enabled = false);
 
 	/// Clear stored results
 	void clear();
@@ -89,6 +91,7 @@ private:
 #ifndef PYPLUSPLUS
 	tbb::concurrent_vector<VerificationResult> mErrors;
 #endif
+	bool const m_verify_only_enabled;
 };
 
 } // end namespace sthal

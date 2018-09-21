@@ -150,13 +150,33 @@ void ParallelHICANNv4Configurator::config(fpga_handle_t const& f,
 	              short_format(f->coordinate()) << " ParallelHICANNv4Configurator stage "
 	                                            << static_cast<size_t>(stage));
 
+	hicann_handles_t highspeed_hicann_handles;
+	hicann_datas_t highspeed_hicann_datas;
+
+	for (auto it : pythonic::zip(handles, hicanns)) {
+		if (f->hicann_highspeed(DNCOnFPGA(Enum(0)), it.first->coordinate().toHICANNOnDNC())) {
+			highspeed_hicann_handles.push_back(it.first);
+			highspeed_hicann_datas.push_back(it.second);
+		}
+	}
+
 	switch (stage) {
 		case ConfigurationStage::TIMING_UNCRITICAL: {
 			// interleaved
 			config_floating_gates(handles, hicanns);
 
-			// interleaved
-			config_synapse_array(handles, hicanns);
+			// interleaved and only via highspeed
+			config_synapse_array(highspeed_hicann_handles, highspeed_hicann_datas);
+
+			for (auto handle : handles) {
+				if (std::find(
+				        highspeed_hicann_handles.begin(), highspeed_hicann_handles.end(), handle) ==
+				    highspeed_hicann_handles.end()) {
+					LOG4CXX_WARN(
+					    getLogger(), "Skipping synapse array configuration for non-highspeed "
+					                     << short_format(handle->coordinate()));
+				}
+			}
 
 			// TODO: make parallel/interleaved (no bottleneck here?)
 			auto it_data = hicanns.begin();
@@ -202,7 +222,15 @@ void ParallelHICANNv4Configurator::config(fpga_handle_t const& f,
 			auto it_data = hicanns.begin();
 			for (auto handle : handles) {
 				auto hicann = *it_data;
-				config_synapse_drivers(handle, hicann);
+				if (std::find(
+				        highspeed_hicann_handles.begin(), highspeed_hicann_handles.end(), handle) !=
+				    highspeed_hicann_handles.end()) {
+					config_synapse_drivers(handle, hicann);
+				} else {
+					LOG4CXX_WARN(
+					    getLogger(), "Skipping synapse driver configuration for non-highspeed "
+					                     << short_format(handle->coordinate()));
+				}
 				flush_hicann(handle);
 				++it_data;
 			}

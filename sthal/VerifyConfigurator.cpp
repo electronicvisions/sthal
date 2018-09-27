@@ -14,6 +14,8 @@
 #include "hal/backend/FPGABackend.h"
 #include "hal/backend/HICANNBackend.h"
 
+#include "halco/common/typed_array.h"
+
 #include "sthal/AnalogRecorder.h"
 #include "sthal/FPGA.h"
 #include "sthal/HICANN.h"
@@ -411,7 +413,31 @@ void VerifyConfigurator::read_synapse_decoders(
 		LOG4CXX_TRACE(getLogger(), "read back: " << syndrv);
 		values.setDecoderDoubleRow(syndrv, ::HMF::HICANN::get_decoder_double_row(*h, syndrv));
 	}
+
+	halco::common::typed_array<
+	    std::pair< ::HMF::HICANN::SynapseDriver, ::HMF::HICANN::SynapseDriver>,
+	    SynapseDriverOnHICANN>
+	    syndrvs;
+
+	for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
+		::HMF::HICANN::SynapseDriver expected_synapse_driver = expected.synapses[syndrv];
+		::HMF::HICANN::SynapseDriver configured_synapse_driver =
+			  ::HMF::HICANN::get_synapse_driver(*h, syndrv);
+		syndrvs[syndrv].first = expected_synapse_driver;
+		syndrvs[syndrv].second = configured_synapse_driver;
+	}
+
 	for (auto synapse : iter_all<SynapseOnHICANN>()) {
+		auto const syndrv = synapse.toSynapseDriverOnHICANN();
+
+		auto const expected_synapse_driver = syndrvs[syndrv].first;
+		auto const configured_synapse_driver = syndrvs[syndrv].second;
+
+		if (m_verify_only_enabled && !expected_synapse_driver.is_enabled() &&
+		    !configured_synapse_driver.is_enabled()) {
+			continue;
+		}
+
 		if (!not_usable(expected, synapse)) {
 			errors.push_back(
 			    check(synapse, expected.synapses[synapse].decoder, values[synapse].decoder));

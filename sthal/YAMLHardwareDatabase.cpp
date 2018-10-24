@@ -98,15 +98,22 @@ YAMLHardwareDatabase::fpga_handle_t YAMLHardwareDatabase::get_fpga_handle(
 	DNCOnFPGA dnc = *dncs.begin();
 
 	std::set<HICANNOnDNC> available_hicanns;
+	std::set<HICANNOnDNC> highspeed_hicanns;
+	std::set<HICANNOnDNC> usable_hicanns;
 	for (auto hicann_on_dnc : iter_all<HICANNOnDNC>()) {
 		global_hicann_coord hicann(hicann_on_dnc.toHICANNOnWafer(dnc.toDNCOnWafer(fpga)),
 		                           fpga.toWafer());
 		if (has_hicann(hicann)) {
 			available_hicanns.insert(hicann_on_dnc);
+			if (fpga_data->getHighspeed(hicann_on_dnc)) {
+				highspeed_hicanns.insert(hicann_on_dnc);
+			}
+			if (!fpga_data->getBlacklisted(hicann_on_dnc)) {
+				usable_hicanns.insert(hicann_on_dnc);
+			}
 		}
 	}
 
-	std::set<HICANNOnDNC> highspeed_hicanns;
 	for (auto hicann : hicanns) {
 		auto const hicann_on_dnc = hicann->index().toHICANNOnDNC();
 		if (available_hicanns.find(hicann_on_dnc) == available_hicanns.end()) {
@@ -114,14 +121,9 @@ YAMLHardwareDatabase::fpga_handle_t YAMLHardwareDatabase::get_fpga_handle(
 			    "Requested hicann is not available on this FPGA, key =", hicann->index());
 		}
 	}
-	for (auto hicann_on_dnc : available_hicanns) {
-		if (fpga_data->getHighspeed(hicann_on_dnc)) {
-			highspeed_hicanns.insert(hicann_on_dnc);
-		}
-	}
 
 	::HMF::Handle::FPGAHw::HandleParameter handleparam{fpga, it->second.ip, dnc, available_hicanns,
-	                                                   highspeed_hicanns,
+	                                                   highspeed_hicanns, usable_hicanns,
 	                                                   wafer.setup_type, wafer.macu};
 	return fpga_handle_t(new ::HMF::Handle::FPGAHw(handleparam));
 }

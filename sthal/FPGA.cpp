@@ -264,4 +264,18 @@ bool FPGA::getHighspeed(const HMF::Coordinate::HICANNOnDNC& highspeed_hicann) co
 	return highspeed_hicanns.count(highspeed_hicann);
 }
 
+void FPGA::setBlacklisted(const HMF::Coordinate::HICANNOnDNC& blacklisted_hicann, bool blacklist)
+{
+	if (blacklist) {
+		blacklisted_hicanns.insert(blacklisted_hicann);
+	} else {
+		blacklisted_hicanns.erase(blacklisted_hicann);
+	}
+}
+
+bool FPGA::getBlacklisted(const HMF::Coordinate::HICANNOnDNC& blacklisted_hicann) const
+{
+	return blacklisted_hicanns.count(blacklisted_hicann);
+}
+
 } // end namespace sthal

@@ -117,6 +117,11 @@ public:
 	/// get if highspeed links are used
 	bool getHighspeed(const HMF::Coordinate::HICANNOnDNC& highspeed_hicann) const;
 
+	/// blacklisted given HICANN
+	void setBlacklisted(const HMF::Coordinate::HICANNOnDNC& blacklisted_hicann, bool blacklist);
+	/// get if HICANN is blacklisted
+	bool getBlacklisted(const HMF::Coordinate::HICANNOnDNC& blacklisted_hicann) const;
+
 private:
 	fpga_coord mCoordinate;
 	std::array<DNC, dnc_coord::size> mDNCs;
@@ -148,6 +153,7 @@ private:
 	HMF::FPGA::SpinnRoutingTable spinnaker_routing_table;
 
 	std::set<HMF::Coordinate::HICANNOnDNC> highspeed_hicanns;
+	std::set<HMF::Coordinate::HICANNOnDNC> blacklisted_hicanns;
 
 	FPGA() {}
 
@@ -179,6 +185,9 @@ private:
 		if (version >= 3) {
 			ar & make_nvp("highspeed_hicanns", highspeed_hicanns);
 		}
+		if (version >= 4) {
+			ar & make_nvp("blacklisted_hicanns", blacklisted_hicanns);
+		}
 	}
 
 public:
@@ -191,4 +200,4 @@ public:
 
 #include "sthal/macros_undef.h"
 
-BOOST_CLASS_VERSION(sthal::FPGA, 3)
+BOOST_CLASS_VERSION(sthal::FPGA, 4)

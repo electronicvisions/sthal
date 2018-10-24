@@ -35,11 +35,16 @@ void ESSHardwareDatabase::freeHandle()
 	mESS.reset();
 }
 
-ESSHardwareDatabase::fpga_handle_t
-ESSHardwareDatabase::get_fpga_handle(const global_fpga_coord & fpga,
-		const std::vector<hicann_coord> & hicanns) const
+ESSHardwareDatabase::fpga_handle_t ESSHardwareDatabase::get_fpga_handle(
+    const global_fpga_coord& fpga,
+    const Wafer::fpga_t& /*fpga_data*/,
+    const std::vector<Wafer::hicann_t>& hicanns) const
 {
-	return fpga_handle_t(new ::HMF::Handle::FPGAEss(fpga, mESS, hicanns));
+	std::vector<hicann_coord> hicann_coords;
+	for (auto hicann : hicanns) {
+		hicann_coords.push_back(hicann->index());
+	}
+	return fpga_handle_t(new ::HMF::Handle::FPGAEss(fpga, mESS, hicann_coords));
 }
 
 bool ESSHardwareDatabase::has_adc_of_hicann(

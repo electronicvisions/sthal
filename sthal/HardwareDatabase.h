@@ -7,6 +7,7 @@
 #include "hal/Coordinate/HMFGeometry.h"
 
 #include "sthal/ADCConfig.h"
+#include "sthal/Wafer.h"
 
 namespace HMF {
 namespace Handle {
@@ -32,8 +33,9 @@ public:
 	virtual ~HardwareDatabase();
 
 	virtual fpga_handle_t get_fpga_handle(
-				const global_fpga_coord & fpga,
-				const std::vector<hicann_coord> & hicanns) const = 0;
+	    const global_fpga_coord& fpga,
+	    const Wafer::fpga_t& fpga_data,
+	    std::vector<Wafer::hicann_t> const& hicanns) const = 0;
 
 	virtual bool has_adc_of_hicann(
 		const global_hicann_coord& hicann, const analog_coord& analog) const = 0;

@@ -6,8 +6,6 @@
 #include "sthal/MagicHardwareDatabase.h"
 #include "sthal/YAMLHardwareDatabase.h"
 
-using namespace HMF::Coordinate;
-
 namespace sthal {
 
 // Just instantiating classes to ensure, that they are not pure virtual
@@ -25,7 +23,7 @@ TEST(Database, YAMLHardwareDatabase)
 #if defined(HAVE_ESS)
 TEST(Databases, ESSHardwareDatabase)
 {
-	ESSHardwareDatabase db(Wafer(), "/dummy/p4th");
+	ESSHardwareDatabase db(halco::hicann::v2::Wafer(), "/dummy/p4th");
 }
 #endif
 }

@@ -18,6 +18,9 @@ FPGA::FPGA(fpga_coord const& fpga,
 	spinnaker_upsample_count(1),
 	spinnaker_downsample_count(1)
 {
+	for (auto h : iter_all<HICANNOnDNC>()) {
+		highspeed_hicanns.insert(h);
+	}
 }
 
 void FPGA::add_hicann(const hicann_coord & h_local, const hicann_t & hicann)
@@ -245,6 +248,20 @@ void FPGA::setSpinnakerRoutingTable(HMF::FPGA::SpinnRoutingTable const t)
 HMF::FPGA::SpinnRoutingTable FPGA::getSpinnakerRoutingTable() const
 {
 	return spinnaker_routing_table;
+}
+
+void FPGA::setHighspeed(const HMF::Coordinate::HICANNOnDNC& highspeed_hicann, bool use_hs)
+{
+	if (use_hs) {
+		highspeed_hicanns.insert(highspeed_hicann);
+	} else {
+		highspeed_hicanns.erase(highspeed_hicann);
+	}
+}
+
+bool FPGA::getHighspeed(const HMF::Coordinate::HICANNOnDNC& highspeed_hicann) const
+{
+	return highspeed_hicanns.count(highspeed_hicann);
 }
 
 } // end namespace sthal

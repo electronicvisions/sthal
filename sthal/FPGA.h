@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/serialization/shared_ptr.hpp>
+#include <boost/serialization/set.hpp>
 #ifndef PYPLUSPLUS
 #include <unordered_map>
 #endif // !PYPLUSPLUS
@@ -111,6 +112,11 @@ public:
 	void setSpinnakerRoutingTable(HMF::FPGA::SpinnRoutingTable const);
 	HMF::FPGA::SpinnRoutingTable getSpinnakerRoutingTable() const;
 
+	/// use highspeed links for given HICANN
+	void setHighspeed(const HMF::Coordinate::HICANNOnDNC& highspeed_hicann, bool use_hs);
+	/// get if highspeed links are used
+	bool getHighspeed(const HMF::Coordinate::HICANNOnDNC& highspeed_hicann) const;
+
 private:
 	fpga_coord mCoordinate;
 	std::array<DNC, dnc_coord::size> mDNCs;
@@ -141,6 +147,8 @@ private:
 	// routing table (spinnaker address <=> pulse address)
 	HMF::FPGA::SpinnRoutingTable spinnaker_routing_table;
 
+	std::set<HMF::Coordinate::HICANNOnDNC> highspeed_hicanns;
+
 	FPGA() {}
 
 	friend class boost::serialization::access;
@@ -168,6 +176,9 @@ private:
 			   & make_nvp("spinnaker_downsample_count", spinnaker_downsample_count)
 			   & make_nvp("spinnaker_routing_table", spinnaker_routing_table);
 		}
+		if (version >= 3) {
+			ar & make_nvp("highspeed_hicanns", highspeed_hicanns);
+		}
 	}
 
 public:
@@ -180,4 +191,4 @@ public:
 
 #include "sthal/macros_undef.h"
 
-BOOST_CLASS_VERSION(sthal::FPGA, 2)
+BOOST_CLASS_VERSION(sthal::FPGA, 3)

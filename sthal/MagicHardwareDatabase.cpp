@@ -17,11 +17,12 @@ MagicHardwareDatabase::MagicHardwareDatabase()
 	mDatabase = database;
 }
 
-MagicHardwareDatabase::fpga_handle_t
-MagicHardwareDatabase::get_fpga_handle(const global_fpga_coord & fpga,
-		const std::vector<hicann_coord> & hicanns) const
+MagicHardwareDatabase::fpga_handle_t MagicHardwareDatabase::get_fpga_handle(
+    const global_fpga_coord& fpga,
+    const Wafer::fpga_t& fpga_data,
+    std::vector<Wafer::hicann_t> const& hicanns) const
 {
-	return mDatabase->get_fpga_handle(fpga, hicanns);
+	return mDatabase->get_fpga_handle(fpga, fpga_data, hicanns);
 }
 
 bool MagicHardwareDatabase::has_adc_of_hicann(

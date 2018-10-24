@@ -75,9 +75,10 @@ ADCConfig YAMLHardwareDatabase::get_adc_of_hicann(const global_hicann_coord& hic
 	return config;
 }
 
-YAMLHardwareDatabase::fpga_handle_t
-    YAMLHardwareDatabase::get_fpga_handle(const global_fpga_coord& fpga,
-                                          const std::vector<hicann_coord>& hicanns) const
+YAMLHardwareDatabase::fpga_handle_t YAMLHardwareDatabase::get_fpga_handle(
+    const global_fpga_coord& fpga,
+    const Wafer::fpga_t& fpga_data,
+    const std::vector<Wafer::hicann_t>& hicanns) const
 {
 	const WaferEntry& wafer = get_wafer(fpga.toWafer());
 
@@ -86,9 +87,9 @@ YAMLHardwareDatabase::fpga_handle_t
 		throw HardwareDatabaseKeyError("Couldn't find FPGA in database; key =", fpga);
 	}
 	std::set<DNCOnFPGA> dncs;
-	for (auto hicann_local : hicanns) {
-		HICANNGlobal hicann(hicann_local, fpga.toWafer());
-		dncs.insert(hicann.toDNCOnFPGA());
+	for (auto hicann : hicanns) {
+		HICANNGlobal hicann_g(hicann->index(), fpga.toWafer());
+		dncs.insert(hicann_g.toDNCOnFPGA());
 	}
 	if (dncs.size() > 1) {
 		throw std::runtime_error(
@@ -105,14 +106,22 @@ YAMLHardwareDatabase::fpga_handle_t
 		}
 	}
 
+	std::set<HICANNOnDNC> highspeed_hicanns;
 	for (auto hicann : hicanns) {
-		if (available_hicanns.find(hicann.toHICANNOnDNC()) == available_hicanns.end()) {
-			throw HardwareDatabaseKeyError("Requested hicann is not available on this FPGA, key =",
-			                               hicann);
+		auto const hicann_on_dnc = hicann->index().toHICANNOnDNC();
+		if (available_hicanns.find(hicann_on_dnc) == available_hicanns.end()) {
+			throw HardwareDatabaseKeyError(
+			    "Requested hicann is not available on this FPGA, key =", hicann->index());
+		}
+	}
+	for (auto hicann_on_dnc : available_hicanns) {
+		if (fpga_data->getHighspeed(hicann_on_dnc)) {
+			highspeed_hicanns.insert(hicann_on_dnc);
 		}
 	}
 
 	::HMF::Handle::FPGAHw::HandleParameter handleparam{fpga, it->second.ip, dnc, available_hicanns,
+	                                                   highspeed_hicanns,
 	                                                   wafer.setup_type, wafer.macu};
 	return fpga_handle_t(new ::HMF::Handle::FPGAHw(handleparam));
 }

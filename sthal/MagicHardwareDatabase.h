@@ -12,8 +12,9 @@ public:
 	MagicHardwareDatabase();
 
 	virtual fpga_handle_t get_fpga_handle(
-				const global_fpga_coord & fpga,
-				const std::vector<hicann_coord> & hicanns) const PYPP_OVERRIDE;
+	    const global_fpga_coord& fpga,
+	    const Wafer::fpga_t& fpga_data,
+	    std::vector<Wafer::hicann_t> const& hicanns) const PYPP_OVERRIDE;
 
 	virtual bool has_adc_of_hicann(
 		const global_hicann_coord& hicann, const analog_coord& analog) const PYPP_OVERRIDE;

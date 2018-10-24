@@ -231,13 +231,20 @@ void Wafer::connect(const HardwareDatabase & db)
 		if (!mFPGAHandle[coord])
 		{
 			FPGAGlobal const fpga_global{coord, mWafer};
-			auto hicanns = mFPGA[coord]->getAllocatedHICANNs();
-			mFPGAHandle[coord] = db.get_fpga_handle(fpga_global, hicanns);
+			auto hicann_coords = mFPGA[coord]->getAllocatedHICANNs();
+			std::vector<hicann_t> hicanns;
+			for (auto hicann : hicann_coords) {
+				hicanns.push_back(mHICANN.at(hicann.toEnum()));
+			}
+
+			mFPGAHandle[coord] = db.get_fpga_handle(fpga_global, mFPGA[coord], hicanns);
 			// multi fpga experiment
 			if (num_fpgas > 1 && !mForceListenLocal) {
 				mFPGAHandle.at(coord)->setListenGlobalMode(true);
 			}
-			LOG4CXX_DEBUG(logger, "connected to FPGA: " << fpga_global << " using HICANNS " << printHICANNS(hicanns));
+			LOG4CXX_DEBUG(
+			    logger, "connected to FPGA: " << fpga_global << " using HICANNS "
+			                                  << printHICANNS(hicann_coords));
 		}
 	}
 

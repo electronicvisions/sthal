@@ -212,7 +212,7 @@ def main():
         slurm_cmd = [SLURM_CMD]
         slurm_cmd += slurm_opt[1:]
         slurm_cmd += [
-            '-p', 'cubic',
+            '-p', 'cube',
             '--gres={}'.format(iboard_res),
             '-L', license]
         slurm_cmd += ['--']

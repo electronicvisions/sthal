@@ -93,6 +93,7 @@ setuptype: CuBeSeTuP
 ---
 wafer: 20
 setuptype: BSSWafer
+macu: 0.0.0.0
 """
         db = pysthal.YAMLHardwareDatabase()
         with tempfile.NamedTemporaryFile() as f:
@@ -145,14 +146,30 @@ macu: 192.168.5.3
 ---
 wafer: 1
 setuptype: bsswafer
+---
+wafer: 2
+setuptype: cubesetup
 """
         db = pysthal.YAMLHardwareDatabase()
         with tempfile.NamedTemporaryFile() as f:
             f.write(yaml)
             f.flush()
+            self.assertRaises(RuntimeError, db.load, f.name)
+        yaml = """
+---
+wafer: 0
+setuptype: bsswafer
+macu: 192.168.5.3
+---
+wafer: 2
+setuptype: cubesetup
+"""
+        with tempfile.NamedTemporaryFile() as f:
+            f.write(yaml)
+            f.flush()
             db.load(f.name)
         self.assertEqual(IPv4.from_string("192.168.5.3"), db.get_macu(Wafer(0)))
-        self.assertEqual(IPv4(), db.get_macu(Wafer(1)))
+        self.assertEqual(IPv4(), db.get_macu(Wafer(2)))
 
     def test_MagicHardwareDatabase(self):
         """
@@ -437,6 +454,7 @@ fpgas:
 ---
 wafer: 20
 setuptype: BSSWafer
+macu: 0.0.0.0
 fpgas:
   - fpga: 0
     ip: 192.168.1.1

@@ -8,6 +8,7 @@ setuptype: cubesetup
 ---
 wafer: 1339
 setuptype: bsswafer
+macu: 0.0.0.0
 fpgas:
   - fpga: 0
     ip: 192.168.21.1

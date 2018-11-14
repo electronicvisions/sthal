@@ -56,6 +56,9 @@ if __name__ == "__main__":
     group.add_argument(
         '-f', "--config_fpga_only", action="store_true")
     parser.add_argument("--freq", type=float, default=125e6)
+
+    parser.add_argument("--defects_path", help="path to defect data (needs pyredman)")
+
     add_default_coordinate_options(parser)
     add_fpga_coordinate_options(parser)
     add_logger_options(parser)
@@ -85,10 +88,41 @@ if __name__ == "__main__":
     print " ", DNC
     print " ", HICANN
 
+    blacklisted_hicanns = []
+    jtag_hicanns = []
+
+    if args.defects_path:
+        from pyredman import load
+        redman_wafer = load.WaferWithBackend(args.defects_path, WAFER)
+
+        for h in C.iter_all(C.HICANNOnWafer):
+            if not redman_wafer.has(h):
+                blacklisted_hicanns.append(h)
+
+        for f in C.iter_all(C.FPGAOnWafer):
+            if redman_wafer.has(f):
+                redman_fpga = redman_wafer.get(f)
+                for h_hs in C.iter_all(C.HICANNOnHS):
+                    if not redman_fpga.hicanns().has(h_hs):
+                        jtag_hicanns.append(h_hs.toHICANNOnDNC().toHICANNOnWafer(f.toDNCOnWafer()))
+            else:
+                for h_dnc in C.iter_all(C.HICANNOnDNC):
+                    blacklisted_hicanns.append(h_dnc.toHICANNOnWafer(f.toDNCOnWafer()))
+
     w = pysthal.Wafer(WAFER)
     w.commonFPGASettings().setPLL(args.freq)
 
     for hicann_on_dnc in C.iter_all(C.HICANNOnDNC):
+
+        if hicann_on_dnc.toHICANNOnWafer(DNC) in blacklisted_hicanns:
+            print "not initing blacklisted", hicann_on_dnc.toHICANNOnWafer(DNC)
+            w[DNC.toFPGAOnWafer()].setBlacklisted(hicann_on_dnc, True)
+            continue
+
+        if hicann_on_dnc.toHICANNOnWafer(DNC) in jtag_hicanns:
+            print "disabling highspeed for", hicann_on_dnc.toHICANNOnWafer(DNC)
+            w[DNC.toFPGAOnWafer()].setHighspeed(hicann_on_dnc, False)
+
         h = w[hicann_on_dnc.toHICANNOnWafer(DNC)]
         if args.zero_fg:
             set_floating_gate_to_zero(h)

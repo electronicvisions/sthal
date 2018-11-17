@@ -46,6 +46,10 @@ def set_floating_gate_to_zero(hicann):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description=__doc__, conflict_handler='resolve')
+    parser.add_argument('--wafer', type=int, required=True,
+                        help="Wafer enum on which reticles are to be initialized")
+    parser.add_argument('--fpga', type=int, required=True, nargs='+',
+                        help="FPGAOnWafer enum(s) for which reticles are to be initialized")
     parser.add_argument(
         '--hwdb', type=str, default=None,
         help="full path to hardware database")
@@ -59,34 +63,16 @@ if __name__ == "__main__":
 
     parser.add_argument("--defects_path", help="path to defect data (needs pyredman)")
 
-    add_default_coordinate_options(parser)
-    add_fpga_coordinate_options(parser)
     add_logger_options(parser)
 
     args = parser.parse_args()
 
-    WAFER = args.wafer
-    HICANN = args.hicann
-    DNC = args.dnc
+    WAFER = C.Wafer(args.wafer)
 
     settings = pysthal.Settings.get()
     if args.hwdb:
         settings.yaml_hardware_database_path = args.hwdb
         print "using non-default hardware database {}".format(args.hwdb)
-
-    if WAFER is None or not ((HICANN is None) ^ (DNC is None)):
-        print parser.print_help()
-        exit(1)
-
-    if DNC is None:
-        DNC = HICANN.toDNCOnWafer()
-    else:
-        HICANN = next(C.iter_all(C.HICANNOnDNC))
-
-    print "USING:"
-    print " ", WAFER
-    print " ", DNC
-    print " ", HICANN
 
     blacklisted_hicanns = []
     jtag_hicanns = []
@@ -112,26 +98,32 @@ if __name__ == "__main__":
     w = pysthal.Wafer(WAFER)
     w.commonFPGASettings().setPLL(args.freq)
 
-    for hicann_on_dnc in C.iter_all(C.HICANNOnDNC):
+    for fpga in [C.FPGAOnWafer(C.Enum(f)) for f in args.fpga]:
 
-        if hicann_on_dnc.toHICANNOnWafer(DNC) in blacklisted_hicanns:
-            print "not initing blacklisted", hicann_on_dnc.toHICANNOnWafer(DNC)
-            w[DNC.toFPGAOnWafer()].setBlacklisted(hicann_on_dnc, True)
-            continue
+        DNC = fpga.toDNCOnWafer()
 
-        if hicann_on_dnc.toHICANNOnWafer(DNC) in jtag_hicanns:
-            print "disabling highspeed for", hicann_on_dnc.toHICANNOnWafer(DNC)
-            w[DNC.toFPGAOnWafer()].setHighspeed(hicann_on_dnc, False)
+        for hicann_on_dnc in C.iter_all(C.HICANNOnDNC):
 
-        h = w[hicann_on_dnc.toHICANNOnWafer(DNC)]
-        if args.zero_fg:
-            set_floating_gate_to_zero(h)
+            if hicann_on_dnc.toHICANNOnWafer(DNC) in blacklisted_hicanns:
+                print "not initing blacklisted", hicann_on_dnc.toHICANNOnWafer(DNC)
+                w[fpga].setBlacklisted(hicann_on_dnc, True)
+                continue
+
+            if hicann_on_dnc.toHICANNOnWafer(DNC) in jtag_hicanns:
+                print "disabling highspeed for", hicann_on_dnc.toHICANNOnWafer(DNC)
+                w[fpga].setHighspeed(hicann_on_dnc, False)
+
+            h = w[hicann_on_dnc.toHICANNOnWafer(DNC)]
+
+            if args.zero_fg:
+                set_floating_gate_to_zero(h)
 
     w.connect(pysthal.MagicHardwareDatabase())
 
     if not args.config_fpga_only:
-        configurator = pysthal.ParallelHICANNv4Configurator()  # Works also on v2
+        w.configure() # use default configuration to allow for multithreading
     else:
         configurator = ConfigFPGAOnlyHICANNConfigurator()
+        w.configure(configurator)
 
-    w.configure(configurator)
+

@@ -5,6 +5,8 @@
 #include <boost/serialization/shared_ptr.hpp>
 #include "boost/serialization/array.h"
 
+#include "log4cxx/provisionnode.h"
+
 #include "hal/Handle/FPGA.h"
 #include "hal/Handle/HICANN.h"
 
@@ -168,6 +170,8 @@ private:
 	}
 
 	friend std::ostream& operator<<(std::ostream& out, Wafer const& obj);
+
+	static log4cxx::LoggerPtr getTimeLogger();
 };
 
 } // end namespace sthal

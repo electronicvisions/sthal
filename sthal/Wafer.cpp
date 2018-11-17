@@ -57,6 +57,12 @@ namespace sthal {
 static log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger("sthal.wafer");
 static log4cxx::LoggerPtr plogger = log4cxx::Logger::getLogger("progress.sthal");
 
+log4cxx::LoggerPtr Wafer::getTimeLogger()
+{
+	static log4cxx::LoggerPtr _logger = log4cxx::Logger::getLogger("sthal.wafer.Time");
+	return _logger;
+}
+
 class DeParallelizeForPython {
 private:
 	size_t const m_orig_num_threads;
@@ -264,6 +270,7 @@ void Wafer::configure() {
 
 void Wafer::configure(HICANNConfigurator & configurator)
 {
+	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 	LOG4CXX_DEBUG(plogger, "Configure hardware");
 
 	/* Deactivating OpenMP-based parallelization for Python-based instances of
@@ -437,6 +444,10 @@ void Wafer::configure(HICANNConfigurator & configurator)
 		check_fpga_handle(fpga_handle, fpga);
 		configurator.disable_global(fpga_handle);
 	}
+
+	LOG4CXX_DEBUG(getTimeLogger(), short_format(index())
+		      << ": configure took " << t.get_ms()
+		      << "ms");
 }
 
 void Wafer::start(ExperimentRunner & runner)

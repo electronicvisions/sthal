@@ -63,46 +63,6 @@ log4cxx::LoggerPtr Wafer::getTimeLogger()
 	return _logger;
 }
 
-class DeParallelizeForPython {
-private:
-	size_t const m_orig_num_threads;
-	bool const m_is_python_configurator;
-
-public:
-	DeParallelizeForPython(HICANNConfigurator& configurator) :
-		m_orig_num_threads(omp_get_max_threads()),
-		m_is_python_configurator(dynamic_cast<boost::python::detail::wrapper_base*>(&configurator))
-	{
-		if (m_is_python_configurator && (m_orig_num_threads > 1)) {
-			static bool already_printed = false;
-			if(!already_printed) {
-				already_printed = true;
-				LOG4CXX_WARN(logger, "OpenMP-parallel configuration not supported "
-							 "for configurators implemented in python. Reducing number "
-							 "of OpenMP threads from " << m_orig_num_threads << " to 1");
-			} else {
-				LOG4CXX_DEBUG(logger,
-				              "OpenMP-parallel configuration not supported "
-				              "for configurators implemented in python. Reducing number "
-				              "of OpenMP threads from "
-				                  << m_orig_num_threads << " to 1");
-			}
-			omp_set_num_threads(1);
-		} else {
-			LOG4CXX_DEBUG(logger, "Starting configuration of hardware using at most "
-				          << m_orig_num_threads << " OpenMP threads");
-		}
-	}
-
-	~DeParallelizeForPython() {
-		if (m_is_python_configurator && (m_orig_num_threads > 1)) {
-			LOG4CXX_DEBUG(logger, "Restoring number of OpenMP threads to " << m_orig_num_threads);
-			omp_set_num_threads(m_orig_num_threads);
-		}
-	}
-
-};
-
 Wafer::Wafer(const wafer_coord & w) :
 	mWafer(w),
 	mFPGA(),
@@ -281,7 +241,6 @@ void Wafer::configure(HICANNConfigurator & configurator)
 	 * code (or boost python code). The DeParallelizeForPython object will reduce
 	 * the thread count to 1 on construction and resets it to previous count on
 	 * destruction. */
-	DeParallelizeForPython parallel_scope(configurator);
 
 	auto* const parallel_configurator =
 	    dynamic_cast<ParallelHICANNv4Configurator*>(&configurator);

@@ -36,8 +36,9 @@ for ns in included_ns:
 
     for c in ns.classes(allow_empty=True):
         c.include()
-        if c.name.endswith("Configurator"):
+        if c.name.endswith("Configurator") or c.name=="ReadFloatingGates":
             list_of_configurators.append(c.name)
+            classes.add_omp_safe_virtual_functions(c, allow_empty=True)
         # propagate "explictness" to python :)
         c.constructors(lambda c: c.explicit == True, allow_empty=True).allow_implicit_conversion = False
 

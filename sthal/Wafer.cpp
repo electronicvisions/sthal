@@ -15,19 +15,18 @@ extern "C" {
 #include <omp.h>
 }
 
-#include "sthal/Wafer.h"
+#include "sthal/AnalogRecorder.h"
 #include "sthal/ConfigurationStages.h"
+#include "sthal/Defects.h"
 #include "sthal/ExperimentRunner.h"
-#include "sthal/HardwareDatabase.h"
+#include "sthal/FPGA.h"
 #include "sthal/HICANNConfigurator.h"
 #include "sthal/HICANNv4Configurator.h"
+#include "sthal/HardwareDatabase.h"
 #include "sthal/ParallelHICANNv4Configurator.h"
-#include "sthal/ParallelHICANNNoFGConfigurator.h"
 #include "sthal/Settings.h"
-#include "sthal/FPGA.h"
-#include "sthal/AnalogRecorder.h"
 #include "sthal/Timer.h"
-#include "sthal/Defects.h"
+#include "sthal/Wafer.h"
 
 #include "pythonic/enumerate.h"
 #include "pythonic/zip.h"

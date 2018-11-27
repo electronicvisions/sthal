@@ -89,6 +89,12 @@ public:
 
 	static log4cxx::LoggerPtr getLogger();
 	static log4cxx::LoggerPtr getTimeLogger();
+private:
+	// dummy serialization as the HICANNConfigurator class doesn't actually have any
+        // persistent data that needs to be serialized
+	friend class boost::serialization::access;
+	template <typename Archive>
+	void serialize(Archive& /* ar */, unsigned int const /* version */) {}
 };
 
 } // end namespace sthal

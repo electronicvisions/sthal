@@ -192,6 +192,8 @@ public:
 	/// DNC frequency, used to calculate spike timestamps
 	static const int dnc_freq_in_MHz;
 	static const double dnc_freq;
+	/// maximum number of events
+	static const double gbitlink_max_throughput;
 
 	friend bool operator==(FPGA const& a, FPGA const& b);
 	friend bool operator!=(FPGA const& a, FPGA const& b);

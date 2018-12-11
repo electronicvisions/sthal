@@ -193,6 +193,25 @@ void ExperimentRunner::receive_spikes(const fpga_list & fpgas, const fpga_handle
 				logger, "received " << total_events
 				<< " (" << (total_events - background_events)
 				<< ") spikes (not background) from FPGA: " << handle.coordinate());
+
+			size_t const max_total_events = this->m_run_time_in_us*1e-6 * FPGA::gbitlink_max_throughput;
+			for (auto hicann : fpga.getAllocatedHICANNs()) {
+				size_t n_spikes = 0;
+				for (auto link : iter_all<GbitLinkOnHICANN>()) {
+					n_spikes += fpga.getReceivedSpikes(hicann, link).size();
+				}
+
+				double const warn_threshold = 0.9;
+				if (n_spikes >= max_total_events * warn_threshold) {
+					LOG4CXX_WARN(
+					    logger, short_format(hicann)
+					                << ": number of received spikes " << n_spikes << " close (>= "
+					                << warn_threshold * 100 << " %) to saturation of "
+					                << max_total_events << " events (given a bandwidth of "
+					                << FPGA::gbitlink_max_throughput / 1e6 << " MEvent/s)");
+				}
+			}
+
 		}
 	}
 	LOG4CXX_INFO(getTimeLogger(), "receiving spikes from FPGAs took " << t.get_ms() << "ms");

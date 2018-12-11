@@ -9,6 +9,8 @@ namespace sthal {
 
 const int FPGA::dnc_freq_in_MHz = 250;
 const double FPGA::dnc_freq = 1e6 * dnc_freq_in_MHz;
+// 1Gbit/s, 2 spikes per 80 bits
+const double FPGA::gbitlink_max_throughput = 25e6;
 
 FPGA::FPGA(fpga_coord const& fpga,
 		boost::shared_ptr<FPGAShared> shared) :

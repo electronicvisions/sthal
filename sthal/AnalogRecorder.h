@@ -5,7 +5,7 @@
 #include "hal/Coordinate/HMFGeometry.h"
 #include "hal/ADC/Status.h"
 #include "hal/ADC/USBSerial.h"
-#include "HMF/ADC/ADCCalibration.h"
+#include "calibtic/HMF/ADC/ADCCalibration.h"
 
 namespace HMF {
 namespace ADC {

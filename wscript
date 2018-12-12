@@ -9,8 +9,7 @@ APPNAME='sthal'
 
 def depends(ctx):
     ctx('halbe')
-    ctx('calibtic', 'HMF')
-    ctx('calibtic', 'backends')
+    ctx('calibtic')
     ctx('logger')
     ctx('hwdb')
 

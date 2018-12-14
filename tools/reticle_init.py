@@ -88,8 +88,8 @@ if __name__ == "__main__":
         for f in C.iter_all(C.FPGAOnWafer):
             if redman_wafer.has(f):
                 redman_fpga = redman_wafer.get(f)
-                for h_hs in C.iter_all(C.HICANNOnHS):
-                    if not redman_fpga.hicanns().has(h_hs):
+                for h_hs in C.iter_all(C.HighspeedLinkOnDNC):
+                    if not redman_fpga.hslinks().has(h_hs):
                         jtag_hicanns.append(h_hs.toHICANNOnDNC().toHICANNOnWafer(f.toDNCOnWafer()))
             else:
                 for h_dnc in C.iter_all(C.HICANNOnDNC):

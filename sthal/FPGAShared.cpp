@@ -5,13 +5,12 @@
 
 namespace sthal {
 
-const uint16_t FPGAShared::fpga_hicann_delay_virtex;
-const uint16_t FPGAShared::fpga_hicann_delay_kintex;
+/// Default HICANN clock delay. Value according to measurements in #1820
+static const uint16_t fpga_hicann_delay_default = 25;
 
-FPGAShared::FPGAShared(bool is_kintex):
+FPGAShared::FPGAShared():
 	pll_freq(100e6),
-	fpga_hicann_delay(is_kintex ? fpga_hicann_delay_kintex :
-			fpga_hicann_delay_virtex)
+	fpga_hicann_delay(fpga_hicann_delay_default)
 {
 }
 

@@ -72,7 +72,7 @@ Wafer::Wafer(const wafer_coord & w) :
 	mADCChannels(),
 	mNumHICANNs(0),
 	mForceListenLocal(false),
-	mSharedSettings(new FPGAShared(w.isKintex())),
+	mSharedSettings(new FPGAShared()),
 	mWaferWithBackend(load_defects_backend(), mWafer)
 {
 }
@@ -146,7 +146,7 @@ void Wafer::allocate(const hicann_coord& c)
 		    mFPGA.begin(), mFPGA.end(),
 		    [](const boost::shared_ptr<FPGA>& f) { return f != nullptr; });
 		// allocate master fpga if more than one fpga is used
-		if (!mForceListenLocal && mWafer.isKintex() && (num_fpgas > 1)) {
+		if (!mForceListenLocal && (num_fpgas > 1)) {
 			::HMF::Coordinate::FPGAGlobal f{::HMF::Coordinate::FPGAOnWafer::Master,
 			                                mWafer};
 			auto& fpga = mFPGA[f.value()];

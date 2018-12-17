@@ -145,17 +145,7 @@ private:
 			// would be hard to fix, when loading.
 			// I assume that such archives almost shouldn't exists.
 			// If they should you would have to fix this somehow
-			if (mWafer.isKintex()) {
-				throw std::runtime_error(
-					"You are loading a old version of sthal and have used a "
-					"wafer > 2, which are now used for wafers with Kintex-7. "
-					"Loading such a wafer would be possible, but will "
-					"only be supported on request.");
-			}
-			std::array<fpga_t, 12> tmp;
-			ar & make_nvp("fpgas", tmp);
-			mFPGA.fill(fpga_t());
-			std::copy(tmp.begin(), tmp.end(), mFPGA.begin());
+			throw std::runtime_error("De-serialization of old StHal version (<2) not supported");
 		}
 		else {
 			ar & make_nvp("fpgas", mFPGA);

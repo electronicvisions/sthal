@@ -94,6 +94,7 @@ setuptype: CuBeSeTuP
 wafer: 20
 setuptype: BSSWafer
 macu: 0.0.0.0
+macuversion: 1
 """
         db = pysthal.YAMLHardwareDatabase()
         with tempfile.NamedTemporaryFile() as f:
@@ -143,6 +144,7 @@ hicanns:
 wafer: 0
 setuptype: bsswafer
 macu: 192.168.5.3
+macuversion: 1
 ---
 wafer: 1
 setuptype: bsswafer
@@ -160,6 +162,7 @@ setuptype: cubesetup
 wafer: 0
 setuptype: bsswafer
 macu: 192.168.5.3
+macuversion: 1
 ---
 wafer: 2
 setuptype: cubesetup
@@ -455,6 +458,7 @@ fpgas:
 wafer: 20
 setuptype: BSSWafer
 macu: 0.0.0.0
+macuversion: 1
 fpgas:
   - fpga: 0
     ip: 192.168.1.1

@@ -49,8 +49,11 @@ public:
 
 	/// Insert new Wafer into the database.
 	/// All entries for an existing wafer will be replaced by the new one
-	void add_wafer(wafer_coord wafer, HMF::Coordinate::SetupType type,
-	               ::HMF::Coordinate::IPv4 macu = ::HMF::Coordinate::IPv4());
+	void add_wafer(
+	    wafer_coord wafer,
+	    HMF::Coordinate::SetupType type,
+	    ::HMF::Coordinate::IPv4 macu = ::HMF::Coordinate::IPv4(),
+	    size_t macu_version = 0);
 
 	/// Insert an FPGA into the database
 	/// An existing FPGA will be replaced

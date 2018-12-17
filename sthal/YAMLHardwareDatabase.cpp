@@ -163,11 +163,13 @@ void YAMLHardwareDatabase::clear()
 	mData.clear();
 }
 
-void YAMLHardwareDatabase::add_wafer(wafer_coord wafer, SetupType type, ::HMF::Coordinate::IPv4 macu)
+void YAMLHardwareDatabase::add_wafer(
+    wafer_coord wafer, SetupType type, ::HMF::Coordinate::IPv4 macu, size_t macu_version)
 {
 	::hwdb4cpp::WaferEntry entry;
 	entry.setup_type = type;
 	entry.macu = macu;
+	entry.macu_version = macu_version;
 	mData.add_wafer_entry(wafer, entry);
 }
 

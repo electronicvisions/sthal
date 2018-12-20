@@ -17,7 +17,7 @@ import Coordinate as C
 REQUIRED_EXECUTABLES_ON_PATH = ["tests2", "reticle_init.py"]
 
 
-def start_jobs(wafer, fpga, skip_fg=False, zero_fg=False, freq=125e6, reservation=None):
+def start_jobs(wafer, fpga, skip_fg=False, zero_fg=False, freq=125e6, reservation=None, defects_path=""):
     ip = fpga // 12 * 32 + fpga % 12 + 1
 
     os.environ["SINGULARITYENV_LD_LIBRARY_PATH"] = os.environ["LD_LIBRARY_PATH"]
@@ -26,7 +26,7 @@ def start_jobs(wafer, fpga, skip_fg=False, zero_fg=False, freq=125e6, reservatio
     container_cmd = "singularity exec --app {} {}".format(os.environ["CONTAINER_APP_NMPM_SOFTWARE"],
                                                           os.environ["CONTAINER_IMAGE_NMPM_SOFTWARE"])
 
-    hs_cmd = "reticle_init.py --wafer {} --fpga {}".format(wafer, fpga)
+    hs_cmd = "reticle_init.py --wafer {} --fpga {} --defects_path {}".format(wafer, fpga, defects_path)
     if skip_fg:
         hs_cmd += " --config_fpga_only"
     if zero_fg:
@@ -133,6 +133,7 @@ def main():
     parser.add_argument("--reservation", help="name of slurm reservation",
                         default=None)
     parser.add_argument("--freq", type=float, default=125e6)
+    parser.add_argument("--defects_path", help="path to defect data (needs pyredman)")
     args = parser.parse_args()
 
     unmet_dependencies = [
@@ -149,7 +150,7 @@ def main():
 
     jobs = []
     for fpga in args.fpga:
-        jobs.append(start_jobs(args.wafer, fpga, args.skip_fg, args.zero_fg, args.freq, args.reservation))
+        jobs.append(start_jobs(args.wafer, fpga, args.skip_fg, args.zero_fg, args.freq, args.reservation, args.defects_path))
 
     all_jobs = sum([j for j in sum(jobs,tuple())], [])
 

@@ -61,7 +61,9 @@ if __name__ == "__main__":
         '-f', "--config_fpga_only", action="store_true")
     parser.add_argument("--freq", type=float, default=125e6)
 
-    parser.add_argument("--defects_path", help="path to defect data (needs pyredman)")
+    parser.add_argument("--defects_path",
+                        default="/wang/data/calibration/brainscales/default",
+                        help="path to defect data (needs pyredman)")
 
     add_logger_options(parser)
 

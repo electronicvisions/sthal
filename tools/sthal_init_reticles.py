@@ -133,7 +133,9 @@ def main():
     parser.add_argument("--reservation", help="name of slurm reservation",
                         default=None)
     parser.add_argument("--freq", type=float, default=125e6)
-    parser.add_argument("--defects_path", help="path to defect data (needs pyredman)")
+    parser.add_argument("--defects_path",
+                        default="/wang/data/calibration/brainscales/default",
+                        help="path to defect data (needs pyredman)")
     args = parser.parse_args()
 
     unmet_dependencies = [

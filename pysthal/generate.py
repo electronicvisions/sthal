@@ -28,12 +28,16 @@ for ns in already_exposed_ns:
 containers.extend_std_containers(mb)
 namespaces.include_default_copy_constructors(mb)
 
+list_of_configurators = []
+
 for ns in included_ns:
     ns.include()
     namespaces.extend_array_operators(ns)
 
     for c in ns.classes(allow_empty=True):
         c.include()
+        if c.name.endswith("Configurator"):
+            list_of_configurators.append(c.name)
         # propagate "explictness" to python :)
         c.constructors(lambda c: c.explicit == True, allow_empty=True).allow_implicit_conversion = False
 
@@ -103,6 +107,17 @@ for cls in ['ParallelHICANNv4Configurator']:
     for td in ns_sthal.class_(cls).typedefs(f):
         td.target_decl.include()
         td.include()
+
+for cls in list_of_configurators:
+    # in case the configurator is not a trivially constructed one, we need to
+    # pass the parameters through here
+    if cls not in ["HICANNReadoutConfigurator"]:
+        custom_create = 'def("__init__", boost::python::make_constructor(+[]() { return boost::make_shared<%s_wrapper>(); }))'%cls
+    elif cls == "HICANNReadoutConfigurator":
+        custom_create = 'def("__init__", boost::python::make_constructor(+[](sthal::Wafer& wafer, std::vector< ::HMF::Coordinate::HICANNOnWafer> read_hicanns) { return boost::make_shared<%s_wrapper>(wafer, read_hicanns); }))'%cls
+    c = ns_sthal.class_(cls)
+    c.add_registration_code(custom_create)
+
 
 
 # expose only public interfaces

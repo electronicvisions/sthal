@@ -33,6 +33,12 @@ public:
 	typedef boost::shared_ptr<sthal::HICANNData> hicann_data_t;
 
 	HICANNConfigurator();
+#ifndef PYPLUSPLUS
+template<typename T, typename... Ps>
+static boost::shared_ptr<HICANNConfigurator> create(Ps&... ps) {
+	return boost::shared_ptr<HICANNConfigurator>(new T(std::forward<Ps>(ps)...));
+}
+#endif
 
 	// ECM (2016-08-31): Some child classes DO throw, but (i.e. FIXME)
 	// boost::python::instance_holder::~instance_holder() is noexcept(true),

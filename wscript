@@ -17,14 +17,14 @@ def options(opt):
     opt.load('compiler_cxx')
     opt.load('boost')
     opt.load('gtest')
-    opt.load('documentation')
+    opt.load('doxygen')
 
 
 def configure(cfg):
     cfg.load('compiler_cxx')
     cfg.load('boost')
     cfg.load('gtest')
-    cfg.load('documentation')
+    cfg.load('doxygen')
 
     cfg.check_cxx(lib='rt', uselib_store='RT')
     cfg.check_cxx(lib='gomp', cxxflags='-fopenmp', linkflags='-fopenmp', uselib_store='OPENMP4STHAL')
@@ -204,4 +204,4 @@ def doc(dox):
     '''build documentation (doxygen)'''
     dox(features  = 'doxygen',
         doxyfile  = 'doc/doxyfile',
-        doxyinput = ['sthal'])
+        pars={ 'INPUT': dox.path.get_src().abspath() + '/sthal', })

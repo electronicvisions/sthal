@@ -26,11 +26,13 @@ def start_jobs(wafer, fpga, skip_fg=False, zero_fg=False, freq=125e6, reservatio
     container_cmd = "singularity exec --app {} {}".format(os.environ["CONTAINER_APP_NMPM_SOFTWARE"],
                                                           os.environ["CONTAINER_IMAGE_NMPM_SOFTWARE"])
 
-    hs_cmd = "reticle_init.py --wafer {} --fpga {} --defects_path {}".format(wafer, fpga, defects_path)
+    hs_cmd = "reticle_init.py --wafer {} --fpga {}".format(wafer, fpga)
     if skip_fg:
         hs_cmd += " --config_fpga_only"
     if zero_fg:
         hs_cmd += " --zero-floating-gate"
+    if defects_path:
+        hs_cmd += " --defects_path {}".format(defects_path)
 
     hs_cmd += " --freq {}".format(freq)
     jt_cmds = ["tests2 -bje 8 {} -jp 1700 -k7 -ip 192.168.{}.{} -m tm_hicann_sram_reset".format(h, wafer, ip)

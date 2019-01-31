@@ -38,7 +38,7 @@ def start_jobs(wafer, fpga, skip_fg=False, zero_fg=False, freq=125e6, reservatio
 
     logfile = 'high_speed_reticle_init_{:0>2}_{:0>2}.out'.format(wafer, fpga)
     hs_out = subprocess.check_output([
-        'sbatch', '-p', 'experiment',
+        'sbatch', '-p', 'calib',
         '--wmod', str(wafer),
         '--fpga-without-aout', str(fpga),
         '-o', logfile,
@@ -52,7 +52,7 @@ def start_jobs(wafer, fpga, skip_fg=False, zero_fg=False, freq=125e6, reservatio
     for h, jt_cmd in enumerate(jt_cmds):
         logfile = 'jtag_reticle_init_{:0>2}_{:0>2}_{:0>2}.out'.format(wafer, fpga, h)
         jt_out = subprocess.check_output([
-            'sbatch', '-p', 'experiment',
+            'sbatch', '-p', 'calib',
             '--wmod', str(wafer),
             '--fpga-without-aout', str(fpga),
             '-o', logfile,

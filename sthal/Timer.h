@@ -1,6 +1,11 @@
 #pragma once
 
 #include <chrono>
+#include <thread>
+extern "C" {
+#include <omp.h>
+}
+
 
 #include <log4cxx/logger.h>
 
@@ -35,6 +40,8 @@ public:
 		if (m_name != nullptr) {
 			LOG4CXX_TRACE(
 				get_logger(), "\t" << m_name
+				<< "\t" << omp_get_thread_num()
+				<< "\t" << std::this_thread::get_id()
 				<< "\t" << duration_cast<nanoseconds>(m_start.time_since_epoch()).count()
 				<< "\t" << duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count());
 		}

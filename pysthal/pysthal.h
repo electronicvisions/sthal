@@ -22,6 +22,8 @@
 #include "sthal/NoFGConfigurator.h"
 #include "sthal/NoResetNoFGConfigurator.h"
 #include "sthal/ParallelHICANNNoFGConfigurator.h"
+#include "sthal/ParallelHICANNNoResetNoFGConfigurator.h"
+#include "sthal/ParallelHICANNv4Configurator.h"
 #include "sthal/ProgrammAndReadFloatingGatesConfigurator.h"
 #include "sthal/VerifyConfigurator.h"
 #include "sthal/ReadRepeaterTestdataConfigurator.h"

@@ -28,6 +28,17 @@ namespace {
 
 typedef ParallelHICANNv4Configurator::row_list_t row_list_t;
 
+/// check if any of row4 on any block is essential for L1
+bool any_l1_row(::HMF::HICANN::FGRowOnFGBlock4 row4)
+{
+	for (auto row : row4) {
+		if (::HMF::HICANN::isPotentialL1Row(row) || ::HMF::HICANN::isPotentialFGRow(row)) {
+			return true;
+		}
+	}
+	return false;
+}
+
 row_list_t make_rows(size_t start, size_t offset)
 {
 	using namespace ::HMF::HICANN;
@@ -398,9 +409,19 @@ void ParallelHICANNv4Configurator::zero_fg(
 	                                &fgconfigs](::HMF::HICANN::FGRowOnFGBlock4 const& row) {
 		::HMF::HICANN::FGRow4 const row_data; // zeroed data
 		// write FGRow4 to all blocks
-		for (size_t i = 0; i != n_hicanns; ++i)
+		for (size_t i = 0; i != n_hicanns; ++i) {
+			if (!handles[i]->highspeed() &&
+			    !any_l1_row(row)) {
+				LOG4CXX_INFO(
+				    getLogger(), "Skipping FG rows " << row[0] << " " << row[1] << " " << row[2]
+				                                     << " " << row[3]
+				                                     << " not essential for L1 on non-highspeed "
+				                                     << short_format(handles[i]->coordinate()));
+				continue;
+			}
 			::HMF::HICANN::set_fg_row_values(
 				*handles[i], row, row_data, fgconfigs[i].writeDown, /* blocking */ false);
+		}
 		// wait for fg controller to finish
 		for (size_t i = 0; i != n_hicanns; ++i)
 			::HMF::HICANN::wait_fg(*handles[i]);
@@ -475,6 +496,15 @@ void ParallelHICANNv4Configurator::program_normal(
 					<< " (" << n_hicanns << " HICANNs in total)");
 				if ((r < rows[i].size()) && (pass < maxProgrammingPasses[i])) {
 					auto row = rows[i][r];
+					if (!handles[i]->highspeed() &&
+					    !any_l1_row(row)) {
+						LOG4CXX_INFO(
+						    getLogger(), "Skipping FG rows "
+						                     << row[0] << " " << row[1] << " " << row[2] << " "
+						                     << row[3] << " not essential for L1 on non-highspeed "
+						                     << short_format(handles[i]->coordinate()));
+						continue;
+					}
 					// row in list...
 					LOG4CXX_DEBUG(getLogger(), "FG: writing HICANN " << i);
 					const FloatingGates& fg = hicanns[i]->floating_gates;
@@ -546,6 +576,15 @@ void ParallelHICANNv4Configurator::program_high(
 				<< " (" << n_hicanns << " HICANNs in total)");
 			if (r < rows[i].size()) {
 				auto row = rows[i][r];
+				if (!handles[i]->highspeed() &&
+				    !any_l1_row(row)) {
+					LOG4CXX_INFO(
+					    getLogger(), "Skipping FG rows "
+					                     << row[0] << " " << row[1] << " " << row[2] << " "
+					                     << row[3] << " not essential for L1 on non-highspeed "
+					                     << short_format(handles[i]->coordinate()));
+					continue;
+				}
 				::HMF::HICANN::FGRow4 row_data{
 					{hicanns[i]->floating_gates[FGBlockOnHICANN(Enum(0))].getFGRow(row[0]),
 					 hicanns[i]->floating_gates[FGBlockOnHICANN(Enum(1))].getFGRow(row[1]),

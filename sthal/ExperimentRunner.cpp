@@ -56,7 +56,10 @@ void ExperimentRunner::run(const fpga_list & fpgas, const fpga_handle_list & han
 	send_spikes(fpgas, handles);
 	start_experiment(fpgas, handles);
 	receive_spikes(fpgas, handles);
-	LOG4CXX_INFO(getLogger(), "experiment run took " << t.get_ms() << "ms");
+	LOG4CXX_INFO(
+	    getLogger(), "execution took " << t.get_ms() << "ms"
+	                                   << " for an experiment run of" << run_time_in_s() * 1e3
+	                                   << "ms");
 }
 
 void ExperimentRunner::sort_spikes(fpga_list const& fpgas)

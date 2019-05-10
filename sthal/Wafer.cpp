@@ -25,6 +25,7 @@ extern "C" {
 #include "sthal/FPGA.h"
 #include "sthal/AnalogRecorder.h"
 #include "sthal/Timer.h"
+#include "sthal/Defects.h"
 
 #include "pythonic/enumerate.h"
 #include "pythonic/zip.h"
@@ -71,7 +72,8 @@ Wafer::Wafer(const wafer_coord & w) :
 	mADCChannels(),
 	mNumHICANNs(0),
 	mForceListenLocal(false),
-	mSharedSettings(new FPGAShared(w.isKintex()))
+	mSharedSettings(new FPGAShared(w.isKintex())),
+	mWaferWithBackend(load_defects_backend(), mWafer)
 {
 }
 
@@ -115,8 +117,17 @@ Wafer::get_hicann_handle(hicann_coord const& hicann)
 	return hh;
 }
 
-void Wafer::allocate(const hicann_coord & c)
+bool Wafer::has(hicann_coord const& hicann) const
 {
+	return mWaferWithBackend.has(hicann);
+}
+
+void Wafer::allocate(const hicann_coord& c)
+{
+	if (!has(c)) {
+		throw std::runtime_error(short_format(c) + " is not available");
+	}
+
 	if (!mHICANN[c.id()])
 	{
 		::HMF::Coordinate::HICANNGlobal hicann_global(c, mWafer);
@@ -192,6 +203,21 @@ void Wafer::connect(const HardwareDatabase & db)
 
 	const size_t num_fpgas = std::count_if(
 	    mFPGA.begin(), mFPGA.end(), [](const boost::shared_ptr<FPGA>& f) { return f != nullptr; });
+
+	for (auto fpga : mFPGA) {
+		if (!fpga) {
+			continue;
+		}
+		auto const defects_fpga = mWaferWithBackend.get(fpga->coordinate());
+		for (auto hicann : iter_all<HICANNOnDNC>()) {
+			if(mWaferWithBackend.hicanns()->has(hicann.toHICANNOnWafer(fpga->coordinate()))) {
+				fpga->setHighspeed(hicann, defects_fpga->hslinks()->has(hicann.toHighspeedLinkOnDNC()));
+			} else {
+				fpga->setBlacklisted(hicann, true);
+			}
+		}
+	}
+
 	for (auto coord : getAllocatedFpgaCoordinates() )
 	{
 		if (!mFPGAHandle[coord])

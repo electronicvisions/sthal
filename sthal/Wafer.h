@@ -13,6 +13,8 @@
 #include "sthal/HICANN.h"
 #include "sthal/Status.h"
 
+#include "redman/resources/Wafer.h"
+
 namespace sthal {
 
 class HardwareDatabase;
@@ -112,6 +114,8 @@ public:
 
 	void populate_adc_config(hicann_coord const& hicann, analog_coord const& analog);
 
+	bool has(const hicann_coord& hicann) const;
+
 private:
 	void allocate(const hicann_coord & hicann);
 
@@ -172,6 +176,8 @@ private:
 	friend std::ostream& operator<<(std::ostream& out, Wafer const& obj);
 
 	static log4cxx::LoggerPtr getTimeLogger();
+
+	redman::resources::WaferWithBackend mWaferWithBackend;
 };
 
 } // end namespace sthal

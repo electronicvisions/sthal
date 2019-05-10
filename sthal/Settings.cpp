@@ -42,6 +42,8 @@ Settings::CfgStages::CfgStages()
 Settings::Settings() :
 	calibtic_backend("xml"),
 	calibtic_host("/ley/data/adc-calib"),
+	defects_backend(getenv_or_default("STHAL_DEFECTS_BACKEND", "xml")),
+	defects_host(getenv_or_default("STHAL_DEFECTS_PATH", "/wang/data/calibration/brainscales/default")),
 	adc_calibtic_collection("adc2"),
 	yaml_hardware_database_path(
 		std::getenv("STHAL_HWDB_PATH") != nullptr

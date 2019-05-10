@@ -10,6 +10,7 @@ APPNAME='sthal'
 def depends(ctx):
     ctx('halbe')
     ctx('calibtic')
+    ctx('redman')
     ctx('logger')
     ctx('hwdb')
 
@@ -43,12 +44,13 @@ def build(bld):
             'halbe_container_inc',
             'halbe_handle_inc',
             'calibtic_inc',
+            'redman_inc',
             'hwdb4cpp_inc',
         ],
         export_includes = ['.'],
     )
 
-    sthal_post = ['calibtic_xml']
+    sthal_post = ['calibtic_xml', 'redman', 'redman_xml']
 
     # always re-check git version, user could have changed stuff at arbitrary times
     try:
@@ -92,6 +94,7 @@ def build(bld):
             'sthal_git_version.h',
             'hwdb4cpp',
             'TBB4STHAL',
+            'redman'
         ],
         post_task       = sthal_post,
         defines         = ['DATADIR="{}"'.format(datadir)],

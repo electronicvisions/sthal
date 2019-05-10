@@ -20,6 +20,9 @@ public:
 	std::string calibtic_backend; //>! backend: xml
 	std::string calibtic_host;	  //>! host (or path to folder containing xml files)
 
+	std::string defects_backend; //>! backend: xml
+	std::string defects_host;    //>! host (or path to folder containing xml files)
+
 	std::string adc_calibtic_collection; //>! collection to use for adc calibration
 
 	std::string yaml_hardware_database_path; //>! full path to the hardware database file

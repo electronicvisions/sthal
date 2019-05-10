@@ -72,51 +72,19 @@ if __name__ == "__main__":
     WAFER = C.Wafer(args.wafer)
 
     settings = pysthal.Settings.get()
+    settings.defects_host = args.defects_path
     if args.hwdb:
         settings.yaml_hardware_database_path = args.hwdb
         print "using non-default hardware database {}".format(args.hwdb)
-
-    blacklisted_hicanns = []
-    jtag_hicanns = []
-
-    if args.defects_path:
-        from pyredman import load
-        redman_wafer = load.WaferWithBackend(args.defects_path, WAFER)
-
-        for h in C.iter_all(C.HICANNOnWafer):
-            if not redman_wafer.has(h):
-                blacklisted_hicanns.append(h)
-
-        for f in C.iter_all(C.FPGAOnWafer):
-            if redman_wafer.has(f):
-                redman_fpga = redman_wafer.get(f)
-                for h_hs in C.iter_all(C.HighspeedLinkOnDNC):
-                    if not redman_fpga.hslinks().has(h_hs):
-                        jtag_hicanns.append(h_hs.toHICANNOnDNC().toHICANNOnWafer(f.toDNCOnWafer()))
-            else:
-                for h_dnc in C.iter_all(C.HICANNOnDNC):
-                    blacklisted_hicanns.append(h_dnc.toHICANNOnWafer(f.toDNCOnWafer()))
 
     w = pysthal.Wafer(WAFER)
     w.commonFPGASettings().setPLL(args.freq)
 
     for fpga in [C.FPGAOnWafer(C.Enum(f)) for f in args.fpga]:
-
         DNC = fpga.toDNCOnWafer()
-
         for hicann_on_dnc in C.iter_all(C.HICANNOnDNC):
-
-            if hicann_on_dnc.toHICANNOnWafer(DNC) in blacklisted_hicanns:
-                print "not initing blacklisted", hicann_on_dnc.toHICANNOnWafer(DNC)
-                w[fpga].setBlacklisted(hicann_on_dnc, True)
-                continue
-
-            if hicann_on_dnc.toHICANNOnWafer(DNC) in jtag_hicanns:
-                print "disabling highspeed for", hicann_on_dnc.toHICANNOnWafer(DNC)
-                w[fpga].setHighspeed(hicann_on_dnc, False)
-
-            h = w[hicann_on_dnc.toHICANNOnWafer(DNC)]
-
+            if w.has(hicann_on_dnc.toHICANNOnWafer(DNC)):
+                h = w[hicann_on_dnc.toHICANNOnWafer(DNC)]
             if args.zero_fg:
                 set_floating_gate_to_zero(h)
 

@@ -32,6 +32,8 @@ public:
 	typedef std::vector<hicann_data_t> hicann_datas_t;
 	typedef std::vector< ::HMF::HICANN::FGRowOnFGBlock4> row_list_t;
 	typedef std::vector<row_list_t> row_lists_t;
+	PYPP_INSTANTIATE(std::vector<hicann_handle_t>)
+	PYPP_INSTANTIATE(std::vector<hicann_data_t>)
 
 	/// If the smallest value of an FGRow is larger than limit, programm_high
 	/// is used to programm this line

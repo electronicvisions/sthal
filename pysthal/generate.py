@@ -122,6 +122,15 @@ for cls in list_of_configurators:
     c.add_registration_code(custom_create)
 
 
+# Rename some types manually
+c = mb.class_('::std::vector<boost::shared_ptr<HMF::Handle::HICANN>, std::allocator<boost::shared_ptr<HMF::Handle::HICANN> > >')
+c.alias = 'VectorHICANNHandle'
+c.include()
+
+c = mb.class_('::std::vector<boost::shared_ptr<sthal::HICANNData>, std::allocator<boost::shared_ptr<sthal::HICANNData> > >')
+c.alias = 'VectorHICANNData'
+c.include()
+
 
 # expose only public interfaces
 namespaces.exclude_by_access_type(mb, ['variables', 'calldefs', 'classes', 'typedefs'], 'private')

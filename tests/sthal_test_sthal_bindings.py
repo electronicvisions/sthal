@@ -120,6 +120,10 @@ class Test_PyhalbeBindings(PyhalbeTest):
         self.assertEqual(a.writeDown, b.writeDown)
         self.assertEqual(a, b)
 
+    def test_manual_type_renaming(self):
+        import pysthal
+        self.assertNotEqual(getattr(pysthal, 'VectorHICANNHandle', False), False)
+        self.assertNotEqual(getattr(pysthal, 'VectorHICANNData', False), False)
 
 if __name__ == '__main__':
     Test_PyhalbeBindings.main()

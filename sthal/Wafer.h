@@ -171,6 +171,9 @@ private:
 		{
 			ar & make_nvp("fpga_shared_settings", mSharedSettings);
 		}
+		if (version > 2) {
+			ar & make_nvp("wafer_with_backend", mWaferWithBackend);
+		}
 	}
 
 	friend std::ostream& operator<<(std::ostream& out, Wafer const& obj);
@@ -182,4 +185,4 @@ private:
 
 } // end namespace sthal
 
-BOOST_CLASS_VERSION(sthal::Wafer, (::HMF::Coordinate::FPGAOnWafer::size == 12 ? 1 : 2))
+BOOST_CLASS_VERSION(sthal::Wafer, 3)

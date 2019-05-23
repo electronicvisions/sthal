@@ -1,9 +1,6 @@
 #pragma once
 
 #include <boost/shared_ptr.hpp>
-#include <boost/serialization/nvp.hpp>
-#include <boost/serialization/shared_ptr.hpp>
-#include "boost/serialization/array.h"
 
 #include "log4cxx/provisionnode.h"
 
@@ -14,6 +11,12 @@
 #include "sthal/Status.h"
 
 #include "redman/resources/Wafer.h"
+
+namespace boost {
+namespace serialization {
+class access;
+} // serialization
+} // boost
 
 namespace sthal {
 
@@ -138,41 +141,7 @@ private:
 
 	friend class boost::serialization::access;
 	template<typename Archiver>
-	void serialize(Archiver & ar, unsigned int const version)
-	{
-		using boost::serialization::make_nvp;
-		ar & make_nvp("wafer", mWafer);
-		// When loading version 1 archives with array size != 12 special care is needed
-		// saving is handeled by the definition of the archive version
-		if (version < 2 && typename Archiver::is_loading()) {
-			// This version fixed the size change of FPGAOnWafer from 12 to
-			// 48 make the loading, for wafers with id > 2 this change
-			// would be hard to fix, when loading.
-			// I assume that such archives almost shouldn't exists.
-			// If they should you would have to fix this somehow
-			throw std::runtime_error("De-serialization of old StHal version (<2) not supported");
-		}
-		else {
-			ar & make_nvp("fpgas", mFPGA);
-		}
-		ar & make_nvp("hicanns", mHICANN)
-		   & make_nvp("adc_channels", mADCChannels)
-		   & make_nvp("num_hicanns", mNumHICANNs);
-		if (version == 0)
-		{
-			//mSharedSettings.reset(new FPGAShared());
-		}
-		else
-		{
-			ar & make_nvp("fpga_shared_settings", mSharedSettings);
-		}
-		if (version == 3) {
-			throw std::runtime_error("De-serialization of sthal::Wafer version 3 not supported");
-		}
-		if (version > 3) {
-			ar & make_nvp("defects", mDefects);
-		}
-	}
+	void serialize(Archiver & ar, unsigned int const version);
 
 	friend std::ostream& operator<<(std::ostream& out, Wafer const& obj);
 

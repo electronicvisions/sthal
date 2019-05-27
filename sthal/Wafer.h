@@ -145,6 +145,9 @@ private:
 
 	friend std::ostream& operator<<(std::ostream& out, Wafer const& obj);
 
+	friend bool operator==(Wafer const& a, Wafer const& b);
+	friend bool operator!=(Wafer const& a, Wafer const& b);
+
 	static log4cxx::LoggerPtr getTimeLogger();
 
 	defects_t mDefects;
@@ -153,3 +156,5 @@ private:
 } // end namespace sthal
 
 BOOST_CLASS_VERSION(sthal::Wafer, 4)
+BOOST_CLASS_TRACKING(sthal::Wafer, boost::serialization::track_always)
+

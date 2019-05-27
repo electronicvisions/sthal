@@ -2,6 +2,7 @@
 #include <boost/filesystem/fstream.hpp>
 #include <boost/archive/xml_oarchive.hpp>
 #include <boost/archive/xml_iarchive.hpp>
+#include <boost/serialization/weak_ptr.hpp>
 
 #include "sthal/HICANN.h"
 #include "sthal/FPGA.h"
@@ -30,7 +31,7 @@ static log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger("sthal.HICANN");
 
 namespace sthal {
 
-HICANN::HICANN()
+HICANN::HICANN() : mWafer(nullptr)
 {
 	// Enable membrane reset and firing
 	enable_firing();
@@ -47,14 +48,14 @@ HICANN::HICANN()
 	set_fg_speed_up_scaling(NORMAL);
 }
 
-HICANN::HICANN(const hicann_coord& hicann, const boost::shared_ptr<FPGA>& fpga)
+HICANN::HICANN(const hicann_coord& hicann, boost::shared_ptr<FPGA> const fpga)
     : HICANN()
 {
 	mCoordinate = hicann;
 	mFPGA = fpga;
 }
 
-HICANN::HICANN(const hicann_coord& hicann, const boost::shared_ptr<FPGA>& fpga, Wafer& wafer)
+HICANN::HICANN(const hicann_coord& hicann, boost::shared_ptr<FPGA> const fpga, Wafer* wafer)
     : HICANN(hicann, fpga)
 {
 	mWafer = wafer;
@@ -71,8 +72,28 @@ HICANN::hicann_coord const& HICANN::index() const
 
 bool operator==(const HICANN & a, const HICANN & b)
 {
-	return static_cast<const HICANNData &>(a) == static_cast<const HICANNData &>(b)
-		&& a.mADCConfig== b.mADCConfig;
+	// check sequence-of-optionals manually (due to bool-context)
+	for (auto [elem_a, elem_b] : pythonic::zip(a.mADCConfig, b.mADCConfig)) {
+		if (static_cast<bool>(elem_a) != static_cast<bool>(elem_b)) {
+			return false;
+		} else if (static_cast<bool>(elem_a) && (! ((*elem_a) == (*elem_b)))) {
+			return false;
+		}
+	}
+
+	return (static_cast<const HICANNData &>(a) == static_cast<const HICANNData &>(b))
+		&& (a.mCoordinate == b.mCoordinate)
+		// no recursion! TODO: remove cycles in data structures
+		// && ((a.mFPGA.expired() == b.mFPGA.expired()) && (!a.mFPGA.expired()) && (*(a.mFPGA.lock()) == *(b.mFPGA.lock()))) 
+		// && ((a.mWafer == b.mWafer) && (a.mWafer && ((*a.mWafer) == (*b.mWafer)))
+		&& (a.mVersion == b.mVersion)
+		&& (a.mMinorVersion == b.mMinorVersion)
+	;
+}
+
+bool operator!=(const HICANN & a, const HICANN & b)
+{
+	return !(a == b);
 }
 
 ADCConfig HICANN::getADCConfig(const ::HMF::Coordinate::AnalogOnHICANN & ii)
@@ -625,6 +646,10 @@ boost::shared_ptr<const FPGA> HICANN::fpga() const
 	throw std::runtime_error("Incomplete initialized HICANN has no FPGA");
 }
 
+bool HICANN::has_wafer() const {
+	return static_cast<bool>(mWafer);
+}
+
 Wafer& HICANN::wafer()
 {
 	if (mWafer) {
@@ -829,4 +854,23 @@ void HICANN::route(DNCMergerOnHICANN from,
 	}
 }
 
-} // end namespace sthalg
+template<typename Archiver>
+void HICANN::serialize(Archiver& ar, unsigned int const)
+{
+	using namespace boost::serialization;
+	ar & make_nvp("base", base_object<HICANNData>(*this))
+	   & make_nvp("coordinate", mCoordinate)
+	   & make_nvp("mFPGA", mFPGA)
+	   & make_nvp("mWafer", mWafer)
+	   //& make_nvp("mADCConfig", mADCConfig)
+	   & make_nvp("mVersion", mVersion)
+	   & make_nvp("mMinorVersion", mMinorVersion);
+}
+
+
+} // end namespace sthal
+
+BOOST_CLASS_EXPORT_IMPLEMENT(sthal::HICANN)
+
+#include "boost/serialization/serialization_helper.tcc"
+EXPLICIT_INSTANTIATE_BOOST_SERIALIZE(sthal::HICANN)

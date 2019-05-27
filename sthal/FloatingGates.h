@@ -1,5 +1,7 @@
 #pragma once
 
+#include <boost/serialization/vector.hpp>
+
 #include "hal/HICANN/FGControl.h"
 #include "hal/HICANN/FGStimulus.h"
 

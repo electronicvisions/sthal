@@ -2,6 +2,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/serialization/export.hpp>
 #include <boost/serialization/weak_ptr.hpp>
 
 #ifndef PYPLUSPLUS
@@ -39,11 +40,11 @@ public:
 	HICANN();
 	HICANN(
 	    const hicann_coord& hicann,
-	    const boost::shared_ptr<FPGA>& fpga);
+	    const boost::shared_ptr<FPGA> fpga);
 	HICANN(
 	    const hicann_coord& hicann,
-	    const boost::shared_ptr<FPGA>& fpga,
-	    Wafer& wafer);
+	    const boost::shared_ptr<FPGA> fpga,
+	    Wafer* wafer);
 	~HICANN();
 
 	hicann_coord const& index() const;
@@ -168,7 +169,10 @@ public:
 
 	// TODO: check that at least one repeater send 0 to each used mergertree output
 	// void check_repeater_locking();
+
+	/// Compare instances (does not recurse into wafer and fpga links to break the cycle)
 	friend bool operator==(const HICANN & a, const HICANN & b);
+	friend bool operator!=(const HICANN & a, const HICANN & b);
 
 	/// returns the number of denmems (including defect ones)
 	static size_t capacity();
@@ -221,12 +225,14 @@ public:
 	::HMF::Coordinate::NeuronOnHICANN find_neuron_in_analog_output(
 			analog_coord analog) const;
 
+	/// check if HICANN knows its wafer
+	bool has_wafer() const;
+
 private:
-	hicann_coord                  mCoordinate;
-	boost::weak_ptr<FPGA>		  mFPGA;
-#ifndef PYPLUSPLUS
-	boost::optional<Wafer&> mWafer;
-#endif
+	hicann_coord mCoordinate;
+	boost::weak_ptr<FPGA> mFPGA;
+	Wafer* mWafer;
+
 	typedef boost::shared_ptr<ADCConfig> aout_t;
 #ifndef PYPLUSPLUS
 	halco::common::typed_array<std::optional<aout_t>, analog_coord> mADCConfig;
@@ -245,15 +251,11 @@ private:
 	friend std::ostream& operator<<(std::ostream& os, const HICANN & h);
 
 	friend class boost::serialization::access;
-	template<typename Archiver>
-	void serialize(Archiver & ar, unsigned int const)
-	{
-		using namespace boost::serialization;
-		ar & make_nvp("base", base_object<HICANNData>(*this))
-		   & make_nvp("coordinate", mCoordinate)
-		   & make_nvp("mFPGA", mFPGA);
-		//   & make_nvp("analog_config", mADCConfig); // TODO think about it
-	}
+	template <class Archiver>
+	void serialize(Archiver & ar, unsigned int const version);
 };
 
 } // end namespace sthal
+
+BOOST_CLASS_EXPORT_KEY(sthal::HICANN)
+BOOST_CLASS_TRACKING(sthal::HICANN, boost::serialization::track_always)

@@ -64,7 +64,7 @@ for cls in ['SynapseProxy', 'SynapseRowProxy']:
     for var in c.variables():
         var.getter_call_policies = call_policies.return_internal_reference()
 
-for cls in ['Wafer', 'HICANN', 'HICANNData', 'Status', 'ADCChannel', 'Spike',
+for cls in ['Wafer', 'HICANN', 'HICANNData', 'DNC', 'FPGA', 'Status', 'ADCChannel', 'Spike',
             'SynapseArray', 'FGStimulus', 'FloatingGates', 'FGConfig']:
     c = ns_sthal.class_(cls)
     classes.add_pickle_suite(c)

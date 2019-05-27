@@ -31,7 +31,7 @@ public:
 	typedef std::vector<PulseEvent> pulse_event_container_type;
 	typedef ::HMF::FPGA::PulseEventContainer PulseEventContainer;
 
-	FPGA(fpga_coord const& fpga, boost::shared_ptr<FPGAShared> shared);
+	FPGA(fpga_coord const& fpga = fpga_coord(), boost::shared_ptr<FPGAShared> shared = boost::shared_ptr<FPGAShared>());
 
 	void add_hicann(const hicann_coord &, const hicann_t & );
 
@@ -155,8 +155,6 @@ private:
 	std::set<HMF::Coordinate::HICANNOnDNC> highspeed_hicanns;
 	std::set<HMF::Coordinate::HICANNOnDNC> blacklisted_hicanns;
 
-	FPGA() {}
-
 	friend class boost::serialization::access;
 	template<typename Archiver>
 	void serialize(Archiver & ar, unsigned int const version)
@@ -194,6 +192,9 @@ public:
 	/// DNC frequency, used to calculate spike timestamps
 	static const int dnc_freq_in_MHz;
 	static const double dnc_freq;
+
+	friend bool operator==(FPGA const& a, FPGA const& b);
+	friend bool operator!=(FPGA const& a, FPGA const& b);
 };
 
 } // end namespace sthal
@@ -201,3 +202,4 @@ public:
 #include "sthal/macros_undef.h"
 
 BOOST_CLASS_VERSION(sthal::FPGA, 4)
+BOOST_CLASS_TRACKING(sthal::FPGA, boost::serialization::track_always)

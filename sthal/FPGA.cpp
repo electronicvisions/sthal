@@ -278,4 +278,27 @@ bool FPGA::getBlacklisted(const HMF::Coordinate::HICANNOnDNC& blacklisted_hicann
 	return blacklisted_hicanns.count(blacklisted_hicann);
 }
 
+bool operator==(FPGA const& a, FPGA const& b)
+{
+	return (a.mCoordinate == b.mCoordinate)
+		&& (a.mDNCs == b.mDNCs)
+		&& (a.m_send_pulses == b.m_send_pulses)
+		&& (a.m_received_pulses == b.m_received_pulses)
+		&& (a.m_pending_send_pulses == b.m_pending_send_pulses)
+		&& ((static_cast<bool>(a.mSharedSettings) == static_cast<bool>(b.mSharedSettings)) &&
+			(static_cast<bool>(a.mSharedSettings) && ((*a.mSharedSettings) == (*b.mSharedSettings))))
+		&& (a.spinnaker_enable == b.spinnaker_enable)
+		&& (a.spinnaker_upsample_count == b.spinnaker_upsample_count)
+		&& (a.spinnaker_downsample_count == b.spinnaker_downsample_count)
+		&& (a.spinnaker_routing_table == b.spinnaker_routing_table)
+		&& (a.highspeed_hicanns == b.highspeed_hicanns)
+		&& (a.blacklisted_hicanns == b.blacklisted_hicanns)
+	;
+}
+
+bool operator!=(FPGA const& a, FPGA const& b)
+{
+	return !(a == b);
+}
+
 } // end namespace sthal

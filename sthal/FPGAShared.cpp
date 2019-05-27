@@ -46,8 +46,14 @@ uint16_t FPGAShared::getFPGAHICANNDelay() const
 
 bool operator==(const FPGAShared & a, const FPGAShared & b)
 {
-	return a.pll_freq          == b.pll_freq
-		&& a.fpga_hicann_delay == b.fpga_hicann_delay;
+	return (a.pll_freq          == b.pll_freq)
+		&& (a.fpga_hicann_delay == b.fpga_hicann_delay)
+	;
+}
+
+bool operator!=(const FPGAShared & a, const FPGAShared & b)
+{
+	return !(a == b);
 }
 
 } // end namespace sthal

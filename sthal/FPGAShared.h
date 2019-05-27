@@ -25,6 +25,7 @@ public:
 	uint16_t getFPGAHICANNDelay() const;
 
 	friend bool operator==(const FPGAShared & a, const FPGAShared & b);
+	friend bool operator!=(const FPGAShared & a, const FPGAShared & b);
 
 private:
 	/// pll frequency of the hicann, musst be 50.0e6, 100.0e6, 150.0e6, 200.0e6 or 250.0e6

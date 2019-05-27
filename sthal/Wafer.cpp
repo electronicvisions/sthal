@@ -152,7 +152,7 @@ void Wafer::allocate(const hicann_coord& c)
 		{
 			fpga.reset(new FPGA(f, mSharedSettings));
 		}
-		hicann.reset(new HICANN(hicann_global, fpga, *this));
+		hicann.reset(new HICANN(hicann_global, fpga, this));
 		fpga->add_hicann(hicann_global, hicann);
 		LOG4CXX_INFO(logger, "allocate HICANN: " << hicann_global);
 
@@ -717,6 +717,42 @@ void Wafer::serialize(Archiver & ar, unsigned int const version)
 	if (version > 3) {
 		ar& make_nvp("defects", mDefects);
 	}
+	if (version > 3) {
+		ar & make_nvp("wafer", mWafer);
+	}
+}
+
+bool operator==(Wafer const& a, Wafer const& b)
+{
+	// boost::shared_ptr does not support reasonable comparisons...
+	for (size_t i = 0; i < a.mFPGA.size(); i++) {
+		if (static_cast<bool>(a.mFPGA[i]) != static_cast<bool>(b.mFPGA[i])) {
+			return false;
+		} else if (static_cast<bool>(a.mFPGA[i]) && ((*a.mFPGA[i]) != (*b.mFPGA[i]))) {
+			return false;
+		}
+	}
+
+	for (size_t i = 0; i < a.mHICANN.size(); i++) {
+		if (static_cast<bool>(a.mHICANN[i]) != static_cast<bool>(b.mHICANN[i])) {
+			return false;
+		} else if (static_cast<bool>(a.mHICANN[i]) && ((*a.mHICANN[i]) != (*b.mHICANN[i]))) {
+			return false;
+		}
+	}
+	return (a.mWafer == b.mWafer)
+		&& (a.mADCChannels == b.mADCChannels)
+		&& (a.mNumHICANNs == b.mNumHICANNs)
+		&& ((static_cast<bool>(a.mSharedSettings) == static_cast<bool>(b.mSharedSettings)) &&
+			(static_cast<bool>(a.mSharedSettings) && ((*a.mSharedSettings) == (*b.mSharedSettings))))
+		// TODO: missing comparison operators
+		//&& (a.mWaferWithBackend == b.mWaferWithBackend)
+	;
+}
+
+bool operator!=(Wafer const& a, Wafer const& b)
+{
+	return !(a == b);
 }
 
 } // sthal

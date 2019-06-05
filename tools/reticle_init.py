@@ -78,6 +78,9 @@ if __name__ == "__main__":
         print "using non-default hardware database {}".format(args.hwdb)
 
     w = pysthal.Wafer(WAFER)
+    # initialization of reticles is independent so we don't need global operation mode if we
+    # have multiple reticles to init
+    w.force_listen_local(True)
     w.commonFPGASettings().setPLL(args.freq)
 
     for fpga in [C.FPGAOnWafer(C.Enum(f)) for f in args.fpga]:

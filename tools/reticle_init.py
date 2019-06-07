@@ -88,8 +88,8 @@ if __name__ == "__main__":
         for hicann_on_dnc in C.iter_all(C.HICANNOnDNC):
             if w.has(hicann_on_dnc.toHICANNOnWafer(DNC)):
                 h = w[hicann_on_dnc.toHICANNOnWafer(DNC)]
-            if args.zero_fg:
-                set_floating_gate_to_zero(h)
+                if args.zero_fg:
+                    set_floating_gate_to_zero(h)
 
     w.connect(pysthal.MagicHardwareDatabase())
 

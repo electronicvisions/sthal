@@ -39,6 +39,8 @@ public:
 	typedef boost::shared_ptr<sthal::FPGA>   fpga_t;
 	typedef boost::shared_ptr<sthal::HICANN> hicann_t;
 
+	typedef boost::shared_ptr<redman::resources::Wafer> defects_t;
+
 	Wafer(const wafer_coord & w = wafer_coord(0));
 
 	HICANN & operator[](const hicann_coord & hicann);
@@ -116,6 +118,9 @@ public:
 
 	bool has(const hicann_coord& hicann) const;
 
+	void drop_defects();
+	void set_defects(defects_t wafer);
+
 private:
 	void allocate(const hicann_coord & hicann);
 
@@ -161,8 +166,11 @@ private:
 		{
 			ar & make_nvp("fpga_shared_settings", mSharedSettings);
 		}
-		if (version > 2) {
-			ar & make_nvp("wafer_with_backend", mWaferWithBackend);
+		if (version == 3) {
+			throw std::runtime_error("De-serialization of sthal::Wafer version 3 not supported");
+		}
+		if (version > 3) {
+			ar & make_nvp("defects", mDefects);
 		}
 	}
 
@@ -170,9 +178,9 @@ private:
 
 	static log4cxx::LoggerPtr getTimeLogger();
 
-	redman::resources::WaferWithBackend mWaferWithBackend;
+	defects_t mDefects;
 };
 
 } // end namespace sthal
 
-BOOST_CLASS_VERSION(sthal::Wafer, 3)
+BOOST_CLASS_VERSION(sthal::Wafer, 4)

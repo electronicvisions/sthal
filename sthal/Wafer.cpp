@@ -73,7 +73,7 @@ Wafer::Wafer(const wafer_coord & w) :
 	mNumHICANNs(0),
 	mForceListenLocal(false),
 	mSharedSettings(new FPGAShared()),
-	mWaferWithBackend(load_defects_backend(), mWafer)
+	mDefects(load_resources_wafer(index()))
 {
 }
 
@@ -119,7 +119,19 @@ Wafer::get_hicann_handle(hicann_coord const& hicann)
 
 bool Wafer::has(hicann_coord const& hicann) const
 {
-	return mWaferWithBackend.has(hicann);
+	if (mDefects) {
+		return mDefects->has(hicann);
+	}
+	return true;
+}
+
+void Wafer::set_defects(defects_t wafer)
+{
+	mDefects = wafer;
+}
+
+void Wafer::drop_defects() {
+	mDefects.reset();
 }
 
 void Wafer::allocate(const hicann_coord& c)
@@ -204,16 +216,32 @@ void Wafer::connect(const HardwareDatabase & db)
 	const size_t num_fpgas = std::count_if(
 	    mFPGA.begin(), mFPGA.end(), [](const boost::shared_ptr<FPGA>& f) { return f != nullptr; });
 
-	for (auto fpga : mFPGA) {
-		if (!fpga) {
-			continue;
-		}
-		auto const defects_fpga = mWaferWithBackend.get(fpga->coordinate());
-		for (auto hicann : iter_all<HICANNOnDNC>()) {
-			if(mWaferWithBackend.hicanns()->has(hicann.toHICANNOnWafer(fpga->coordinate()))) {
-				fpga->setHighspeed(hicann, defects_fpga->hslinks()->has(hicann.toHighspeedLinkOnDNC()));
-			} else {
-				fpga->setBlacklisted(hicann, true);
+	if (mDefects) {
+		for (auto fpga : mFPGA) {
+			if (!fpga) {
+				continue;
+			}
+			auto const defects_fpga = mDefects->get(fpga->coordinate());
+			for (auto hicann : iter_all<HICANNOnDNC>()) {
+				auto const hicann_on_wafer = hicann.toHICANNOnWafer(fpga->coordinate());
+
+				bool const hs_user = fpga->getHighspeed(hicann);
+				bool const hs_defects = defects_fpga->hslinks()->has(hicann.toHighspeedLinkOnDNC());
+				if (hs_user != hs_defects) {
+					LOG4CXX_WARN(
+					    logger, "Overriding highspeed setting for " << short_format(hicann_on_wafer)
+					                                                << " to " << hs_defects);
+					fpga->setHighspeed(hicann, hs_defects);
+				}
+
+				bool const bl_user = fpga->getBlacklisted(hicann);
+				bool const bl_defects = !mDefects->hicanns()->has(hicann_on_wafer);
+				if (bl_user != bl_defects) {
+					LOG4CXX_WARN(
+					    logger, "Overriding blacklisting for " << short_format(hicann_on_wafer)
+					                                           << " to " << bl_defects);
+					fpga->setBlacklisted(hicann, bl_defects);
+				}
 			}
 		}
 	}

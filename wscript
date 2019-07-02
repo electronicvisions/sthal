@@ -50,8 +50,6 @@ def build(bld):
         export_includes = ['.'],
     )
 
-    sthal_post = ['calibtic_xml', 'redman', 'redman_xml']
-
     # always re-check git version, user could have changed stuff at arbitrary times
     try:
         cmd = [bld.env.get_flat('GIT'), 'describe', '--long', '--dirty', '--always', '--abbrev=32']
@@ -83,7 +81,7 @@ def build(bld):
 
     bld.shlib(
         target          = 'sthal',
-        features        = 'pyembed post_task',
+        features        = 'pyembed',
         source          = sthal_sources,
         export_includes = ['.'],
         install_path    = '${PREFIX}/lib',  # avoid lib/lib64 problems
@@ -96,7 +94,6 @@ def build(bld):
             'TBB4STHAL',
             'redman'
         ],
-        post_task       = sthal_post,
         defines         = ['DATADIR="{}"'.format(datadir)],
     )
 
@@ -149,14 +146,13 @@ def build(bld):
     if bld.env.build_python_bindings:
         bld(
                 target         = '_pysthal',
-                features       = 'cxx cxxshlib pypp pyembed pyext post_task',
+                features       = 'cxx cxxshlib pypp pyembed pyext',
                 script         = 'pysthal/generate.py',
                 gen_defines    = 'PYPLUSPLUS __STRICT_ANSI__',
                 defines        = 'PYBINDINGS',
                 headers        = 'pysthal/pysthal.h',
                 use            = ['sthal', 'pyhalbe', 'pyhwdb'],
                 install_path   = '${PREFIX}/lib',
-                post_task      = ['pysthal_tests'],
                 cxxflags       = [
                     '-Wno-unused-local-typedefs',
                     '-fvisibility=hidden',
@@ -165,9 +161,9 @@ def build(bld):
 
         bld(
                 target          = 'pysthal',
-                features        = 'py post_task',
+                features        = 'use py',
+                use             = 'sthal',
                 source          = bld.path.ant_glob('pysthal/pysthal/**/*.py'),
-                post_task       = ['_pysthal'],
                 install_from    = 'pysthal',
                 install_path    = '${PREFIX}/lib'
         )

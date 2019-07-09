@@ -12,6 +12,7 @@
 #include "sthal/ADCHwHandleFactory.h"
 #include "sthal/ADCRemoteHwHandleFactory.h"
 #include "sthal/HardwareDatabaseErrors.h"
+#include "sthal/Settings.h"
 
 static log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger("YAMLHardwareDAtabase");
 
@@ -122,9 +123,10 @@ YAMLHardwareDatabase::fpga_handle_t YAMLHardwareDatabase::get_fpga_handle(
 		}
 	}
 
+	auto const jtag_frequency = Settings::get().jtag_frequency;
 	::HMF::Handle::FPGAHw::HandleParameter handleparam{fpga, it->second.ip, dnc, available_hicanns,
 	                                                   highspeed_hicanns, usable_hicanns,
-	                                                   wafer.setup_type, wafer.macu};
+	                                                   wafer.setup_type, wafer.macu, jtag_frequency};
 	return fpga_handle_t(new ::HMF::Handle::FPGAHw(handleparam));
 }
 

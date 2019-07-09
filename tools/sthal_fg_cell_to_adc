@@ -51,6 +51,7 @@ if __name__ == "__main__":
     parser.add_argument('--dac_fg_left', type=int, default=1023, help="DAC value for left FG blocks")
     parser.add_argument('--dac_fg_right', type=int, default=1023, help="DAC value for right FG blocks")
     parser.add_argument('--hwdb', type=str, default=None, help="full path to hardware database")
+    parser.add_argument('--jtag_freq', type=int, default=None, help="JTAG TCK frequency in kHz")
     parser.add_argument('--dump', default=False, help="dump trace to file", action="store_true")
     parser.add_argument('--skip_fg', help='skip floating gate programming', action="store_true", default=False)
     add_default_coordinate_options(parser)
@@ -63,6 +64,8 @@ if __name__ == "__main__":
     WAFER = args.wafer
 
     settings = pysthal.Settings.get()
+    if args.jtag_freq:
+        settings.jtag_freq = C.JTAGFrequency(args.jtag_freq)
     if args.hwdb:
         settings.yaml_hardware_database_path = args.hwdb
         print "using non-default hardware database {}".format(args.hwdb)

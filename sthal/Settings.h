@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "halco/hicann/v2/external.h"
 #include "sthal/ConfigurationStages.h"
 
 namespace sthal {
@@ -80,6 +81,7 @@ public:
 
 	bool ignore_hicann_checks;
 
+	halco::hicann::v2::JTAGFrequency jtag_frequency;
 private:
 	Settings();
 	~Settings();

@@ -205,7 +205,6 @@ def main():
     fpga, iboard, mux = HICANNS[args.hicann]
     cube_res = "cube{}".format(cube)
     iboard_res = "{}iboard{}".format(cube_res, iboard)
-    license = "W{}F{}".format(args.wafer, fpga)
 
     if not in_slurm:
         # Rerun the program using slurm
@@ -214,7 +213,8 @@ def main():
         slurm_cmd += [
             '-p', 'cube',
             '--gres={}'.format(iboard_res),
-            '-L', license]
+            '--wafer', str(args.wafer),
+            '--fpga-without-aout', str(fpga)]
         slurm_cmd += ['--']
         slurm_cmd += sys.argv
         if not args.quiet:

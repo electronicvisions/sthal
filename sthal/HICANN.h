@@ -39,6 +39,8 @@ public:
 
 	HICANN();
 	HICANN(
+	    const hicann_coord& hicann);
+	HICANN(
 	    const hicann_coord& hicann,
 	    const boost::shared_ptr<FPGA> fpga);
 	HICANN(

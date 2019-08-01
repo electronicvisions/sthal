@@ -48,10 +48,15 @@ HICANN::HICANN() : mWafer(nullptr)
 	set_fg_speed_up_scaling(NORMAL);
 }
 
-HICANN::HICANN(const hicann_coord& hicann, boost::shared_ptr<FPGA> const fpga)
+HICANN::HICANN(const hicann_coord& hicann)
     : HICANN()
 {
 	mCoordinate = hicann;
+}
+
+HICANN::HICANN(const hicann_coord& hicann, boost::shared_ptr<FPGA> const fpga)
+    : HICANN(hicann)
+{
 	mFPGA = fpga;
 }
 

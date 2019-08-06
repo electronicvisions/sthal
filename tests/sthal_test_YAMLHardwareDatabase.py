@@ -167,6 +167,7 @@ macuversion: 1
 wafer: 2
 setuptype: cubesetup
 """
+        db = pysthal.YAMLHardwareDatabase()
         with tempfile.NamedTemporaryFile() as f:
             f.write(yaml)
             f.flush()

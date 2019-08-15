@@ -757,7 +757,7 @@ class WaferData(object):
 
         adc_box_size = 0.25
 
-        data_adc0 = data.reset_index(['dnc'])
+        data_adc0 = data.set_index('dnc')
         data_adc0['label'] = "0"
         data_adc0['x'] -= 0.25
         data_adc0['y'] -= 0.3
@@ -766,7 +766,7 @@ class WaferData(object):
         data_adc0.dropna(inplace=True)
         adc0_source = ColumnDataSource(data_adc0)
 
-        data_adc1 = data.reset_index(['dnc'])
+        data_adc1 = data.set_index('dnc')
         data_adc1['label'] = "1"
         data_adc1['x'] += 0.25
         data_adc1['y'] -= 0.3

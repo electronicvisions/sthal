@@ -64,7 +64,7 @@ public:
 	virtual void read_synapse_drivers(hicann_handle_t const& h, hicann_data_t const& hicann);
 	virtual void read_synapse_weights(hicann_handle_t const& h, hicann_data_t const& hicann);
 	virtual void read_synapse_decoders(hicann_handle_t const& h, hicann_data_t const& hicann);
-	virtual void read_stdp(hicann_handle_t const& h, hicann_data_t const& hicann);
+	virtual void read_synapse_controllers(hicann_handle_t const& h, hicann_data_t const& hicann);
 	virtual void read_neuron_config(hicann_handle_t const& h, hicann_data_t const& hicann);
 	virtual void read_background_generators(hicann_handle_t const& h, hicann_data_t const& hicann);
 	virtual void read_neuron_quads(hicann_handle_t const& h, hicann_data_t const& hicann);

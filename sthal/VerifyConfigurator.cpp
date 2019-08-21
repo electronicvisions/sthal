@@ -191,9 +191,10 @@ void VerifyConfigurator::config(
 	read_synapse_switch(h, data);
 	read_crossbar_switches(h, data);
 	read_synapse_drivers(h, data);
+	read_synapse_controllers(h, data);
 	read_synapse_weights(h, data);
 	read_synapse_decoders(h, data);
-	read_stdp(h, data);
+
 	read_neuron_config(h, data);
 	read_background_generators(h, data);
 	// HW-Bug: reading changes stored values, see #818
@@ -449,9 +450,23 @@ void VerifyConfigurator::read_synapse_decoders(
 	LOG4CXX_DEBUG(getTimeLogger(), "read back synapses decoder took " << t.get_ms() << "ms");
 }
 
-void VerifyConfigurator::read_stdp(hicann_handle_t const& h, hicann_data_t const&)
+void VerifyConfigurator::read_synapse_controllers
+	(hicann_handle_t const& h, hicann_data_t const& expected_)
 {
-	data_not_readable(h->coordinate(), "STDP");
+	SynapseControllers const& expected_controllers = expected_->synapse_controllers;
+	SynapseControllers read_controllers;
+
+	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
+	LOG4CXX_DEBUG(getLogger(), short_format(h->coordinate()) << ": read back synapse controller");
+
+	std::vector<std::string> errors;
+	for (auto addr : iter_all<SynapseArrayOnHICANN>()) {
+		read_controllers[addr] = ::HMF::HICANN::get_synapse_controller(*h, addr);
+		errors.push_back(check(addr, expected_controllers[addr], read_controllers[addr]));
+	}
+
+	post_merge_errors(h->coordinate(), "synapse controllers", errors, true);
+	LOG4CXX_DEBUG(getTimeLogger(), "read back synapse controller took " << t.get_ms() << "ms");
 }
 
 void VerifyConfigurator::read_synapse_switch(

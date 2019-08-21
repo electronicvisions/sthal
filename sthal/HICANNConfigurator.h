@@ -53,6 +53,28 @@ static boost::shared_ptr<HICANNConfigurator> create(Ps&... ps) {
 	virtual void config_fpga(fpga_handle_t const& f, fpga_t const& fg);
 	virtual void config(fpga_handle_t const& f, hicann_handle_t const& h, hicann_data_t const& fg);
 
+	/**
+	 * Sets several L1 related settings to values which are desired during initial configuration.
+	 * Tests whether dll-reset is pulled and drv-reset is disabled for repeater blocks in the hicann
+	 * object. Furthermore, it checks if dll-reset is enabled in all synapse controllers. All wrong
+	 * reset values are actively set and a warning is produced.
+	 * The synapse controllers in the hicann object are supposed to have the IDLE command. If not a
+	 * runtime error is thrown.
+	 *
+	 * @param hicann Configuration data to be checked and modified if necessary.
+	 */
+	virtual void ensure_correct_l1_init_settings(
+		hicann_handle_t const&, hicann_data_t const& hicann);
+
+	/**
+	 * Writes initial values as specified in hicann to the repeater blocks, synapse controllers
+	 * and neurons of the HICANN represented by h.
+	 *
+	 * @param h HICANN for which the controllers have to be initialized.
+	 * @param hicann Data which is written to the controllers.
+	 */
+	virtual void init_controllers(hicann_handle_t const& h, hicann_data_t const& hicann);
+
 	/* Stop and reset FPGA and all HICANN time counter and set if they will
 	 * listen for local or global start signal. Latter is determined by globalListen
 	 * flag in the FPGA handle */
@@ -78,7 +100,27 @@ static boost::shared_ptr<HICANNConfigurator> create(Ps&... ps) {
 	virtual void config_phase(hicann_handle_t const& h, hicann_data_t const& hicann);
 
 	virtual void config_repeater(hicann_handle_t const& h, hicann_data_t const& hicann);
-	virtual void lock_repeater(hicann_handle_t const& h, hicann_data_t const& hicann);
+
+	/**
+	 * Writes repeater blocks configuration, which is stored in hicann, to the HICANN
+	 * specified by h. This includes the SRAM timings, test output data as well
+	 * as the configuration.
+	 *
+	 * @param h HICANN for which the repeater blocks should be configured.
+	 * @param hicann Holds the configuration data.
+	 */
+	virtual void config_repeater_blocks(hicann_handle_t const& h, hicann_data_t const& hicann);
+
+	/**
+	 * Writes the configuration of synapse controllers, which is stored in hicann, to the HICANN
+	 * specified by h. This includes the following registers for each array:
+	 * control, configuration, reset and STDP LUTs.
+	 * Furthermore, the SRAM timings of the synapse controllers are set.
+	 *
+	 * @param h HICANN for which the synapse controllers should be configured.
+	 * @param hicann Holds the configuration data.
+	 */
+	virtual void config_synapse_controllers(hicann_handle_t const& h, hicann_data_t const& hicann);
 	virtual void config_synapse_switch(hicann_handle_t const& h, hicann_data_t const& hicann);
 	virtual void config_crossbar_switches(hicann_handle_t const& h, hicann_data_t const& hicann);
 	virtual void config_synapse_drivers(hicann_handle_t const& h, hicann_data_t const& hicann);

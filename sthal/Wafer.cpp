@@ -24,7 +24,7 @@ extern "C" {
 #include "sthal/HICANNConfigurator.h"
 #include "sthal/HICANNv4Configurator.h"
 #include "sthal/HardwareDatabase.h"
-#include "sthal/ParallelHICANNv4Configurator.h"
+#include "sthal/ParallelHICANNv4SmartConfigurator.h"
 #include "sthal/Settings.h"
 #include "sthal/Timer.h"
 #include "sthal/Wafer.h"
@@ -360,6 +360,9 @@ void Wafer::configure(HICANNConfigurator & configurator)
 
 	auto* const v4_configurator = dynamic_cast<HICANNv4Configurator*>(&configurator);
 	bool const is_v4_cfg = (v4_configurator != nullptr);
+
+	// check for global changes configuration changes
+	configure_l1_bus_locking(configurator);
 
 	/// First reset / configure FPGAs
 	const size_t num_fpgas = mFPGA.size();
@@ -750,6 +753,35 @@ void Wafer::load(const char * const _filename)
 boost::shared_ptr<FPGAShared> Wafer::commonFPGASettings()
 {
 	return mSharedSettings;
+}
+
+void Wafer::configure_l1_bus_locking(HICANNConfigurator& configurator)
+{
+	// only relevant if configurator is smart
+	auto* const smart_configurator =
+		dynamic_cast<ParallelHICANNv4SmartConfigurator*>(&configurator);
+	bool const is_smart_cfg = (smart_configurator != nullptr);
+
+	if (!is_smart_cfg)
+	{
+		return;
+	}
+
+	bool locking_needed = false;
+
+	const size_t num_fpgas = mFPGA.size();
+	for (size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
+		const fpga_t fpga = mFPGA.at(fpga_counter);
+		if (!fpga || fpga->getAllocatedHICANNs().empty()) {
+			continue;
+		}
+		for (HICANNOnWafer coord : fpga->getAllocatedHICANNs()) {
+			auto hicann = mHICANN.at(coord.id());
+			locking_needed |= smart_configurator->check_l1_bus_changes(coord, hicann);
+		}
+	}
+
+	smart_configurator->m_global_l1_bus_changes = locking_needed;
 }
 
 std::ostream& operator<<(std::ostream& out, Wafer const& obj)

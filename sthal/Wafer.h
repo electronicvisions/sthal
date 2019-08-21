@@ -7,6 +7,7 @@
 #include "hal/Handle/FPGA.h"
 #include "hal/Handle/HICANN.h"
 
+#include "sthal/FPGA.h"
 #include "sthal/HICANN.h"
 #include "sthal/Status.h"
 
@@ -134,6 +135,12 @@ public:
 
 private:
 	void allocate(const hicann_coord & hicann);
+
+	/*
+	 * Only relevant if the configurator is smart. Checks if the new configuration affects L1
+	 * locking and if so tells the smart configurator that locking is needed.
+	 */
+	void configure_l1_bus_locking(HICANNConfigurator& configurator);
 
 	wafer_coord mWafer;
 	std::array<fpga_t,          fpga_coord::size>   mFPGA;

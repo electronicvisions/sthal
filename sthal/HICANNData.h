@@ -15,6 +15,7 @@
 #include "sthal/Neurons.h"
 #include "sthal/SynapseArray.h"
 #include "sthal/FGStimulus.h"
+#include "sthal/SynapseControllers.h"
 
 namespace sthal {
 
@@ -29,12 +30,13 @@ public:
 	HICANNData();
 	virtual ~HICANNData();
 
-	FloatingGates    floating_gates;
-	AnalogOutput     analog;
-	L1Repeaters	     repeater;
-	SynapseArray     synapses;
-	Neurons          neurons;
-	Layer1           layer1;
+	FloatingGates      floating_gates;
+	AnalogOutput       analog;
+	L1Repeaters        repeater;
+	SynapseArray       synapses;
+	Neurons            neurons;
+	Layer1             layer1;
+	SynapseControllers synapse_controllers;
 
 	SynapseSwitches  synapse_switches;
 	CrossbarSwitches crossbar_switches;
@@ -54,4 +56,4 @@ public:
 } // end namespace sthal
 
 BOOST_CLASS_EXPORT_KEY(sthal::HICANNData)
-BOOST_CLASS_VERSION(sthal::HICANNData, 1)
+BOOST_CLASS_VERSION(sthal::HICANNData, 2)

@@ -20,7 +20,10 @@ ParallelHICANNv4SmartConfigurator::ParallelHICANNv4SmartConfigurator() :
     synapse_config_mode(ParallelHICANNv4SmartConfigurator::ConfigMode::Smart),
     synapse_drv_config_mode(ParallelHICANNv4SmartConfigurator::ConfigMode::Smart),
     reset_config_mode(ParallelHICANNv4SmartConfigurator::ConfigMode::Smart),
-    repeater_config_mode(ParallelHICANNv4SmartConfigurator::ConfigMode::Smart)
+    repeater_config_mode(ParallelHICANNv4SmartConfigurator::ConfigMode::Smart),
+    repeater_locking_config_mode(ParallelHICANNv4SmartConfigurator::ConfigMode::Smart),
+    syn_drv_locking_config_mode(ParallelHICANNv4SmartConfigurator::ConfigMode::Smart),
+    m_global_l1_bus_changes(true)
 {
 	omp_init_lock(&mLock);
 }
@@ -43,7 +46,24 @@ void ParallelHICANNv4SmartConfigurator::config(
     ConfigurationStage stage)
 {
 	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
-	ParallelHICANNv4Configurator::config(fpga_handle, hicann_handle, hicann_data, stage);
+
+	// locking unrelated stages will always be called. The execution of different configuration
+	// procedures is then handeled by the member functions of this configurator.
+	bool const locking_stage = (stage == ConfigurationStage::LOCKING_REPEATER_BLOCKS)
+	                            || (stage == ConfigurationStage::LOCKING_SYNAPSE_DRIVERS);
+	// whether stage LOCKING_REPEATER_BLOCKS is to be executed
+	bool const repeater_locking = ((stage == ConfigurationStage::LOCKING_REPEATER_BLOCKS)
+	                                && repeater_locking_wanted());
+	// whether stage LOCKING_SYNAPSE_DRIVERS is to be executed
+	bool const syn_drv_locking = ((stage == ConfigurationStage::LOCKING_SYNAPSE_DRIVERS)
+	                               && syn_drv_locking_wanted_any(hicann_handle, hicann_data));
+
+	if (!locking_stage || repeater_locking || syn_drv_locking) {
+		ParallelHICANNv4Configurator::config(fpga_handle, hicann_handle, hicann_data, stage);
+	} else {
+		LOG4CXX_DEBUG(getLogger(), "Skip stage " << static_cast<size_t>(stage));
+	}
+
 	auto const& last_stage = Settings::get().configuration_stages.order.back();
 	if (stage == last_stage) {
 		LOG4CXX_DEBUG(getLogger(), "Saving old configuration");
@@ -252,25 +272,6 @@ void ParallelHICANNv4SmartConfigurator::config_repeater(
 	}
 }
 
-void ParallelHICANNv4SmartConfigurator::lock_repeater(
-    hicann_handle_t const& h, hicann_data_t const& hicann)
-{
-	if (repeater_config_mode == ConfigMode::Force) {
-		LOG4CXX_INFO(getLogger(), "Forcing Repeater Lock write, ignoring previous configuration");
-		return ParallelHICANNv4Configurator::lock_repeater(h, hicann);
-	}
-	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
-
-	const hicann_coord coord = h->coordinate();
-	const hicann_data_t old_hicann = mWrittenHICANNData[coord];
-	if (!(repeater_config_mode == ConfigMode::Skip) &&
-	    (old_hicann == nullptr || old_hicann->repeater != hicann->repeater)) {
-		return ParallelHICANNv4Configurator::lock_repeater(h, hicann);
-	} else {
-		LOG4CXX_INFO(getLogger(), "Skipping Repeater Lock configuration as nothing has changed");
-	}
-}
-
 void ParallelHICANNv4SmartConfigurator::config_fpga(fpga_handle_t const& f, fpga_t const& fpga)
 {
 	if (!(reset_config_mode == ConfigMode::Skip) &&
@@ -286,6 +287,101 @@ void ParallelHICANNv4SmartConfigurator::config_fpga(fpga_handle_t const& f, fpga
 	LOG4CXX_INFO(
 	    getTimeLogger(), "finished configuring DNC link of FPGA " << f->coordinate() << " in "
 	                                                              << t.get_ms() << "ms");
+}
+
+void ParallelHICANNv4SmartConfigurator::ensure_correct_l1_init_settings(
+	hicann_handle_t const& h, hicann_data_t const& hicann)
+{
+	// check repeater blocks
+	if (repeater_locking_wanted()) {
+		// setup regular locking
+		LOG4CXX_DEBUG(getLogger(), short_format(h->coordinate())
+			<< ": Setup regular locking of repeater blocks.");
+		for (auto addr : iter_all<RepeaterBlockOnHICANN>()) {
+			if (hicann->repeater[addr].dllresetb != false) {
+				hicann->repeater[addr].dllresetb = false;
+				LOG4CXX_WARN(getLogger(),
+					addr << ": Overwriting dllreset to active in order to setup locking of "
+					        "repeaters during initialization.");
+			}
+			if (hicann->repeater[addr].drvresetb != true) {
+				hicann->repeater[addr].drvresetb = true;
+				LOG4CXX_WARN(getLogger(),
+					addr << ": Overwriting drvreset to inactive during initialization.");
+			}
+		}
+	} else {
+		// setup skipping of locking
+		if (m_global_l1_bus_changes) {
+			LOG4CXX_WARN(getLogger(), short_format(h->coordinate())
+				<< ": Setup skipping of repeater locking even though changes in L1 were detected.");
+		} else {
+			LOG4CXX_INFO(getLogger(), short_format(h->coordinate())
+				<< ": Setup skipping of repeater locking.");
+		}
+
+		for (auto addr : iter_all<RepeaterBlockOnHICANN>()) {
+			if (hicann->repeater[addr].dllresetb != true) {
+				hicann->repeater[addr].dllresetb = true;
+				LOG4CXX_WARN(getLogger(),
+					addr << ": Overwriting dllreset to zero in order to skip locking of repeaters "
+					        "during initialization.");
+			}
+			if (hicann->repeater[addr].drvresetb != true) {
+				hicann->repeater[addr].drvresetb = true;
+				LOG4CXX_WARN(getLogger(),
+					addr << ": Overwriting drvreset to inactive during initialization.");
+			}
+		}
+	}
+
+	// check synapse controllers
+	for (auto addr : iter_all<SynapseArrayOnHICANN>()) {
+		HMF::HICANN::SynapseController& synapse_controller = hicann->synapse_controllers[addr];
+		HMF::HICANN::SynapseControlRegister& ctrl_reg = synapse_controller.ctrl_reg;
+		HMF::HICANN::SynapseConfigurationRegister& cnfg_reg = synapse_controller.cnfg_reg;
+
+		if (ctrl_reg.cmd != ::HMF::HICANN::SynapseControlRegister::Opcodes::IDLE) {
+			throw std::runtime_error("Synase controller needs to have the IDLE comand to perform "
+			                         "initialization correctly");
+		}
+
+		if (syn_drv_locking_wanted(h->coordinate(), hicann)) {
+			// setup regular locking
+			LOG4CXX_DEBUG(getLogger(),
+				short_format(h->coordinate()) << ' ' << addr
+					<< ": Setup regular locking of synapse drivers");
+			// check if DLL reset is enabled for all synapse drivers
+			if (cnfg_reg.dllresetb != ::HMF::HICANN::SynapseDllresetb::min) {
+				cnfg_reg.dllresetb =
+					::HMF::HICANN::SynapseDllresetb(::HMF::HICANN::SynapseDllresetb::min);
+				LOG4CXX_WARN(getLogger(), ": Overwriting dllreset of synapse controller "
+				                          "to active in order to perform locking of "
+				                          "synapse drivers during initialization.");
+			}
+		} else {
+			// setup skipping of locking
+			if (syn_drv_locking_needed(h->coordinate(), hicann)) {
+				LOG4CXX_WARN(getLogger(),
+					short_format(h->coordinate()) << ' ' << addr
+						<< ": Setup skipping of synapse driver locking even though "
+						   "changes in L1 were detected.");
+			} else {
+				LOG4CXX_INFO(getLogger(),
+					short_format(h->coordinate()) << ' ' << addr
+						<< ": Setup skipping of synapse driver locking.");
+			}
+
+			// check if DLL reset is disabled for all synapse drivers
+			if (cnfg_reg.dllresetb != ::HMF::HICANN::SynapseDllresetb::max) {
+				cnfg_reg.dllresetb =
+					::HMF::HICANN::SynapseDllresetb(::HMF::HICANN::SynapseDllresetb::max);
+				LOG4CXX_WARN(getLogger(), ": Overwriting dllreset of synapse controller to "
+				                          "zero in order to skip locking of synapse drivers "
+				                          "during initialization.");
+			}
+		}
+	}
 }
 
 void ParallelHICANNv4SmartConfigurator::prime_systime_counter(fpga_handle_t const& f)
@@ -331,6 +427,8 @@ void ParallelHICANNv4SmartConfigurator::set_smart()
 	synapse_drv_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Smart;
 	reset_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Smart;
 	repeater_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Smart;
+	repeater_locking_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Smart;
+	syn_drv_locking_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Smart;
 }
 void ParallelHICANNv4SmartConfigurator::set_skip()
 {
@@ -339,6 +437,8 @@ void ParallelHICANNv4SmartConfigurator::set_skip()
 	synapse_drv_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Skip;
 	reset_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Skip;
 	repeater_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Skip;
+	repeater_locking_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Skip;
+	syn_drv_locking_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Skip;
 }
 void ParallelHICANNv4SmartConfigurator::set_force()
 {
@@ -347,6 +447,98 @@ void ParallelHICANNv4SmartConfigurator::set_force()
 	synapse_drv_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Force;
 	reset_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Force;
 	repeater_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Force;
+	repeater_locking_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Force;
+	syn_drv_locking_config_mode = ParallelHICANNv4SmartConfigurator::ConfigMode::Force;
+}
+
+bool ParallelHICANNv4SmartConfigurator::check_l1_bus_changes(hicann_coord coord,
+                                                             hicann_data_t const& hicann) const
+{
+	auto search_old_hicann = mWrittenHICANNData.find(coord);
+
+	// return if old data is not available
+	if (search_old_hicann == mWrittenHICANNData.end()) {
+		return true;
+	}
+
+	bool change_in_l1 = false;
+	const hicann_data_t old_hicann = search_old_hicann->second;
+
+	if (old_hicann) {
+		// check for relevant changes in repeaters
+		change_in_l1 |= (old_hicann->repeater.mHorizontalRepeater
+		                 != hicann->repeater.mHorizontalRepeater);
+		change_in_l1 |= (old_hicann->repeater.mVerticalRepeater
+		                 != hicann->repeater.mVerticalRepeater);
+
+		// check for changes in L1
+		change_in_l1 |= (old_hicann->layer1 != hicann->layer1);
+
+		// check for changes in switches
+		change_in_l1 |= (old_hicann->synapse_switches != hicann->synapse_switches);
+		change_in_l1 |= (old_hicann->crossbar_switches != hicann->crossbar_switches);
+
+		// check if dllreset or drvreset were not disabled in old configuration
+		change_in_l1 |= !old_hicann->repeater.is_drvreset_disabled();
+		change_in_l1 |= !old_hicann->repeater.is_dllreset_disabled();
+		change_in_l1 |= !old_hicann->synapse_controllers.is_dllreset_disabled();
+	}
+
+	return change_in_l1;
+}
+
+bool ParallelHICANNv4SmartConfigurator::syn_drv_locking_needed(hicann_coord coord,
+                                                               hicann_data_t const& hicann) const
+{
+	auto search_old_hicann = mWrittenHICANNData.find(coord);
+
+	// return if old data is not available
+	if (search_old_hicann == mWrittenHICANNData.end()) {
+		return true;
+	}
+
+	bool driver_changes = m_global_l1_bus_changes;
+	const hicann_data_t old_hicann = search_old_hicann->second;
+
+	if (old_hicann) {
+		for (auto const ii : iter_all<::HMF::Coordinate::SynapseDriverOnHICANN>()) {
+			driver_changes |= (old_hicann->synapses[ii] != hicann->synapses[ii]);
+		}
+	}
+
+	return driver_changes;
+}
+
+bool ParallelHICANNv4SmartConfigurator::repeater_locking_wanted() const
+{
+	return  ((repeater_locking_config_mode == ConfigMode::Force)
+	          || (m_global_l1_bus_changes
+	              && (repeater_locking_config_mode != ConfigMode::Skip)));
+}
+
+bool ParallelHICANNv4SmartConfigurator::syn_drv_locking_wanted(
+	hicann_coord const& coord,
+	hicann_data_t const& hicann) const
+{
+
+	return  ((syn_drv_locking_config_mode == ConfigMode::Force)
+	          || (syn_drv_locking_needed(coord, hicann)
+	              && (syn_drv_locking_config_mode != ConfigMode::Skip)));
+}
+
+bool ParallelHICANNv4SmartConfigurator::syn_drv_locking_wanted_any(
+	hicann_handles_t const& handles,
+	hicann_datas_t const& hicanns) const
+{
+	bool locking_needed = false;
+	auto it_data = hicanns.begin();
+	for (auto const& h : handles) {
+		auto hicann = *it_data;
+		locking_needed |= syn_drv_locking_wanted(h->coordinate(), hicann);
+		++it_data;
+	}
+
+	return locking_needed;
 }
 
 } // end namespace sthal

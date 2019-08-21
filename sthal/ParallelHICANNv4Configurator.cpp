@@ -193,6 +193,9 @@ void ParallelHICANNv4Configurator::config(fpga_handle_t const& f,
 			auto it_data = hicanns.begin();
 			for (auto handle : handles) {
 				auto hicann = *it_data;
+
+				init_controllers(handle, hicann);
+
 				config_phase(handle, hicann);
 				config_gbitlink(handle, hicann);
 				config_fg_stimulus(handle, *it_data);
@@ -202,37 +205,10 @@ void ParallelHICANNv4Configurator::config(fpga_handle_t const& f,
 				config_merger_tree(handle, hicann);
 				config_dncmerger(handle, hicann);
 				config_background_generators(handle, hicann);
-				flush_hicann(handle);
-				++it_data;
-			}
-			break;
-		}
-
-		case ConfigurationStage::CONFIG_REPEATER: {
-			auto it_data = hicanns.begin();
-			for (auto handle : handles) {
-				auto hicann = *it_data;
 				config_repeater(handle, hicann);
 				flush_hicann(handle);
-				++it_data;
-			}
-			break;
-		}
 
-		case ConfigurationStage::LOCK_REPEATER: {
-			auto it_data = hicanns.begin();
-			for (auto handle : handles) {
-				auto hicann = *it_data;
-				lock_repeater(handle, hicann);
-				flush_hicann(handle);
-				++it_data;
-			}
-			break;
-		}
-		case ConfigurationStage::LOCK_SYNAPSEDRIVERS: {
-			auto it_data = hicanns.begin();
-			for (auto handle : handles) {
-				auto hicann = *it_data;
+				// configure synapse drivers
 				if (std::find(
 				        highspeed_hicann_handles.begin(), highspeed_hicann_handles.end(), handle) !=
 				    highspeed_hicann_handles.end()) {
@@ -243,6 +219,30 @@ void ParallelHICANNv4Configurator::config(fpga_handle_t const& f,
 					                     << short_format(handle->coordinate()));
 				}
 				flush_hicann(handle);
+				++it_data;
+			}
+			break;
+		}
+		case ConfigurationStage::LOCKING_REPEATER_BLOCKS: {
+			auto it_data = hicanns.begin();
+			for (auto handle : handles) {
+				auto hicann = *it_data;
+
+				hicann->repeater.disable_dllreset();
+				config_repeater_blocks(handle, hicann);
+
+				++it_data;
+			}
+			break;
+		}
+		case ConfigurationStage::LOCKING_SYNAPSE_DRIVERS: {
+			auto it_data = hicanns.begin();
+			for (auto handle : handles) {
+				auto hicann = *it_data;
+
+				hicann->synapse_controllers.disable_dllreset();
+				config_synapse_controllers(handle, hicann);
+
 				++it_data;
 			}
 			break;

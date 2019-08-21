@@ -27,17 +27,16 @@ Settings::SynapseSwitches::SynapseSwitches(size_t max_per_row, size_t max_per_co
 	: max_switches_per_row(max_per_row), max_switches_per_column_per_side(max_per_column_per_side)
 {}
 
-Settings::CfgStages::CfgStages()
-    : sleeps({{ConfigurationStage::TIMING_UNCRITICAL, ms(0)},
-              {ConfigurationStage::CONFIG_REPEATER, ms(0)},
-              {ConfigurationStage::LOCK_REPEATER, ms(0)},
-              {ConfigurationStage::LOCK_SYNAPSEDRIVERS, ms(0)},
-              {ConfigurationStage::NEURONS, ms(0)}}),
-      order({ConfigurationStage::TIMING_UNCRITICAL,
-			 ConfigurationStage::CONFIG_REPEATER,
-			 ConfigurationStage::LOCK_REPEATER,
-			 ConfigurationStage::LOCK_SYNAPSEDRIVERS,
-			 ConfigurationStage::NEURONS}) {}
+Settings::CfgStages::CfgStages() :
+	sleeps({{ConfigurationStage::TIMING_UNCRITICAL, ms(0)},
+	        {ConfigurationStage::LOCKING_REPEATER_BLOCKS, ms(0)},
+	        {ConfigurationStage::LOCKING_SYNAPSE_DRIVERS, ms(0)},
+	        {ConfigurationStage::NEURONS, ms(0)}}),
+	order({ConfigurationStage::TIMING_UNCRITICAL,
+	       ConfigurationStage::LOCKING_REPEATER_BLOCKS,
+	       ConfigurationStage::LOCKING_SYNAPSE_DRIVERS,
+	       ConfigurationStage::NEURONS})
+{}
 
 Settings::Settings() :
 	calibtic_backend("xml"),

@@ -16,15 +16,17 @@ void HICANNData::copy(const HICANNData & other)
 
 bool operator==(const HICANNData & a, const HICANNData & b)
 {
-	return
-		   a.floating_gates    == b.floating_gates
-		&& a.analog            == b.analog
-		&& a.repeater          == b.repeater
-		&& a.synapses          == b.synapses
-		&& a.neurons           == b.neurons
-		&& a.layer1            == b.layer1
-		&& a.synapse_switches  == b.synapse_switches
-		&& a.crossbar_switches == b.crossbar_switches;
+	return (
+		   a.floating_gates      == b.floating_gates
+		&& a.analog              == b.analog
+		&& a.repeater            == b.repeater
+		&& a.synapses            == b.synapses
+		&& a.neurons             == b.neurons
+		&& a.layer1              == b.layer1
+		&& a.synapse_switches    == b.synapse_switches
+		&& a.crossbar_switches   == b.crossbar_switches
+		&& a.synapse_controllers == b.synapse_controllers
+	);
 }
 
 template<typename Archiver>
@@ -37,10 +39,11 @@ void HICANNData::serialize(Archiver & ar, unsigned int const version)
 		::HMF::HICANN::FGControl tmp;
 		ar & make_nvp("floating_gates", tmp);
 		floating_gates = tmp;
-	}
-	else
-	{
+	} else if (version == 1) {
 		ar & make_nvp("floating_gates", floating_gates);
+	} else if (version >= 2) {
+		ar & make_nvp("floating_gates", floating_gates)
+		   & make_nvp("synapse_controllers", synapse_controllers);
 	}
 	ar & make_nvp("analog",            analog)
 	   & make_nvp("repeater",          repeater)

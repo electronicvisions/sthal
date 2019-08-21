@@ -11,13 +11,13 @@
 #include "sthal/AnalogRecorder.h"
 #include "sthal/HICANNData.h"
 #include "sthal/Spike.h"
-#include "sthal/FPGA.h"
 #include "sthal/ADCConfig.h"
 #include "sthal/SpeedUp.h"
 
 namespace sthal {
 
 class Wafer;
+class FPGA;
 
 // TODO set activate_firing true for all neurons
 
@@ -131,6 +131,9 @@ public:
 	///  * horizontal and vertical repeaters
 	///  * repeater blocks
 	void clear_complete_l1_routing();
+
+	/// Clear the settings of all synapse controllers
+	void clear_synapse_controllers();
 
 	/// Switch the capacitor size on the hicann for all neurons
 	/// small_capacitors: 164.2 fF

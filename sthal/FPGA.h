@@ -24,6 +24,7 @@ public:
 	typedef boost::shared_ptr<sthal::HICANN>    hicann_t;
 	typedef ::HMF::Coordinate::FPGAGlobal       fpga_coord;
 	typedef ::HMF::Coordinate::HICANNOnWafer    hicann_coord;
+	typedef ::HMF::Coordinate::HICANNGlobal     hicann_coord_global;
 	typedef ::HMF::Coordinate::DNCOnFPGA        dnc_coord;
 	typedef ::HMF::Coordinate::GbitLinkOnHICANN dnc_merger_coord;
 
@@ -36,6 +37,10 @@ public:
 	void add_hicann(const hicann_coord &, const hicann_t & );
 
 	STHAL_ARRAY_OPERATOR(DNC, dnc_coord, return mDNCs[ii];)
+	STHAL_ARRAY_OPERATOR(
+		hicann_t, hicann_coord,
+		hicann_coord_global h(ii, wafer());
+		return mDNCs[h.toDNCOnFPGA()][h.toHICANNOnDNC()];)
 
 	void addSendSpikes(const hicann_coord & hicann,
 			           const dnc_merger_coord & dnc_merger,

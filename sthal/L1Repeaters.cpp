@@ -1,3 +1,6 @@
+#include <algorithm>
+#include <iterator>
+
 #include "L1Repeaters.h"
 #include "hal/Coordinate/iter_all.h"
 
@@ -43,6 +46,48 @@ void L1Repeaters::setRepeater(::HMF::Coordinate::HRepeaterOnHICANN c, ::HMF::HIC
 void L1Repeaters::setRepeaterBlock(::HMF::Coordinate::RepeaterBlockOnHICANN block, ::HMF::HICANN::RepeaterBlock const& r)
 {
 	mBlocks[block.id()] = r;
+}
+
+void L1Repeaters::enable_dllreset()
+{
+	for (auto& rb : mBlocks) {
+		rb.dllresetb = false;
+	}
+}
+
+void L1Repeaters::disable_dllreset()
+{
+	for (auto& rb : mBlocks) {
+		rb.dllresetb = true;
+	}
+}
+
+bool L1Repeaters::is_dllreset_disabled() const
+{
+	return std::all_of(std::cbegin(mBlocks),
+	                   std::cend(mBlocks),
+	                   [](auto const& rb){return rb.dllresetb;});
+}
+
+void L1Repeaters::enable_drvreset()
+{
+	for (auto& rb : mBlocks) {
+		rb.drvresetb = false;
+	}
+}
+
+void L1Repeaters::disable_drvreset()
+{
+	for (auto& rb : mBlocks) {
+		rb.drvresetb = true;
+	}
+}
+
+bool L1Repeaters::is_drvreset_disabled() const
+{
+	return std::all_of(std::cbegin(mBlocks),
+	                   std::cend(mBlocks),
+	                   [](auto const& rb){return rb.drvresetb;});
 }
 
 bool L1Repeaters::operator==(const L1Repeaters & other) const

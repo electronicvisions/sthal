@@ -45,6 +45,14 @@ public:
 
 	// TODO: add iterator for all horizontal repeaters (including sending repeaters)
 
+	void enable_dllreset();
+	void disable_dllreset();
+	bool is_dllreset_disabled() const;
+
+	void enable_drvreset();
+	void disable_drvreset();
+	bool is_drvreset_disabled() const;
+
 	bool operator==(const L1Repeaters & other) const;
 	bool operator!=(const L1Repeaters & other) const;
 	friend std::ostream& operator<<(std::ostream& os, L1Repeaters const& a);

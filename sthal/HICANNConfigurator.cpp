@@ -57,6 +57,56 @@ void HICANNConfigurator::config_fpga(fpga_handle_t const& f, fpga_t const& fpga)
 	                              << "ms");
 }
 
+void HICANNConfigurator::ensure_correct_l1_init_settings(
+	hicann_handle_t const&, hicann_data_t const& hicann)
+{
+	// check repeater blocks
+	for (auto addr : iter_all<RepeaterBlockOnHICANN>()) {
+		if (hicann->repeater[addr].dllresetb != false) {
+			hicann->repeater[addr].dllresetb = false;
+			LOG4CXX_WARN(getLogger(),
+			    addr << ": Overwriting dllreset to active during initialization.");
+		}
+		if (hicann->repeater[addr].drvresetb != true) {
+			hicann->repeater[addr].drvresetb = true;
+			LOG4CXX_WARN(getLogger(),
+			    addr << ": Overwriting drvreset to inactive during initialization.");
+		}
+	}
+
+	// check synapse controllers
+	for (auto addr : iter_all<SynapseArrayOnHICANN>()) {
+		HMF::HICANN::SynapseController& synapse_controller = hicann->synapse_controllers[addr];
+		HMF::HICANN::SynapseControlRegister& ctrl_reg = synapse_controller.ctrl_reg;
+		HMF::HICANN::SynapseConfigurationRegister& cnfg_reg = synapse_controller.cnfg_reg;
+
+		if (ctrl_reg.cmd != ::HMF::HICANN::SynapseControlRegister::Opcodes::IDLE) {
+			throw std::runtime_error("Command in synapse controller has to be IDLE in order to "
+			                         "perform initialization correctly");
+		}
+
+		// DLL reset enabled for all drivers on synapse array
+		if (cnfg_reg.dllresetb != ::HMF::HICANN::SynapseDllresetb::min) {
+			cnfg_reg.dllresetb =
+				::HMF::HICANN::SynapseDllresetb(::HMF::HICANN::SynapseDllresetb::min);
+			LOG4CXX_WARN(getLogger(),
+			    addr << ": Overwriting dllreset of the synapse controller to active"
+				        " during initialization.");
+		}
+	}
+}
+
+void HICANNConfigurator::init_controllers(hicann_handle_t const& h, hicann_data_t const& hicann)
+{
+	config_neuron_config(h, hicann);
+
+	// check for correct initial configuration of repeaters and synapse controllers
+	ensure_correct_l1_init_settings(h, hicann);
+
+	config_repeater_blocks(h, hicann);
+	config_synapse_controllers(h, hicann);
+}
+
 void HICANNConfigurator::prime_systime_counter(fpga_handle_t const& f)
 {
 	::HMF::FPGA::prime_systime_counter(*f);
@@ -106,10 +156,12 @@ void HICANNConfigurator::config_dnc_link(fpga_handle_t const& f, fpga_t const& f
 }
 
 void HICANNConfigurator::config(
-	fpga_handle_t const&, hicann_handle_t const& h, hicann_data_t const& hicann)
+	fpga_handle_t const& f, hicann_handle_t const& h, hicann_data_t const& hicann)
 {
 	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 	LOG4CXX_INFO(getLogger(), "configure HICANN: " << short_format(h->coordinate()));
+
+	init_controllers(h, hicann);
 
 	config_floating_gates(h, hicann);
 	config_fg_stimulus(h, hicann);
@@ -124,17 +176,25 @@ void HICANNConfigurator::config(
 	config_stdp(h, hicann);
 	config_crossbar_switches(h, hicann);
 	config_repeater(h, hicann);
+	sync_command_buffers(f, hicann_handles_t{h});
+
+	hicann->repeater.disable_dllreset();
+	config_repeater_blocks(h, hicann);
+	sync_command_buffers(f, hicann_handles_t{h});
+
 	config_merger_tree(h, hicann);
 	config_dncmerger(h, hicann);
 	config_background_generators(h, hicann);
 	flush_hicann(h);
-	lock_repeater(h, hicann);
 	config_synapse_drivers(h, hicann);
+
+	hicann->synapse_controllers.disable_dllreset();
+	config_synapse_controllers(h, hicann);
+	sync_command_buffers(f, hicann_handles_t{h});
 
 	config_neuron_config(h, hicann);
 	config_neuron_quads(h, hicann);
 	config_analog_readout(h, hicann);
-	flush_hicann(h);
 
 	LOG4CXX_INFO(getLogger(), "finished configuring HICANN "
 	                              << short_format(h->coordinate()) << " in " << t.get_ms()
@@ -258,6 +318,21 @@ void HICANNConfigurator::config_phase(hicann_handle_t const& h, hicann_data_t co
 	                                   << "ms");
 }
 
+void HICANNConfigurator::config_repeater_blocks(
+    hicann_handle_t const& h, hicann_data_t const& hicann)
+{
+	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
+	LOG4CXX_DEBUG(getLogger(), short_format(h->coordinate()) << ": configure repeater blocks");
+
+	for (auto addr : iter_all<RepeaterBlockOnHICANN>()) {
+		::HMF::HICANN::set_repeater_block(*h, addr, hicann->repeater[addr]);
+	}
+
+	LOG4CXX_DEBUG(
+	    getTimeLogger(), short_format(h->coordinate())
+	                         << ": configure repeater blocks took " << t.get_ms() << "ms");
+}
+
 void HICANNConfigurator::config_repeater(hicann_handle_t const& h, hicann_data_t const& hicann)
 {
 	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
@@ -278,31 +353,9 @@ void HICANNConfigurator::config_repeater(hicann_handle_t const& h, hicann_data_t
 		::HMF::HICANN::set_repeater(*h, addr, repeaters[addr]);
 	}
 
-	// configure repeater block
-	for (auto addr : iter_all<RepeaterBlockOnHICANN>()) {
-		LOG4CXX_TRACE(getLogger(), short_format(h->coordinate())
-		                               << ": configure repeater block: " << addr);
-		::HMF::HICANN::set_repeater_block(*h, addr, repeaters.getRepeaterBlock(addr));
-	}
 	LOG4CXX_DEBUG(getTimeLogger(), short_format(h->coordinate())
-	                                   << ": configure repeaters took " << t.get_ms()
-	                                   << "ms");
+	                                   << ": configure repeaters took " << t.get_ms() << "ms");
 }
-
-
-void HICANNConfigurator::lock_repeater(hicann_handle_t const& h, hicann_data_t const& hicann)
-{
-	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
-	LOG4CXX_DEBUG(getLogger(), short_format(h->coordinate()) << ": lock repeater");
-	// configure repeater block
-	for (auto addr : iter_all<RepeaterBlockOnHICANN>())
-	{
-		::HMF::HICANN::lock_repeater_and_synapse_driver(*h, addr, hicann->repeater[addr]);
-	}
-	LOG4CXX_DEBUG(getTimeLogger(), short_format(h->coordinate())
-	                                   << ": lock repeater took " << t.get_ms() << "ms");
-}
-
 
 void HICANNConfigurator::config_synapse_drivers(
 	hicann_handle_t const& h, hicann_data_t const& hicann)
@@ -330,6 +383,21 @@ static std::string format_debug(SynapseRowOnHICANN row_coordinate, const ::HMF::
 			out << ' ';
 	}
 	return out.str();
+}
+
+void HICANNConfigurator::config_synapse_controllers(
+    hicann_handle_t const& h, hicann_data_t const& hicann)
+{
+	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
+	LOG4CXX_DEBUG(getLogger(), short_format(h->coordinate()) << ": configure synapse controllers");
+
+	for (auto addr : iter_all<SynapseArrayOnHICANN>()) {
+		::HMF::HICANN::set_synapse_controller(*h, addr, hicann->synapse_controllers[addr]);
+	}
+
+	LOG4CXX_DEBUG(
+	    getTimeLogger(), short_format(h->coordinate())
+	                         << ": configure synapse controllers took " << t.get_ms() << "ms");
 }
 
 void HICANNConfigurator::config_synapse_array(hicann_handle_t const& h,

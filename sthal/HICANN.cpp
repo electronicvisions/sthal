@@ -477,6 +477,11 @@ void HICANN::clear_complete_l1_routing()
 	repeater.clearReapeater();
 }
 
+void HICANN::clear_synapse_controllers()
+{
+	synapse_controllers = SynapseControllers();
+}
+
 std::vector<NeuronOnHICANN> HICANN::set_neuron_size(const size_t n)
 {
 	std::vector<NeuronOnHICANN> ret;

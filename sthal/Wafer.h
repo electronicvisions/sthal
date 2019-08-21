@@ -123,6 +123,7 @@ public:
 
 	void drop_defects();
 	void set_defects(defects_t wafer);
+	defects_t get_defects();
 
 private:
 	void allocate(const hicann_coord & hicann);

@@ -132,6 +132,11 @@ void Wafer::set_defects(defects_t wafer)
 	mDefects = wafer;
 }
 
+Wafer::defects_t Wafer::get_defects()
+{
+	return mDefects;
+}
+
 void Wafer::drop_defects() {
 	mDefects.reset();
 }

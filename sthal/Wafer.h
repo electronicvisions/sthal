@@ -95,6 +95,8 @@ public:
 	/// Dumps the current configuration into a file
 	/// @note the hardware connection cannot be dumped
 	void dump(const char * const filename, bool overwrite = false) const;
+	/// alias to dump
+	void save(const char * const filename, bool overwrite = false) const;
 
 	/// Loads a wafer config from a saved
 	/// @note after loading the wafer will be disconnected

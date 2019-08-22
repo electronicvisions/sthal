@@ -648,6 +648,11 @@ void Wafer::dump(const char * const _filename, bool overwrite) const
 	}
 }
 
+void Wafer::save(const char* const _filename, bool overwrite) const
+{
+	dump(_filename, overwrite);
+}
+
 void Wafer::load(const char * const _filename)
 {
 	boost::filesystem::path filename(_filename);

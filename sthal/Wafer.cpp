@@ -201,6 +201,12 @@ void Wafer::populate_adc_config(hicann_coord const& hicann, analog_coord const& 
 		throw std::runtime_error("Wafer::populate_adc_config(): connect to HardwareDatabase first");
 	}
 	LOG4CXX_DEBUG(logger, "Retrieving ADC config for " << hicann << " " << analog);
+	if (!mHardwareDatabase->has_adc_of_hicann(HICANNGlobal(hicann, index()), analog)) {
+		throw std::runtime_error(
+		    "Wafer::populate_adc_config(): " + short_format(hicann) + " (" +
+		    short_format(hicann.toFPGAOnWafer()) + ") analog " + std::to_string(analog) +
+		    " has no ADC entry in HWDB");
+	}
 	auto conf = mHardwareDatabase->get_adc_of_hicann(HICANNGlobal(hicann, index()), analog);
 	h->setADCConfig(analog, conf);
 	auto& adc_channel = mADCChannels[hicann.toDNCOnWafer().id()][analog.value()];

@@ -16,6 +16,20 @@ ESSConfig::ESSConfig() :
 	calib_path("")
 {}
 
+bool ESSConfig::operator==(ESSConfig const& rhs) const
+{
+	return (speedup == rhs.speedup) && (timestep == rhs.timestep) &&
+	       (enable_weight_distortion == rhs.enable_weight_distortion) &&
+	       (weight_distortion == rhs.weight_distortion) &&
+	       (enable_timed_merger == rhs.enable_timed_merger) &&
+	       (enable_spike_debugging == rhs.enable_spike_debugging) &&
+	       (pulse_statistics_file == rhs.pulse_statistics_file) && (calib_path == rhs.calib_path);
+}
+
+bool ESSConfig::operator!=(ESSConfig const& rhs) const
+{
+	return !((*this) == rhs);
+}
 
 std::ostream& operator<<(std::ostream& out, ESSConfig const& obj)
 {

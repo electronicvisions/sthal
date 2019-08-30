@@ -50,6 +50,9 @@ struct ESSConfig
 	/// @note Make sure to provide corresponding xml files for the wafer you are using.
 	std::string calib_path;
 
+	bool operator==(ESSConfig const& rhs) const;
+	bool operator!=(ESSConfig const& rhs) const;
+
 #ifndef PYPLUSPLUS
 private:
 	/// serialization

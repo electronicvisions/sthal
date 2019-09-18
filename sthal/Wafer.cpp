@@ -386,9 +386,9 @@ void Wafer::configure(HICANNConfigurator & configurator)
 	auto const& parallel_stages = settings.configuration_stages.order;
 
 	auto const call_stages =
-	    (is_hicann_parallel && !is_v4_cfg) ? parallel_stages : serial_stages;
+	    (is_hicann_parallel) ? parallel_stages : serial_stages;
 	auto const sleep_stages =
-	    (is_hicann_parallel && !is_v4_cfg) ? parallel_stage_sleep : serial_stage_sleep;
+	    (is_hicann_parallel) ? parallel_stage_sleep : serial_stage_sleep;
 
 	/// Check for invalid/dangerous HICANN configuration
 	for (size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
@@ -442,6 +442,21 @@ void Wafer::configure(HICANNConfigurator & configurator)
 			if (is_hicann_parallel && !is_v4_cfg) {
 				parallel_configurator->config(fpga_handle, hicann_handles, hicann_datas,
 				                              stage);
+			} else if (is_v4_cfg) {
+				// The HICANNv4Configurator is a wrapper of the ParallelHICANNv4Configurator
+				// which offers the same functionality as its base class but is supposed to
+				// perform HICANN configuration sequentially, i.e configure one HICANN at the time
+				// (c.f. header of HICANNv4Configurator).
+				// We don't use ParallelHICANNConfigurator::config(fpga_handle_t f,
+				// hicann_handle_t h, hicann_data_t hd) since this function doesn't implement sleeps.
+				assert(hicann_handles.size() == hicann_datas.size());
+				for (auto item : pythonic::zip(hicann_handles, hicann_datas)) {
+					v4_configurator->config(
+						fpga_handle,
+						ParallelHICANNv4Configurator::hicann_handles_t{std::get<0>(item)},
+						ParallelHICANNv4Configurator::hicann_datas_t{std::get<1>(item)},
+						stage);
+				}
 			} else {
 				assert(hicann_handles.size() == hicann_datas.size());
 				for (auto item : pythonic::zip(hicann_handles, hicann_datas)) {

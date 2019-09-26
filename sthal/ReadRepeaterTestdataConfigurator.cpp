@@ -451,6 +451,13 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t&,
 				for (auto testport : {0, 1}) {
 					rb.full_flag[testport] = false;
 				}
+				// FIXME: The variable rb is read back from hardware since dllresetb is not readable,
+				//        the default value in the constructor is used. This may lead to a
+				//        reset of the dll locking and therefore to locking errors.
+				//        Setting dllresetb manually to 1 is a quick fix until the RepeaterBlock
+				//        container is reprogrammed to probably implement read-/wite-only values.
+				//        JJK.
+				rb.dllresetb = !false;
 				set_repeater_block(*h, c_rb, rb);
 
 				flush(*h);

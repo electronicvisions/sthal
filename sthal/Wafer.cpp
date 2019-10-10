@@ -1,6 +1,7 @@
 #include <chrono>
 #include <thread>
 
+#include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
 #include <boost/scope_exit.hpp>
@@ -37,6 +38,8 @@ extern "C" {
 #include "hal/Coordinate/FormatHelper.h"
 #include "hal/backend/HMFBackend.h"
 
+#include "slurm/vision_defines.h"
+
 #include "sthal_git_version.h"
 
 using namespace ::HMF::Coordinate;
@@ -51,6 +54,30 @@ void check_fpga_handle(sthal::Wafer::fpga_handle_t const& fpga_handle,
 		        << " missing. You have to connect first to the hardware.";
 		throw std::runtime_error(message.str().c_str());
 	}
+}
+
+std::vector<FPGAGlobal> get_fpgas_from_licenses()
+{
+	std::string const licenses = (std::getenv(vision_slurm_hardware_licenses_env_name) != nullptr)
+	                                 ? std::getenv(vision_slurm_hardware_licenses_env_name)
+	                                 : "";
+
+	std::vector<std::string> tokens;
+	boost::split(tokens, licenses, boost::is_any_of(","));
+
+	std::vector<std::string> fpga_licenses;
+	std::copy_if(
+	    std::begin(tokens), std::end(tokens), std::back_inserter(fpga_licenses),
+	    [](std::string fl) {
+		    try {
+			    auto const fs = from_string(fl);
+			    return boost::get<FPGAGlobal>(&fs) != nullptr;
+		    } catch (std::runtime_error const& e) {
+			    return false;
+		    }
+	    });
+
+	return from_string<FPGAGlobal>(fpga_licenses);
 }
 }
 
@@ -278,6 +305,25 @@ void Wafer::connect(const HardwareDatabase & db)
 			    logger, "connected to FPGA: " << fpga_global << " using HICANNS "
 			                                  << printHICANNS(hicann_coords));
 		}
+	}
+
+	std::vector<FPGAOnWafer> const allocated_fpga_coordinates = getAllocatedFpgaCoordinates();
+	std::vector<FPGAGlobal> const allocated_fpgas_by_licenses = get_fpgas_from_licenses();
+
+	std::vector<FPGAGlobal> allocated_fpgas_by_experiment(allocated_fpga_coordinates.size());
+	std::transform(
+	    std::begin(allocated_fpga_coordinates), std::end(allocated_fpga_coordinates),
+	    std::back_inserter(allocated_fpgas_by_experiment),
+	    [this](auto f) { return FPGAGlobal(f, index()); });
+
+	std::vector<FPGAGlobal> diff;
+	std::set_difference(
+	    std::begin(allocated_fpgas_by_licenses), std::end(allocated_fpgas_by_licenses),
+	    std::begin(allocated_fpgas_by_experiment), std::end(allocated_fpgas_by_experiment),
+	    std::inserter(diff, begin(diff)));
+
+	for (auto const& f : diff) {
+		LOG4CXX_WARN(logger, "License of " << to_string(f) << " not required by experiment");
 	}
 
 	for (auto ii : getAllocatedHicannCoordinates() )

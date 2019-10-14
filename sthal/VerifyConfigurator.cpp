@@ -314,8 +314,8 @@ void VerifyConfigurator::read_repeater(hicann_handle_t const& h, hicann_data_t c
 	for (auto addr : iter_all<RepeaterBlockOnHICANN>()) {
 		LOG4CXX_TRACE(getLogger(), "read back: " << addr);
 		auto value = ::HMF::HICANN::get_repeater_block(*h, addr);
-		value.tdi_data = decltype(value.tdi_data)();
-		errors.push_back(check(addr, repeaters[addr], value));
+		// Only SRAM timings are writ- and readable
+		errors.push_back(check(addr, repeaters[addr].timings, value.timings));
 	}
 	post_merge_errors(h->coordinate(), "repeater", errors, true);
 	LOG4CXX_DEBUG(getTimeLogger(), "read back repeaters took " << t.get_ms() << "ms");

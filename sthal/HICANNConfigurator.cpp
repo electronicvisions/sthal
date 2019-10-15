@@ -442,4 +442,20 @@ void HICANNConfigurator::config_background_generators(hicann_handle_t const& h,
 	                                   << t.get_ms() << "ms");
 }
 
+void HICANNConfigurator::sync_command_buffers(fpga_handle_t const& fpga_handle,
+                                              hicann_handles_t const& hicann_handles)
+{
+	auto const t = Timer::from_literal_string(__PRETTY_FUNCTION__);
+	// Make sure no commands are pending
+	LOG4CXX_DEBUG(getLogger(), short_format(fpga_handle->coordinate())
+	                           << ": sync command buffers (Host-FPGA and FPGA-HICANN");
+
+	::HMF::FPGA::flush(*fpga_handle);
+
+	for (auto handle : hicann_handles) {
+		flush_hicann(handle);
+	}
+	LOG4CXX_DEBUG(getTimeLogger(), "synchronization of command buffers took " << t.get_ms() << "ms");
+}
+
 } // end namespace sthal

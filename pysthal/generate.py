@@ -75,17 +75,19 @@ for cls in ['vector<sthal::Spike>']:
     c.add_registration_code('def(bp::self_ns::str(bp::self_ns::self))')
 
 # Because e.g. HICANNData does not provide operator<
-for td in ns_sthal.class_("ParallelHICANNv4Configurator").typedefs(allow_empty=True):
-    cls = td.target_decl
-    container = cls.indexing_suite
-    if container is None:
-        continue
+class_names = ["ParallelHICANNv4Configurator", "HICANNConfigurator"]
+for name in class_names:
+    for td in ns_sthal.class_(name).typedefs(allow_empty=True):
+        cls = td.target_decl
+        container = cls.indexing_suite
+        if container is None:
+            continue
 
-    element_type = container.element_type
-    if not element_type.decl_string.startswith("::boost::shared_ptr"):
-        continue
+        element_type = container.element_type
+        if not element_type.decl_string.startswith("::boost::shared_ptr"):
+            continue
 
-    container.disable_methods_group("reorder")
+        container.disable_methods_group("reorder")
 
 for td in ns_sthal.typedefs():
     decl = getattr(td.type, "declaration", None)

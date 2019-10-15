@@ -1,6 +1,7 @@
 #pragma once
 
 #include <boost/shared_ptr.hpp>
+#include <vector>
 
 #include "pywrap/compat/array.hpp"
 #include "pywrap/compat/macros.hpp"
@@ -31,6 +32,8 @@ public:
 	typedef boost::shared_ptr< ::HMF::Handle::HICANN> hicann_handle_t;
 	typedef boost::shared_ptr<sthal::FPGA> fpga_t;
 	typedef boost::shared_ptr<sthal::HICANNData> hicann_data_t;
+
+	typedef std::vector<hicann_handle_t> hicann_handles_t;
 
 	HICANNConfigurator();
 #ifndef PYPLUSPLUS
@@ -86,6 +89,16 @@ static boost::shared_ptr<HICANNConfigurator> create(Ps&... ps) {
 		hicann_handle_t const& h, hicann_data_t const& hicann);
 	virtual void config_neuron_quads(
 		hicann_handle_t const& h, hicann_data_t const& hicann, bool disable_spl1_output = false);
+
+	/**
+	 * Waits until 1. Host-FPGA and 2. all FPGA-HICANN communication channels are idle, i.e.
+	 * similar to a "sync barrier".
+	 *
+	 * @param fpga_handle FPGA handle.
+	 * @param hicann_handles Handles of HICANNs to be included in the synchronization.
+	 */
+	void sync_command_buffers(fpga_handle_t const& fpga_handle,
+	                          hicann_handles_t const& hicann_handles);
 
 	virtual void write_fg_row(
 		hicann_handle_t const& h,

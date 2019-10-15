@@ -29,7 +29,6 @@ namespace sthal {
 class ParallelHICANNv4Configurator : public HICANNConfigurator
 {
 public:
-	typedef std::vector<hicann_handle_t> hicann_handles_t;
 	typedef std::vector<hicann_data_t> hicann_datas_t;
 	typedef std::vector< ::HMF::HICANN::FGRowOnFGBlock4> row_list_t;
 	typedef std::vector<row_list_t> row_lists_t;

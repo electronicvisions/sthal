@@ -464,6 +464,9 @@ void Wafer::configure(HICANNConfigurator & configurator)
 					                    std::get<1>(item));
 				}
 			}
+
+			// sync command buffers
+			configurator.sync_command_buffers(fpga_handle, hicann_handles);
 		} // fpgas
 		auto const sleep_interval = std::chrono::milliseconds(sleep_stages.at(stage));
 		LOG4CXX_DEBUG(logger, "sleeping for " << sleep_interval.count() << " ms after stage "

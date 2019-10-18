@@ -2,6 +2,8 @@
 #include "sthal/Timer.h"
 
 #include "hal/Coordinate/iter_all.h"
+#include "hal/HICANN/GbitLink.h"
+#include "sthal/HICANN.h"
 
 using namespace ::HMF::Coordinate;
 
@@ -301,6 +303,21 @@ bool operator==(FPGA const& a, FPGA const& b)
 bool operator!=(FPGA const& a, FPGA const& b)
 {
 	return !(a == b);
+}
+
+bool FPGA::hasOutboundMergers() const
+{
+	for (HICANNOnWafer const hicann_c : getAllocatedHICANNs()) {
+		HICANNOnDNC const hicann_on_dnc_c = hicann_c.toHICANNOnDNC();
+		DNCOnFPGA const dnc_c = HICANNGlobal(hicann_c, wafer()).toDNCOnFPGA();
+		for (auto channel : iter_all<GbitLinkOnHICANN>()) {
+			if (mDNCs[dnc_c][hicann_on_dnc_c]->layer1[channel] ==
+			    HMF::HICANN::GbitLink::Direction::TO_DNC) {
+				return true;
+			}
+		}
+	}
+	return false;
 }
 
 } // end namespace sthal

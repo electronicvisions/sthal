@@ -307,6 +307,28 @@ class TestSthalAlgorithms(PyhalbeTest):
                              hicann.find_neuron_in_analog_output(analog))
             hicann.analog.disable(analog)
 
+    def test_has_outbound_mergers(self):
+        import pyhalbe
+        import pysthal
+        import Coordinate as C
+
+        wafer_c = C.Wafer(33)
+        gbitlink_c = C.GbitLinkOnHICANN(C.Enum(0))
+        fpga_on_wafer_c = C.FPGAOnWafer(C.Enum(0))
+        fpga_c = C.FPGAGlobal(fpga_on_wafer_c, wafer_c)
+        hicann_cs = [C.HICANNGlobal(h, wafer_c) for h in fpga_c.toHICANNOnWafer()]
+        hicann_c = hicann_cs[0]
+        hicann_on_dnc_c = hicann_c.toHICANNOnWafer().toHICANNOnDNC()
+        dnc_on_fpga_c = hicann_c.toDNCOnFPGA()
+
+        w = pysthal.Wafer()
+        h = w[hicann_c.toHICANNOnWafer()]
+        f = w[fpga_on_wafer_c]
+
+        self.assertFalse(f.hasOutboundMergers())
+
+        f[dnc_on_fpga_c][hicann_on_dnc_c].layer1[gbitlink_c] = pyhalbe.HICANN.GbitLink.Direction.TO_DNC
+        self.assertTrue(f.hasOutboundMergers())
 
 if __name__ == '__main__':
     TestSthalAlgorithms.main()

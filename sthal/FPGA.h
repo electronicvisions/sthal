@@ -122,6 +122,9 @@ public:
 	/// get if HICANN is blacklisted
 	bool getBlacklisted(const HMF::Coordinate::HICANNOnDNC& blacklisted_hicann) const;
 
+	// return if has at least one HICANN configured to send spikes back
+	bool hasOutboundMergers() const;
+
 private:
 	fpga_coord mCoordinate;
 	std::array<DNC, dnc_coord::size> mDNCs;

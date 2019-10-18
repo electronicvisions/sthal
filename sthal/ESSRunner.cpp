@@ -44,11 +44,12 @@ void ESSRunner::run(const fpga_list & fpgas,
 				FPGA::dnc_freq_in_MHz * this->time();
 
 			// send_spikes(fpgas, handles);
-			::HMF::FPGA::write_playback_pulses(
+			::HMF::FPGA::write_playback_program(
 				fpga_handle,
 				fpga->getSendSpikes(),
 				endtime,
-				 /* fpga_hicann_delay */ 62 // 62 fpga_clk cycles are 496 nano seconds (corresponds to L2_TRANSMIT_DELAY=500ns from systemsim/global_src/systemc/sim_def.h), FIXME: hardcoded delay
+				/* fpga_hicann_delay */ 62, // 62 fpga_clk cycles are 496 nano seconds (corresponds to L2_TRANSMIT_DELAY=500ns from systemsim/global_src/systemc/sim_def.h), FIXME: hardcoded delay
+				fpga->hasOutboundMergers()
 				);
 
 			::HMF::FPGA::prime_experiment(fpga_handle);

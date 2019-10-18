@@ -98,8 +98,9 @@ void ExperimentRunner::send_spikes(const fpga_list & fpgas, const fpga_handle_li
 			                                << " to FPGA: " << handle.coordinate());
 			FPGA::PulseEvent::spiketime_t const endtime =
 				FPGA::dnc_freq_in_MHz * this->m_run_time_in_us;
-			::HMF::FPGA::write_playback_pulses(handle, spikes, endtime,
-				fpga.commonFPGASettings()->getFPGAHICANNDelay());
+			::HMF::FPGA::write_playback_program(
+			    handle, spikes, endtime, fpga.commonFPGASettings()->getFPGAHICANNDelay(),
+			    fpga.hasOutboundMergers());
 		}
 	}
 
@@ -123,7 +124,7 @@ void ExperimentRunner::send_spikes(const fpga_list & fpgas, const fpga_handle_li
 			now = std::chrono::steady_clock::now();
 			if ((now - start) > timeout) {
 				std::stringstream debug_msg;
-				debug_msg << "write_playback_pulses: no end of experiment response from FPGA "
+				debug_msg << "write_playback_program: no end of experiment response from FPGA "
 				          << handle.coordinate();
 				throw std::runtime_error(debug_msg.str());
 			}

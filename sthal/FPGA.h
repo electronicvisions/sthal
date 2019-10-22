@@ -20,8 +20,8 @@ class HICANN;
 
 class FPGA
 {
-	typedef boost::shared_ptr<sthal::HICANN>    hicann_t;
 public:
+	typedef boost::shared_ptr<sthal::HICANN>    hicann_t;
 	typedef ::HMF::Coordinate::FPGAGlobal       fpga_coord;
 	typedef ::HMF::Coordinate::HICANNOnWafer    hicann_coord;
 	typedef ::HMF::Coordinate::DNCOnFPGA        dnc_coord;

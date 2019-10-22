@@ -26,6 +26,7 @@ class HICANNConfigurator;
 
 class Wafer : private boost::noncopyable
 {
+public:
 	typedef ::HMF::Coordinate::Wafer          wafer_coord;
 	typedef ::HMF::Coordinate::HICANNOnWafer  hicann_coord;
 	typedef ::HMF::Coordinate::FPGAOnWafer    fpga_coord;
@@ -33,8 +34,6 @@ class Wafer : private boost::noncopyable
 	typedef ::HMF::Coordinate::AnalogOnHICANN analog_coord;
 	typedef ::HMF::Coordinate::Enum           enum_t;
 	typedef ::HMF::Coordinate::IPv4           ip_t;
-
-public:
 
 	typedef boost::shared_ptr< ::HMF::Handle::FPGA >   fpga_handle_t;
 	typedef boost::shared_ptr< ::HMF::Handle::HICANN > hicann_handle_t;

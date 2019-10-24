@@ -6,7 +6,6 @@
 #include "hal/Coordinate/HMFGeometry.h"
 #include "hal/HICANNContainer.h"
 #include "hal/DNCContainer.h"
-#include "hal/HMFUtil.h" // TODO: DELETE THIS
 
 #include "sthal/CrossbarSwitches.h"
 #include "sthal/SynapseSwitches.h"

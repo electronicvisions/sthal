@@ -555,6 +555,16 @@ Wafer::operator[](const fpga_coord & fc) const
 	return *fpga;
 }
 
+SynapseProxy Wafer::operator[](const ::HMF::Coordinate::SynapseOnWafer& s)
+{
+	return (*this)[s.toHICANNOnWafer()].synapses[s.toSynapseOnHICANN()];
+}
+
+SynapseConstProxy Wafer::operator[](const ::HMF::Coordinate::SynapseOnWafer& s) const
+{
+	return (*this)[s.toHICANNOnWafer()].synapses[s.toSynapseOnHICANN()];
+}
+
 size_t Wafer::allocated() const
 {
 	return mNumHICANNs;

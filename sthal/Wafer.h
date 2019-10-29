@@ -52,6 +52,12 @@ public:
 	FPGA & operator[](const fpga_coord & fpga);
 	const FPGA & operator[](const fpga_coord & fpga) const;
 	
+	/// Returns synapse proxy
+	SynapseProxy operator[](const ::HMF::Coordinate::SynapseOnWafer& s);
+
+	/// Returns constant synapse proxy
+	SynapseConstProxy operator[](const ::HMF::Coordinate::SynapseOnWafer& s) const;
+
 	/// Get Wafer Coordiante
 	wafer_coord const& index() const;
 

@@ -250,6 +250,40 @@ class TestSingleHICANN(PysthalTest):
 #        if they match the frequency of the background generator"""
 
     @hardware
+    def test_bg_event_filter(self):
+        """Test filtering of background events. Activate bg generators and readout trace.
+        Should be empty with active event filter and non empty without filter"""
+
+        bg_period = 500
+        # arbitrarily long enough runtime to capture background events
+        runtime = 1. / pysthal.FPGA.dnc_freq * bg_period * 100
+
+        for bg in Coord.iter_all(Coord.BackgroundGeneratorOnHICANN):
+            generator = self.h.layer1[bg]
+            generator.enable(True)
+            generator.random(False)
+            generator.period(bg_period)
+            generator.address(pyhalbe.HICANN.L1Address(0))
+
+        direction = pyhalbe.HICANN.GbitLink.Direction.TO_DNC
+        for channel in Coord.iter_all(Coord.GbitLinkOnHICANN):
+            self.h.layer1[channel] = direction
+
+        self.connect()
+        cfg = FastConfigurator()
+        self.w.configure(cfg)
+        runner = pysthal.ExperimentRunner(runtime, True)
+        self.w.start(runner)
+        received = self.h.receivedSpikes(Coord.GbitLinkOnHICANN(0))
+        self.assertEqual(received.size, 0)
+
+        runner.drop_background_events(False)
+        self.w.start(runner)
+        received = self.h.receivedSpikes(Coord.GbitLinkOnHICANN(0))
+
+        self.assertTrue(received.size > 0)
+
+    @hardware
     def test_background_frequences_against_ADC_samplerate(self, bg_period=1000):
         """This test sends background pulses to the synapse drivers 111 and
         112 and then checks the pro_out signal of the synapse driver to see

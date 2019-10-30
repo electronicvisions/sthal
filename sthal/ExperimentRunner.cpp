@@ -100,7 +100,7 @@ void ExperimentRunner::send_spikes(const fpga_list & fpgas, const fpga_handle_li
 				FPGA::dnc_freq_in_MHz * this->m_run_time_in_us;
 			::HMF::FPGA::write_playback_program(
 			    handle, spikes, endtime, fpga.commonFPGASettings()->getFPGAHICANNDelay(),
-			    fpga.hasOutboundMergers());
+			    fpga.hasOutboundMergers(), m_drop_background_events);
 		}
 	}
 
@@ -165,7 +165,6 @@ void ExperimentRunner::receive_spikes(const fpga_list & fpgas, const fpga_handle
 	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 	auto logger = getLogger();
 	LOG4CXX_DEBUG(logger, "receiving spikes from FPGAs");
-	bool const drop_background_events = m_drop_background_events;
 	// L1Address(0) is reserved for background events
 	const ::HMF::HICANN::L1Address bkg_address(0);
 	const size_t num_fpgas = fpgas.size();
@@ -176,24 +175,25 @@ void ExperimentRunner::receive_spikes(const fpga_list & fpgas, const fpga_handle
 			FPGA& fpga = *fpgas.at(fpga_counter);
 			FPGA::PulseEvent::spiketime_t const duration =
 				FPGA::dnc_freq_in_MHz * this->m_run_time_in_us;
-			auto const& result = ::HMF::FPGA::read_trace_pulses(handle, duration, drop_background_events);
+			auto const& result = ::HMF::FPGA::read_trace_pulses(handle, duration);
 
-			size_t background_events = result.dropped_events;
-			size_t const total_events = result.events.size() + background_events;
-			if (!drop_background_events) {
-				for (auto const& pulse_event : result.events) {
+			size_t const total_events = result.size();
+			if (!m_drop_background_events) {
+				size_t background_events = 0;
+				for (auto const& pulse_event : result) {
 					if (pulse_event.getNeuronAddress() == bkg_address) {
 						++background_events;
 					}
 				}
+				LOG4CXX_INFO(
+					logger, "received " << total_events
+					<< " (" << (total_events - background_events)
+					<< ") spikes (not background) from FPGA: " << handle.coordinate());
+			} else {
+				LOG4CXX_INFO(logger, "received " << total_events << "spikes from FPGA: " << handle.coordinate());
 			}
 
-			fpga.setReceivedPulseEvents(std::move(result.events));
-
-			LOG4CXX_INFO(
-				logger, "received " << total_events
-				<< " (" << (total_events - background_events)
-				<< ") spikes (not background) from FPGA: " << handle.coordinate());
+			fpga.setReceivedPulseEvents(std::move(result));
 
 			size_t const max_total_events = this->m_run_time_in_us*1e-6 * FPGA::gbitlink_max_throughput;
 			for (auto hicann : fpga.getAllocatedHICANNs()) {

@@ -31,6 +31,7 @@ void ESSRunner::run(const fpga_list & fpgas,
 
 	assert ( fpgas.size() == handles.size() );
 
+	bool const drop_bg_events = drop_background_events();
 	for ( size_t i = 0; i < fpgas.size(); ++i)
 	{
 		auto & handle = handles[i];
@@ -45,12 +46,12 @@ void ESSRunner::run(const fpga_list & fpgas,
 
 			// send_spikes(fpgas, handles);
 			::HMF::FPGA::write_playback_program(
-				fpga_handle,
-				fpga->getSendSpikes(),
-				endtime,
-				/* fpga_hicann_delay */ 62, // 62 fpga_clk cycles are 496 nano seconds (corresponds to L2_TRANSMIT_DELAY=500ns from systemsim/global_src/systemc/sim_def.h), FIXME: hardcoded delay
-				fpga->hasOutboundMergers()
-				);
+			    fpga_handle, fpga->getSendSpikes(), endtime,
+			    /* fpga_hicann_delay */ 62, // 62 fpga_clk cycles are 496 nano seconds (corresponds
+			                                // to L2_TRANSMIT_DELAY=500ns from
+			                                // systemsim/global_src/systemc/sim_def.h), FIXME:
+			                                // hardcoded delay
+			    fpga->hasOutboundMergers(), drop_bg_events);
 
 			::HMF::FPGA::prime_experiment(fpga_handle);
 			::HMF::FPGA::start_experiment(fpga_handle);
@@ -82,7 +83,6 @@ void ESSRunner::run(const fpga_list & fpgas,
 		}
 	}
 
-	bool const drop_bg_events = drop_background_events();
 	for ( size_t i = 0; i < fpgas.size(); ++i)
 	{
 		auto & handle = handles[i];
@@ -93,21 +93,22 @@ void ESSRunner::run(const fpga_list & fpgas,
 			FPGAEss& fpga_handle = dynamic_cast<FPGAEss&>(*handle);
 
 			// receive_spikes(fpgas, handles);
-			auto result = ::HMF::FPGA::read_trace_pulses(fpga_handle, drop_bg_events);
+			auto result =
+			    ::HMF::FPGA::read_trace_pulses(fpga_handle, 0 /*runtime not used in ESS*/);
 
-			size_t background_events = result.dropped_events;
-			size_t total_events = result.events.size() + background_events;
+			size_t background_events = 0;
+			size_t const total_events = result.size();
 			if (!drop_bg_events) {
 				// L1Address(0) is reserved for background events
 				const ::HMF::HICANN::L1Address bkg_address(0);
-				for (auto const& pulse_event : result.events) {
+				for (auto const& pulse_event : result) {
 					if (pulse_event.getNeuronAddress() == bkg_address) {
 						++background_events;
 					}
 				}
 			}
 
-			fpga->setReceivedPulseEvents(std::move(result.events));
+			fpga->setReceivedPulseEvents(std::move(result));
 
 			LOG4CXX_INFO(
 				getLogger(), "received " << total_events

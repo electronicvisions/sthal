@@ -357,6 +357,8 @@ def main():
                 [result_id],
                 'b+')
 
+        p.legend(('Standard deviation', '(Max - Min) measured value'),
+            loc='upper right')
     hist_fig = p.figure()
     p.hist(all_stds, bins=100, range=(0, .1))
     p.xlabel("trial-to-trial sigma [V]")

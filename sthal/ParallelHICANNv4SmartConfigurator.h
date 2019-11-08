@@ -4,6 +4,7 @@
 #include <boost/serialization/map.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/set.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include "hal/Handle/HICANN.h"
@@ -72,6 +73,7 @@ private:
 	{
 		using namespace boost::serialization;
 		ar& make_nvp("mWrittenHICANNData", mWrittenHICANNData);
+		ar& make_nvp("mDidFPGAReset", mDidFPGAReset);
 	}
 	// pointer to the Wafers HICANN data that was written previously
 	std::map<hicann_coord, hicann_data_t> mWrittenHICANNData;

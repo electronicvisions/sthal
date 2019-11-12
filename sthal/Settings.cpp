@@ -66,20 +66,6 @@ Settings::~Settings()
 {
 }
 
-void Settings::init()
-{
-}
-
-void Settings::load()
-{
-
-}
-
-void Settings::save()
-{
-
-}
-
 Settings & Settings::get()
 {
 	static Settings instance;

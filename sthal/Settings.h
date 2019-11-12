@@ -12,10 +12,6 @@ namespace sthal {
 struct Settings
 {
 public:
-	static void init();
-	static void load();
-	static void save();
-
 	static Settings & get();
 
 	std::string calibtic_backend; //>! backend: xml

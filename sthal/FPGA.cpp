@@ -3,13 +3,14 @@
 
 #include "hal/Coordinate/iter_all.h"
 #include "hal/HICANN/GbitLink.h"
+#include "hal/FPGAContainer.h"
 #include "sthal/HICANN.h"
 
 using namespace ::HMF::Coordinate;
 
 namespace sthal {
 
-const int FPGA::dnc_freq_in_MHz = 250;
+const int FPGA::dnc_freq_in_MHz = ::HMF::FPGA::DNC_frequency_in_MHz;
 const double FPGA::dnc_freq = 1e6 * dnc_freq_in_MHz;
 // 1Gbit/s, 2 spikes per 80 bits
 const double FPGA::gbitlink_max_throughput = 25e6;

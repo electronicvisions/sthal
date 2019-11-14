@@ -179,7 +179,7 @@ def build(bld):
             tests           = bld.path.ant_glob('tests/sthal_test_*.py'),
             features        = 'use pytest',
             use             = ['pysthal', '_pysthal', 'pyhalbe', '_pyhalbe',
-                               'pylogging', 'pyhalbe_tests'],
+                               'pylogging', 'pyhalbe_tests', 'pyredman', 'redman_xml'],
             install_path    = '${PREFIX}/bin',
             test_timeout    = 45,
             prepend_to_path = ["tools"],

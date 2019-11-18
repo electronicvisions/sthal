@@ -158,7 +158,7 @@ void ParallelHICANNv4SmartConfigurator::config_synapse_array(
 				        all_changed_hicanns[ii]->synapses.getDecoderDoubleRow(syndrv)) {
 					decoder_data.push_back(
 					    all_changed_hicanns[ii]->synapses.getDecoderDoubleRow(syndrv));
-					drv_changed_handles.push_back(handles[ii]);
+					drv_changed_handles.push_back(all_changed_handles[ii]);
 				}
 			}
 

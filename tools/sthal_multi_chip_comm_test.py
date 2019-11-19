@@ -17,5 +17,5 @@ for h in args.hicann:
     backend_path = args.backend_path_pattern.format(args.wafer, h)
     os.mkdir(backend_path)
     with open(os.path.join(backend_path, "out.txt"),'w') as fout, open(os.path.join(backend_path, "err.txt"),'w') as ferr:
-        subprocess.call(["./sthal_single_chip_comm_test.py", "--wafer", str(args.wafer), "--hicann", str(h), "--backend_path", backend_path],
+        subprocess.call(["sthal_single_chip_comm_test.py", "--wafer", str(args.wafer), "--hicann", str(h), "--backend_path", backend_path],
                         stdout=fout, stderr=ferr)

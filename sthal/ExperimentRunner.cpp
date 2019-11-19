@@ -190,7 +190,7 @@ void ExperimentRunner::receive_spikes(const fpga_list & fpgas, const fpga_handle
 					<< " (" << (total_events - background_events)
 					<< ") spikes (not background) from FPGA: " << handle.coordinate());
 			} else {
-				LOG4CXX_INFO(logger, "received " << total_events << "spikes from FPGA: " << handle.coordinate());
+				LOG4CXX_INFO(logger, "received " << total_events << " spike(s) from FPGA: " << handle.coordinate());
 			}
 
 			fpga.setReceivedPulseEvents(std::move(result));

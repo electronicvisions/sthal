@@ -14,7 +14,8 @@ public:
 	FPGAShared();
 	~FPGAShared();
 
-	/// pll frequency of the hicann, musst be 50.0e6, 100.0e6, 150.0e6, 200.0e6 or 250.0e6
+	/// PLL frequency (Hz) of the HICANNs associated to this FPGA
+	/// Must be 50, 75, 100, 125, 150, 175, 200, 225 or 250e6
 	void setPLL(double freq);
 	double getPLL() const;
 
@@ -28,7 +29,7 @@ public:
 	friend bool operator!=(const FPGAShared & a, const FPGAShared & b);
 
 private:
-	/// pll frequency of the hicann, musst be 50.0e6, 100.0e6, 150.0e6, 200.0e6 or 250.0e6
+	/// PLL frequency (Hz) of the HICANNs associated to this FPGA
 	double pll_freq;
 
 	/// FPGA HICANN delay in fpga clock cycles (8ns)

@@ -80,7 +80,7 @@ const FPGA::PulseEventContainer& FPGA::getSendSpikes() const
 	if (m_pending_send_pulses.empty()) {
 		return m_send_pulses;
 	} else {
-		throw std::runtime_error("Spike events are not sorted, first call sortSpikes()");
+		throw std::runtime_error("FPGA::getSendSpikes: there are spikes pending to be sent");
 	}
 }
 
@@ -143,7 +143,7 @@ std::vector<Spike> const& FPGA::getSentSpikes(
 	}
 
 	if (!m_pending_send_pulses.empty()) {
-		throw std::runtime_error("Spike events are not sorted, first call sortSpikes()");
+		throw std::runtime_error("FPGA::getSentSpikes: there are spikes pending to be sent");
 	}
 
 	auto& spikes = m_sent_spikes_cache[dnc_on_wafer];

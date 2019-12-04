@@ -408,6 +408,19 @@ void ParallelHICANNv4SmartConfigurator::start_systime_counter(fpga_handle_t cons
 	    "Skipping starting of systime counter of FPGA in since Wafer has already been initialized");
 }
 
+void ParallelHICANNv4SmartConfigurator::disable_global(fpga_handle_t const& f)
+{
+	if (!(reset_config_mode == ConfigMode::Skip) &&
+	    (reset_config_mode == ConfigMode::Force ||
+	     mDidFPGAReset.find(f->coordinate()) == mDidFPGAReset.end())) {
+		return ParallelHICANNv4Configurator::disable_global(f);
+	}
+	LOG4CXX_INFO(
+	    getLogger(),
+	    "Skipping disabling of global synchronization of FPGA since Wafer has already"
+	    "been initialized");
+}
+
 void ParallelHICANNv4SmartConfigurator::set_hicanns(
     hicann_datas_t hicanns, hicann_handles_t handles)
 {

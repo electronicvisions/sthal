@@ -55,6 +55,7 @@ public:
 	    hicann_handle_t const& h, hicann_data_t const& hicann) PYPP_OVERRIDE;
 	virtual void prime_systime_counter(fpga_handle_t const& f) PYPP_OVERRIDE;
 	virtual void start_systime_counter(fpga_handle_t const& f) PYPP_OVERRIDE;
+	virtual void disable_global(fpga_handle_t const& f) PYPP_OVERRIDE;
 
 	// smart functions
 	void set_hicanns(hicann_datas_t hicanns, hicann_handles_t handles);

@@ -26,7 +26,8 @@ if __name__ == "__main__":
 
     w.connect(pysthal.MagicHardwareDatabase())
 
-    for analog in C.iter_all(C.AnalogOnHICANN):
-        h.analogRecorder(analog)
+    if args.analog:
+        for aout in args.analog:
+            h.analogRecorder(aout)
 
     print w

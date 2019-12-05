@@ -5,7 +5,7 @@ import os
 
 from pyhalbe.Coordinate import X, Y, Enum, Wafer, HICANNOnDNC, DNCOnWafer, \
     DNCOnFPGA, FPGAGlobal, FPGAOnWafer, HICANNOnWafer, PowerCoordinate, \
-    gridLookupDNCGlobal
+    gridLookupDNCGlobal, AnalogOnHICANN
 
 def parse_reticle(arg):
     """Helper to parse reticle coordinate, given as <recticle,hicann>"""
@@ -48,6 +48,10 @@ def parse_dnc(arg):
         raise argparse.ArgumentTypeError(
             "Please provide --dnc <x,y> or --dnc <enum>")
 
+def parse_analog(arg):
+    """Helper to parse wafer coordinate"""
+    return AnalogOnHICANN(Enum(int(arg)))
+
 class FPGAAction(argparse.Action):
     def __init__(self, option_strings, dest, **kwargs):
         super(FPGAAction, self).__init__(
@@ -77,6 +81,10 @@ def add_default_coordinate_options(parser):
         '--r', '--reticle', action='store', required=False,
         type=parse_reticle, metavar='<reticle>,<hicann>', dest='hicann',
         help='specify reticle and hicann on dnc to use: -r 10,0')
+    group.add_argument(
+        '--a', '--aout', action='store', required=False,
+        type=parse_analog, dest='analog', nargs="+",
+        help='specify analog output to use')
 
 def add_fpga_coordinate_options(parser):
     group = parser.add_argument_group('FPGA/DNC selection:')
@@ -92,6 +100,10 @@ def add_fpga_coordinate_options(parser):
         '--dnc', action='store', required=False,
         type=parse_dnc, metavar='<enum>|<x>,<y>', dest='dnc',
         help='specify DNCOnWafer')
+    group.add_argument(
+        '--a', '--aout', action='store', required=False,
+        type=parse_analog, dest='analog', nargs="+",
+        help='specify analog output to use')
 
 
 def to_level(level, default=pylogging.LogLevel.ALL):

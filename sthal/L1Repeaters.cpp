@@ -30,7 +30,7 @@ void L1Repeaters::clearReapeater()
 
 ::HMF::HICANN::RepeaterBlock L1Repeaters::getRepeaterBlock(::HMF::Coordinate::RepeaterBlockOnHICANN block) const
 {
-	return mBlocks[block.id()];
+	return mBlocks[block.toEnum()];
 }
 
 void L1Repeaters::setRepeater(::HMF::Coordinate::VRepeaterOnHICANN c, ::HMF::HICANN::VerticalRepeater const& r)
@@ -45,7 +45,7 @@ void L1Repeaters::setRepeater(::HMF::Coordinate::HRepeaterOnHICANN c, ::HMF::HIC
 
 void L1Repeaters::setRepeaterBlock(::HMF::Coordinate::RepeaterBlockOnHICANN block, ::HMF::HICANN::RepeaterBlock const& r)
 {
-	mBlocks[block.id()] = r;
+	mBlocks[block.toEnum()] = r;
 }
 
 void L1Repeaters::enable_dllreset()
@@ -118,7 +118,7 @@ std::ostream& operator<<(std::ostream& os, L1Repeaters const& a)
 
 	os << "RepeaterBlocks: " << std::endl;
 	for (auto b_c : ::HMF::Coordinate::iter_all<L1Repeaters::block_coordinate>()) {
-		os << b_c << " " << a.mBlocks[b_c.id()] << std::endl;
+		os << b_c << " " << a.mBlocks[b_c.toEnum()] << std::endl;
 	}
 
 	return os;

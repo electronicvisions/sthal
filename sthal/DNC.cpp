@@ -14,7 +14,7 @@ std::vector<DNC::hicann_coord> DNC::getAllocatedHicanns() const
 	std::vector<hicann_coord> result;
 	for (auto hicann : ::HMF::Coordinate::iter_all<hicann_coord>())
 	{
-		if (mHICANNs[hicann.id()])
+		if (mHICANNs[hicann.toEnum()])
 			result.push_back(hicann);
 	}
 	return result;

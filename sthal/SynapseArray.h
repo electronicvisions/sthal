@@ -68,7 +68,7 @@ struct SynapseArray
 	SynapseRowProxy operator[](row_coordinate const & row)
 	{
 		return SynapseRowProxy(
-				decoders[row.toSynapseDriverOnHICANN().id()][
+				decoders[row.toSynapseDriverOnHICANN().toEnum()][
 					row.toRowOnSynapseDriver()],
 				weights[row]);
 	}
@@ -76,7 +76,7 @@ struct SynapseArray
 	SynapseRowConstProxy operator[](row_coordinate const & row) const
 	{
 		return SynapseRowConstProxy(
-				decoders[row.toSynapseDriverOnHICANN().id()][
+				decoders[row.toSynapseDriverOnHICANN().toEnum()][
 					row.toRowOnSynapseDriver()],
 				weights[row]);
 	}
@@ -85,7 +85,7 @@ struct SynapseArray
 	{
 		const row_coordinate & row = s.toSynapseRowOnHICANN();
 		return SynapseProxy(
-				decoders[row.toSynapseDriverOnHICANN().id()][
+				decoders[row.toSynapseDriverOnHICANN().toEnum()][
 					row.toRowOnSynapseDriver()][s.toSynapseColumnOnHICANN()],
 				weights[row][s.toSynapseColumnOnHICANN()]);
 	}
@@ -94,7 +94,7 @@ struct SynapseArray
 	{
 		const row_coordinate & row = s.toSynapseRowOnHICANN();
 		return SynapseConstProxy(
-				decoders[row.toSynapseDriverOnHICANN().id()][
+				decoders[row.toSynapseDriverOnHICANN().toEnum()][
 					row.toRowOnSynapseDriver()][s.toSynapseColumnOnHICANN()],
 				weights[row][s.toSynapseColumnOnHICANN()]);
 	}

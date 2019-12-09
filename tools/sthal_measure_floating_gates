@@ -53,7 +53,7 @@ def plot(results, folder):
         title = "Block {},{} Row {} | {}, {}".format(
             int(block.x()), int(block.y()), int(row),
             shared_name, neuron_name)
-        filename = "block_{}_row_{}.png".format(int(block.id()), int(row))
+        filename = "block_{}_row_{}.png".format(int(block.toEnum()), int(row))
         logger.info("Create plot '{}' in '{}'".format(title, filename))
 
         blk = fgs.getBlock(block)
@@ -81,7 +81,7 @@ def plot(results, folder):
 
         plt.subplot(1, 2, 2)
         # 5 mV bins
-#        filename = "diff_block_{}_row_{}.png".format(int(block.id()), int(row))
+#        filename = "diff_block_{}_row_{}.png".format(int(block.toEnum()), int(row))
         bins = numpy.arange(50) * 0.0025
         for ii, step in enumerate(result):
             mean, variance = step

@@ -70,7 +70,7 @@ namespace
 			size_t current_component = 0;
 			for (NeuronOnHICANN neuron : iter_all<NeuronOnHICANN>())
 			{
-				if (!visited[neuron.id()])
+				if (!visited[neuron.toEnum()])
 				{
 					find_cc(neuron, current_component);
 					++current_component;
@@ -162,37 +162,37 @@ namespace
 		void find_cc(NeuronOnHICANN start, size_t current_component)
 		{
 			std::vector<size_t> stack;
-			stack.push_back(start.id());
+			stack.push_back(start.toEnum());
 			while (!stack.empty())
 			{
 				NeuronOnHICANN n{Enum{stack.back()}};
 				stack.pop_back();
 
-				if (visited[n.id()])
+				if (visited[n.toEnum()])
 					continue;
 
-				visited[n.id()] = true;
-				components[n.id()] = current_component;
+				visited[n.toEnum()] = true;
+				components[n.toEnum()] = current_component;
 				// Visit Neighbours: left, right, top/bottom
 				if (n.x() != NeuronOnHICANN::x_type::min)
 				{
 					X x{n.x() - 1u};
 					NeuronOnHICANN next(x, n.y());
 					if (are_connected(n, next))
-						stack.push_back(next.id());
+						stack.push_back(next.toEnum());
 				}
 				if (n.x() != NeuronOnHICANN::x_type::max)
 				{
 					X x{n.x() + 1u};
 					NeuronOnHICANN next(x, n.y());
 					if (are_connected(n, next))
-						stack.push_back(next.id());
+						stack.push_back(next.toEnum());
 				}
 				{
 					NeuronOnHICANN next(n.x(), (n.y() == Y(0) ? Y(1) : Y(0)));
 					auto quad = neurons[n.toQuadOnHICANN()];
 					if (quad.getVerticalInterconnect(n.toNeuronOnQuad().x()))
-						stack.push_back(next.id());
+						stack.push_back(next.toEnum());
 				}
 			}
 		}

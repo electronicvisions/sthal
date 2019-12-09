@@ -82,8 +82,8 @@ inline bool not_usable(const HICANN& h, const SynapseDriverOnHICANN c)
 {
 	const SynapseDriverOnHICANN first_invalid_row(Enum(110));
 	const SynapseDriverOnHICANN last_invalid_row(Enum(113));
-	return h.get_version() == 4 && c.id() >= first_invalid_row.id() &&
-		c.id() <= last_invalid_row.id();
+	return h.get_version() == 4 && c.toEnum() >= first_invalid_row.toEnum() &&
+		c.toEnum() <= last_invalid_row.toEnum();
 }
 
 inline bool not_usable(const HICANN& h, const SynapseOnHICANN c)
@@ -227,11 +227,11 @@ void VerifyConfigurator::read_fg_stimulus(hicann_handle_t const& h, hicann_data_
 	// The pulselenght of the current stimulus is determined by the setting in FGConfig.
 	// This implies that the FGConfig is updated after set_current_stimulus
 	for (auto block : iter_all<FGBlockOnHICANN>()) {
-		config_values[block.id()] = ::HMF::HICANN::get_fg_config(*h, block);
-		current_stimuli[block.id()] = ::HMF::HICANN::get_current_stimulus(*h, block);
+		config_values[block.toEnum()] = ::HMF::HICANN::get_fg_config(*h, block);
+		current_stimuli[block.toEnum()] = ::HMF::HICANN::get_current_stimulus(*h, block);
 		// Reconstruct pulselength from the FGConfig
-		current_stimuli[block.id()].setPulselength(
-		    config_values[block.id()].pulselength.to_ulong());
+		current_stimuli[block.toEnum()].setPulselength(
+		    config_values[block.toEnum()].pulselength.to_ulong());
 	}
 
 	std::vector<std::string> errors;
@@ -239,15 +239,15 @@ void VerifyConfigurator::read_fg_stimulus(hicann_handle_t const& h, hicann_data_
 		for (auto block : iter_all<FGBlockOnHICANN>()) {
 			::HMF::HICANN::FGConfig expected_cfg =
 				expected->floating_gates.getFGConfig(Enum(passes - 1));
-			expected_cfg.pulselength = expected->current_stimuli[block.id()].getPulselength();
-			errors.push_back(check(block, expected_cfg, config_values[block.id()]));
+			expected_cfg.pulselength = expected->current_stimuli[block.toEnum()].getPulselength();
+			errors.push_back(check(block, expected_cfg, config_values[block.toEnum()]));
 		}
 	}
 	post_merge_errors(h->coordinate(), "fg_config", errors, true);
 	errors.clear();
 	for (auto block : iter_all<FGBlockOnHICANN>()) {
 		errors.push_back(
-			check(block, expected->current_stimuli[block.id()], current_stimuli[block.id()]));
+			check(block, expected->current_stimuli[block.toEnum()], current_stimuli[block.toEnum()]));
 	}
 	post_merge_errors(h->coordinate(), "current_stimulus", errors, true);
 	LOG4CXX_DEBUG(getTimeLogger(), "read back current stimuli took " << t.get_ms() << "ms");

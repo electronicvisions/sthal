@@ -43,7 +43,7 @@ ReadFloatingGates::ReadFloatingGates(bool do_reset, bool do_read_default) :
 
 static size_t idx(FGBlockOnHICANN block, FGCellOnFGBlock cell)
 {
-	return block.id().value() * FGCellOnFGBlock::enum_type::size + cell.id().value();
+	return block.toEnum().value() * FGCellOnFGBlock::enum_type::size + cell.toEnum().value();
 }
 
 void ReadFloatingGates::setReadCell(block_t block, cell_t cell, bool read)

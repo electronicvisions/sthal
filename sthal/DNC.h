@@ -22,7 +22,7 @@ public:
 	typedef boost::shared_ptr<HICANN>      hicann_t;
 	typedef ::HMF::Coordinate::HICANNOnDNC hicann_coord;
 
-	STHAL_ARRAY_OPERATOR(hicann_t, hicann_coord, return mHICANNs[ii.id()];)
+	STHAL_ARRAY_OPERATOR(hicann_t, hicann_coord, return mHICANNs[ii.toEnum()];)
 
 	std::vector<hicann_coord> getAllocatedHicanns() const;
 

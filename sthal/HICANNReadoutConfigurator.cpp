@@ -190,9 +190,9 @@ void HICANNReadoutConfigurator::read_fg_stimulus(hicann_handle_t const& h, HICAN
 	{
 		if (passes > 0)
 		{
-			cfgs[block.id()] = ::HMF::HICANN::get_fg_config(*h, block);
+			cfgs[block.toEnum()] = ::HMF::HICANN::get_fg_config(*h, block);
 		}
-		hicann.current_stimuli[block.id()] = ::HMF::HICANN::get_current_stimulus(*h, block);
+		hicann.current_stimuli[block.toEnum()] = ::HMF::HICANN::get_current_stimulus(*h, block);
 	}
 	if (std::adjacent_find(cfgs.begin(), cfgs.end(),
 	    std::not_equal_to< ::HMF::HICANN::FGConfig >()))

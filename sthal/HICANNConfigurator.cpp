@@ -255,7 +255,7 @@ void HICANNConfigurator::config_fg_stimulus(hicann_handle_t const& h, hicann_dat
 		::HMF::HICANN::FGConfig cfg;
 		if (passes > 0)
 			cfg = fg.getFGConfig(Enum(passes-1));
-		FGStimulus stim = hicann->current_stimuli[block.id()];
+		FGStimulus stim = hicann->current_stimuli[block.toEnum()];
 		cfg.pulselength = stim.getPulselength();
 		::HMF::HICANN::set_fg_config(*h, block, cfg);
 		::HMF::HICANN::set_current_stimulus(*h, block, stim);

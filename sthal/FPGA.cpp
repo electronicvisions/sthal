@@ -47,7 +47,7 @@ void FPGA::addSendSpikes(const hicann_coord & hicann_local,
 
 	HICANNGlobal hicann(hicann_local, wafer());
 	PulseEvent::dnc_address_t  dnc(hicann.toDNCOnFPGA().value());
-	PulseEvent::chip_address_t chip(hicann.toHICANNOnDNC().id());
+	PulseEvent::chip_address_t chip(hicann.toHICANNOnDNC().toEnum());
 	PulseEvent::channel_t      merger(dnc_merger.value());
 
 	std::transform(pulses.begin(), pulses.end(), data.begin() + old_size,
@@ -121,7 +121,7 @@ std::vector<Spike> const& FPGA::getReceivedSpikes(
 
 	HICANNGlobal hicann(hicann_local, wafer());
 	PulseEvent::dnc_address_t  dnc(hicann.toDNCOnFPGA().value());
-	PulseEvent::chip_address_t chip(hicann.toHICANNOnDNC().id());
+	PulseEvent::chip_address_t chip(hicann.toHICANNOnDNC().toEnum());
 	PulseEvent::channel_t      merger(dnc_merger.value());
 	double t = 1.0/dnc_freq;
 	for (auto& p : m_received_pulses) {
@@ -150,7 +150,7 @@ std::vector<Spike> const& FPGA::getSentSpikes(
 
 	HICANNGlobal hicann(hicann_local, wafer());
 	PulseEvent::dnc_address_t  dnc(hicann.toDNCOnFPGA().value());
-	PulseEvent::chip_address_t chip(hicann.toHICANNOnDNC().id());
+	PulseEvent::chip_address_t chip(hicann.toHICANNOnDNC().toEnum());
 	PulseEvent::channel_t      merger(dnc_merger.value());
 	double t = 1.0/dnc_freq;
 	for (auto& p : m_send_pulses.data()) {

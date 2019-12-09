@@ -30,7 +30,7 @@ public:
 			return mHorizontalRepeater[ii.toHLineOnHICANN()];)
 	STHAL_ARRAY_OPERATOR(vertical_type, vertical_coordinate,
 			return mVerticalRepeater[ii.toVLineOnHICANN()];)
-	STHAL_ARRAY_OPERATOR(block_type, block_coordinate, return mBlocks[ii.id()];)
+	STHAL_ARRAY_OPERATOR(block_type, block_coordinate, return mBlocks[ii.toEnum()];)
 
 	::HMF::HICANN::VerticalRepeater   getRepeater(::HMF::Coordinate::VRepeaterOnHICANN) const;
 	::HMF::HICANN::HorizontalRepeater getRepeater(::HMF::Coordinate::HRepeaterOnHICANN) const;

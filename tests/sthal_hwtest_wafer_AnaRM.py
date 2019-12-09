@@ -186,7 +186,7 @@ class TestRecticleAout(unittest.TestCase):
         adcs = self.data_adcs
         data = {
             'wafer': int(self.WAFER),
-            'dnc': int(self.DNC.id()),
+            'dnc': int(self.DNC.toEnum()),
             'dnc_xy': [int(self.DNC.x()), int(self.DNC.y())],
             'completed': result is not None,
             'adcs': [k + adcs[k] for k in sorted(adcs.keys())],
@@ -212,8 +212,8 @@ class TestRecticleAout(unittest.TestCase):
         """
         return (
             int(self.WAFER),
-            int(self.DNC.id()),
-            int(hicann_c.id()),
+            int(self.DNC.toEnum()),
+            int(hicann_c.toEnum()),
             int(analog),
         )
 
@@ -460,7 +460,7 @@ class TestRecticleAout(unittest.TestCase):
         if args.data_output_dir:
             output_dir = os.path.join(
                 args.data_output_dir,
-                'wafer{}_dnc{:0>2}'.format(int(args.wafer), int(args.dnc.id())))
+                'wafer{}_dnc{:0>2}'.format(int(args.wafer), int(args.dnc.toEnum())))
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
         else:

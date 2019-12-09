@@ -330,7 +330,7 @@ class TestSingleHICANN(PysthalTest):
             freq, qual = eval(dt, data)
             print "Measured frequencies: ", freq, "on", sd_str
             # FOR DEBUG
-            # np.save("synapse_driver_%i_%i_%i_%i.npy" % (bg_period, self.wafer_c, self.hicann_c.id(), ac.value()), (readout.getTimestamps(), data) )
+            # np.save("synapse_driver_%i_%i_%i_%i.npy" % (bg_period, self.wafer_c, self.hicann_c.toEnum(), ac.value()), (readout.getTimestamps(), data) )
             err = ""
             if not self.almostEqual(freq, bg_freq, 1e-4):
                 err += "%s: Meassured background frequency wrong (freq = %f, expeced %f) on the " % (ac, freq, bg_freq)
@@ -1309,8 +1309,8 @@ class TestSingleHICANN(PysthalTest):
             synapses = self.h.synapses
             for synapse in Coord.iter_all(Coord.SynapseOnHICANN):
                 s = synapses[synapse]
-                s.weight = SynapseWeight(int(weights[int(synapse.id())]))
-                s.decoder = SynapseDecoder(int(decoders[int(synapse.id())]))
+                s.weight = SynapseWeight(int(weights[int(synapse.toEnum())]))
+                s.decoder = SynapseDecoder(int(decoders[int(synapse.toEnum())]))
 
             # Check that the values are set correctly
             assert_array_equal(weights, numpy.array(
@@ -1338,7 +1338,7 @@ class TestSingleHICANN(PysthalTest):
             size = (Coord.SynapseSwitchRowOnHICANN.enum_type.size, 16)
             values = rnd.choice([True, False], size=size)
             for row in Coord.iter_all(Coord.SynapseSwitchRowOnHICANN):
-                synapse_switches.set_row(row, values[int(row.id())])
+                synapse_switches.set_row(row, values[int(row.toEnum())])
             return values
 
         def set_current_stimulus(rnd, current_stimuli):

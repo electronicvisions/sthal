@@ -193,7 +193,7 @@ void HICANN::enable_aout(const neuron_coord & ii, const analog_coord & analog_c)
 
 	neurons[ii].enable_aout(true);
 
-	switch (fg_block.id())
+	switch (fg_block.toEnum())
 	{
 		case 0:
 			analog.set_membrane_top_even(analog_c);
@@ -279,7 +279,7 @@ void HICANN::setCurrentStimulus(const neuron_coord & ii, const FGStimulus & stim
 {
 	FGBlockOnHICANN fg_block = ii.toSharedFGBlockOnHICANN();
 	enable_current_stimulus(ii);
-	current_stimuli[fg_block.id()] = stim;
+	current_stimuli[fg_block.toEnum()] = stim;
 }
 
 void HICANN::disable_current_stimulus()
@@ -309,7 +309,7 @@ void HICANN::enable_current_stimulus(const neuron_coord & ii)
 FGStimulus & HICANN::getCurrentStimulus(const neuron_coord & ii)
 {
 	FGBlockOnHICANN fg_block = ii.toSharedFGBlockOnHICANN();
-	return current_stimuli[fg_block.id()];
+	return current_stimuli[fg_block.toEnum()];
 }
 
 std::vector<double> HICANN::getStimCurrents(const neuron_coord & ii)

@@ -48,7 +48,7 @@ class Perflogger():
         self.exit_threads = False
         self.logpath = args.perflogpath
         self.wafer = args.wafer.value()
-        self.hicann = args.hicann.id().value()
+        self.hicann = args.hicann.toEnum().value()
         self.fpga = FPGAOnWafer( gridLookupFPGAOnWafer( DNCGlobal( args.hicann.toDNCOnWafer(), args.wafer ) ) ).value()
         assert(type(wireshark)==bool)
         self.wireshark = wireshark

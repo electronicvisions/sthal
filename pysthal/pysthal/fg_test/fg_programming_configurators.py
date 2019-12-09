@@ -51,7 +51,7 @@ class TestConfigurator(pysthal.HICANNConfigurator):
 
             for row_idx, row in enumerate(rows):
                 writeDown = fgconfig.writeDown
-                data = [deepcopy(fgc[blk].getFGRow(row[int(blk.id())]))
+                data = [deepcopy(fgc[blk].getFGRow(row[int(blk.toEnum())]))
                         for blk in C.iter_all(C.FGBlockOnHICANN)]
 
                 for i in xrange(len(data)):
@@ -96,7 +96,7 @@ class TestConfigurator(pysthal.HICANNConfigurator):
 
             for row_idx, row in enumerate(rows):
                 writeDown = fgconfig.writeDown
-                data = [fgc[blk].getFGRow(row[int(blk.id())])
+                data = [fgc[blk].getFGRow(row[int(blk.toEnum())])
                         for blk in C.iter_all(C.FGBlockOnHICANN)]
 
                 res = pyhalbe.HICANN.set_fg_row_values(

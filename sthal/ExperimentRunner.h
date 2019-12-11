@@ -4,6 +4,8 @@
 #include <pywrap/compat/array.hpp>
 #include "log4cxx/provisionnode.h"
 
+#include "halco/common/typed_array.h"
+
 #include "hal/Coordinate/External.h"
 
 namespace HMF {
@@ -18,8 +20,8 @@ class FPGA;
 
 typedef ::HMF::Coordinate::FPGAOnWafer fpga_coord;
 typedef boost::shared_ptr< ::HMF::Handle::FPGA > fpga_handle_t;
-typedef std::array< boost::shared_ptr<FPGA>, fpga_coord::size> fpga_list;
-typedef std::array<fpga_handle_t, fpga_coord::size> fpga_handle_list;
+typedef halco::common::typed_array< boost::shared_ptr<FPGA>, fpga_coord> fpga_list;
+typedef halco::common::typed_array<fpga_handle_t, fpga_coord> fpga_handle_list;
 
 class ExperimentRunner
 {

@@ -123,7 +123,7 @@ std::vector<Wafer::hicann_coord> Wafer::getAllocatedHicannCoordinates()
 	std::vector<Wafer::hicann_coord> ret;
 	std::copy_if(iter_all<HICANNOnWafer>().begin(), iter_all<HICANNOnWafer>().end(),
 	             std::back_inserter(ret),
-	             [this](HICANNOnWafer const coord) { return mHICANN[coord.id()]; });
+	             [this](HICANNOnWafer const coord) { return mHICANN[coord]; });
 	return ret;
 }
 
@@ -173,12 +173,12 @@ void Wafer::allocate(const hicann_coord& c)
 		throw std::runtime_error(short_format(c) + " is not available");
 	}
 
-	if (!mHICANN[c.id()])
+	if (!mHICANN[c])
 	{
 		::HMF::Coordinate::HICANNGlobal hicann_global(c, mWafer);
 	    ::HMF::Coordinate::FPGAGlobal f = hicann_global.toFPGAGlobal();
-		auto & fpga = mFPGA[f.value()];
-		auto & hicann = mHICANN[c.id()];
+		auto & fpga = mFPGA[f];
+		auto & hicann = mHICANN[c];
 		if (!fpga)
 		{
 			fpga.reset(new FPGA(f, mSharedSettings));
@@ -194,7 +194,7 @@ void Wafer::allocate(const hicann_coord& c)
 		if (!mForceListenLocal && (num_fpgas > 1)) {
 			::HMF::Coordinate::FPGAGlobal f{::HMF::Coordinate::FPGAOnWafer::Master,
 			                                mWafer};
-			auto& fpga = mFPGA[f.value()];
+			auto& fpga = mFPGA[f];
 			if (fpga == nullptr) {
 				fpga.reset(new FPGA(f, mSharedSettings));
 				LOG4CXX_INFO(logger, "allocate master FPGA: " << f);
@@ -226,7 +226,7 @@ namespace {
 
 void Wafer::populate_adc_config(hicann_coord const& hicann, analog_coord const& analog)
 {
-	auto h = mHICANN[hicann.id()];
+	auto h = mHICANN[hicann];
 
 	if(!mHardwareDatabase) {
 		throw std::runtime_error("Wafer::populate_adc_config(): connect to HardwareDatabase first");
@@ -240,7 +240,7 @@ void Wafer::populate_adc_config(hicann_coord const& hicann, analog_coord const& 
 	}
 	auto conf = mHardwareDatabase->get_adc_of_hicann(HICANNGlobal(hicann, index()), analog);
 	h->setADCConfig(analog, conf);
-	auto& adc_channel = mADCChannels[hicann.toDNCOnWafer().id()][analog.value()];
+	auto& adc_channel = mADCChannels[hicann.toDNCOnWafer()][analog];
 	conf.loadCalibration = ADCConfig::CalibrationMode::DEFAULT_CALIBRATION;
 	adc_channel.board_id = conf.coord;
 	adc_channel.channel = conf.channel;
@@ -293,7 +293,7 @@ void Wafer::connect(const HardwareDatabase & db)
 			auto hicann_coords = mFPGA[coord]->getAllocatedHICANNs();
 			std::vector<hicann_t> hicanns;
 			for (auto hicann : hicann_coords) {
-				hicanns.push_back(mHICANN.at(hicann.toEnum()));
+				hicanns.push_back(mHICANN.at(hicann));
 			}
 
 			mFPGAHandle[coord] = db.get_fpga_handle(fpga_global, mFPGA[coord], hicanns);
@@ -329,7 +329,7 @@ void Wafer::connect(const HardwareDatabase & db)
 	for (auto ii : getAllocatedHicannCoordinates() )
 	{
 		HICANNGlobal hicann(ii, mWafer);
-		auto & h = mHICANN[hicann.toHICANNOnWafer().id()];
+		auto & h = mHICANN[hicann.toHICANNOnWafer()];
 		h->set_version(db.get_hicann_version(hicann));
 	}
 	LOG4CXX_INFO(plogger, "Connected to hardware");
@@ -365,11 +365,11 @@ void Wafer::configure(HICANNConfigurator & configurator)
 	configure_l1_bus_locking(configurator);
 
 	/// First reset / configure FPGAs
-	const size_t num_fpgas = mFPGA.size();
 	#pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
-		fpga_t fpga = mFPGA.at(fpga_counter);
-		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_counter);
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		fpga_t fpga = mFPGA.at(fpga_c);
+		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
 		// Skip if FPGA is not allocated or FPGA has no allocated HICANNs,
 		// i.e. master FPGA that is not used in experiment besides global systart
 		if (!fpga || fpga->getAllocatedHICANNs().empty()) {
@@ -394,15 +394,16 @@ void Wafer::configure(HICANNConfigurator & configurator)
 	    (is_hicann_parallel) ? parallel_stage_sleep : serial_stage_sleep;
 
 	/// Check for invalid/dangerous HICANN configuration
-	for (size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
-		fpga_t fpga = mFPGA.at(fpga_counter);
-		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_counter);
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		fpga_t fpga = mFPGA.at(fpga_c);
+		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
 		if (!fpga || fpga->getAllocatedHICANNs().empty()) {
 			continue;
 		}
 		check_fpga_handle(fpga_handle, fpga);
 		for (HICANNOnWafer hicann_c : fpga->getAllocatedHICANNs()) {
-			if (auto hicann = mHICANN.at(hicann_c.id())) {
+			if (auto hicann = mHICANN.at(hicann_c)) {
 				std::stringstream errors;
 				errors << "Dangerous/invalid HICANN configuration of "
 				       << short_format(hicann->index()) << "!\n";
@@ -424,9 +425,10 @@ void Wafer::configure(HICANNConfigurator & configurator)
 	/// Then configure HICANNs
 	for (auto stage : call_stages) {
 		#pragma omp parallel for schedule(dynamic)
-		for (size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
-			fpga_t fpga = mFPGA.at(fpga_counter);
-			fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_counter);
+		for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+			FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+			fpga_t fpga = mFPGA.at(fpga_c);
+			fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
 			if (!fpga || fpga->getAllocatedHICANNs().empty()) {
 				continue;
 			}
@@ -435,7 +437,7 @@ void Wafer::configure(HICANNConfigurator & configurator)
 			ParallelHICANNv4Configurator::hicann_handles_t hicann_handles;
 			ParallelHICANNv4Configurator::hicann_datas_t hicann_datas;
 			for (HICANNOnWafer hicann_c : fpga->getAllocatedHICANNs()) {
-				if (auto hicann = mHICANN.at(hicann_c.id())) {
+				if (auto hicann = mHICANN.at(hicann_c)) {
 					hicann_coords.push_back(hicann_c);
 					hicann_handles.push_back(fpga_handle->get(hicann_c));
 					hicann_datas.push_back(hicann);
@@ -478,9 +480,10 @@ void Wafer::configure(HICANNConfigurator & configurator)
 	} // stages
 
     #pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
-		fpga_t fpga = mFPGA.at(fpga_counter);
-		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_counter);
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		fpga_t fpga = mFPGA.at(fpga_c);
+		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
 		if (!fpga) {
 			continue;
 		}
@@ -490,9 +493,10 @@ void Wafer::configure(HICANNConfigurator & configurator)
 
 	/// prime systime counters on all fpgas
 	#pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
-		fpga_t fpga = mFPGA.at(fpga_counter);
-		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_counter);
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		fpga_t fpga = mFPGA.at(fpga_c);
+		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
 		// Skip if FPGA is not allocated, do as well for master FPGA
 		if (!fpga) {
 			continue;
@@ -503,9 +507,10 @@ void Wafer::configure(HICANNConfigurator & configurator)
 
 	/// start systime counters on all fpgas
 	#pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
-		fpga_t fpga = mFPGA.at(fpga_counter);
-		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_counter);
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		fpga_t fpga = mFPGA.at(fpga_c);
+		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
 		if (!fpga) {
 			continue;
 		}
@@ -515,9 +520,10 @@ void Wafer::configure(HICANNConfigurator & configurator)
 
 	// for all but master
 	#pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
-		fpga_t fpga = mFPGA.at(fpga_counter);
-		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_counter);
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		fpga_t fpga = mFPGA.at(fpga_c);
+		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
 		if (!fpga || fpga_handle->isMaster()) {
 			continue;
 		}
@@ -527,9 +533,10 @@ void Wafer::configure(HICANNConfigurator & configurator)
 
 	// for master
 	#pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
-		fpga_t fpga = mFPGA.at(fpga_counter);
-		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_counter);
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		fpga_t fpga = mFPGA.at(fpga_c);
+		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
 		if (!fpga || !fpga_handle->isMaster()) {
 			continue;
 		}
@@ -570,7 +577,7 @@ void Wafer::disconnect()
 	}
 	for (auto coord : iter_all<HICANNOnWafer>())
 	{
-		auto & h = mHICANN[coord.id()];
+		auto & h = mHICANN[coord];
 		if (h)
 		{
             h->resetADCConfig();
@@ -582,7 +589,7 @@ void Wafer::disconnect()
 
 HICANN & Wafer::operator[](const hicann_coord & hicann)
 {
-	auto& ret = mHICANN.at(hicann.id());
+	auto& ret = mHICANN.at(hicann);
 	if (!ret)
 	{
 		allocate(hicann);
@@ -592,7 +599,7 @@ HICANN & Wafer::operator[](const hicann_coord & hicann)
 
 const HICANN & Wafer::operator[](const hicann_coord & hicann) const
 {
-	auto const& ret = mHICANN.at(hicann.id());
+	auto const& ret = mHICANN.at(hicann);
 	if (!ret)
 	{
 		throw std::runtime_error("HICANN not allocated");
@@ -603,7 +610,7 @@ const HICANN & Wafer::operator[](const hicann_coord & hicann) const
 FPGA &
 Wafer::operator[](const fpga_coord & fc)
 {
-	auto & fpga = mFPGA[fc.value()];
+	auto & fpga = mFPGA[fc];
 	if (!fpga)
 	{
 		fpga.reset(new FPGA(::HMF::Coordinate::FPGAGlobal(fc, index()) , mSharedSettings));
@@ -614,7 +621,7 @@ Wafer::operator[](const fpga_coord & fc)
 const FPGA &
 Wafer::operator[](const fpga_coord & fc) const
 {
-	auto & fpga = mFPGA[fc.value()];
+	auto & fpga = mFPGA[fc];
 	if (!fpga)
 	{
 		throw std::runtime_error("FPGA not allocated");
@@ -665,7 +672,7 @@ Status Wafer::status() const
 	st.git_rev_hicann_system = ::HMF::Debug::getHicannSystemGitVersion();
 	st.git_rev_sthal = STHAL_GIT_VERSION;
 
-	for (size_t ii=0; ii<fpga_coord::size; ++ii)
+	for (auto ii : iter_all<FPGAOnWafer>())
 	{
 		auto handle = mFPGAHandle[ii];
 		if (handle)
@@ -769,14 +776,14 @@ void Wafer::configure_l1_bus_locking(HICANNConfigurator& configurator)
 
 	bool locking_needed = false;
 
-	const size_t num_fpgas = mFPGA.size();
-	for (size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
-		const fpga_t fpga = mFPGA.at(fpga_counter);
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		const fpga_t fpga = mFPGA.at(fpga_c);
 		if (!fpga || fpga->getAllocatedHICANNs().empty()) {
 			continue;
 		}
 		for (HICANNOnWafer coord : fpga->getAllocatedHICANNs()) {
-			auto hicann = mHICANN.at(coord.id());
+			auto hicann = mHICANN.at(coord);
 			locking_needed |= smart_configurator->check_l1_bus_changes(coord, hicann);
 		}
 	}
@@ -846,7 +853,7 @@ void Wafer::serialize(Archiver & ar, unsigned int const version)
 bool operator==(Wafer const& a, Wafer const& b)
 {
 	// boost::shared_ptr does not support reasonable comparisons...
-	for (size_t i = 0; i < a.mFPGA.size(); i++) {
+	for (auto i : iter_all<FPGAOnWafer>()) {
 		if (static_cast<bool>(a.mFPGA[i]) != static_cast<bool>(b.mFPGA[i])) {
 			return false;
 		} else if (static_cast<bool>(a.mFPGA[i]) && ((*a.mFPGA[i]) != (*b.mFPGA[i]))) {
@@ -854,7 +861,7 @@ bool operator==(Wafer const& a, Wafer const& b)
 		}
 	}
 
-	for (size_t i = 0; i < a.mHICANN.size(); i++) {
+	for (auto i : iter_all<HICANNOnWafer>()) {
 		if (static_cast<bool>(a.mHICANN[i]) != static_cast<bool>(b.mHICANN[i])) {
 			return false;
 		} else if (static_cast<bool>(a.mHICANN[i]) && ((*a.mHICANN[i]) != (*b.mHICANN[i]))) {

@@ -143,10 +143,10 @@ private:
 	void configure_l1_bus_locking(HICANNConfigurator& configurator);
 
 	wafer_coord mWafer;
-	std::array<fpga_t,          fpga_coord::size>   mFPGA;
-	std::array<fpga_handle_t,   fpga_coord::size>   mFPGAHandle;
-	std::array<hicann_t,        hicann_coord::enum_type::size> mHICANN;
-	std::array<std::array<ADCChannel, analog_coord::size>, dnc_coord::enum_type::size> mADCChannels;
+	halco::common::typed_array<fpga_t,          fpga_coord>   mFPGA;
+	halco::common::typed_array<fpga_handle_t,   fpga_coord>   mFPGAHandle;
+	halco::common::typed_array<hicann_t,        hicann_coord> mHICANN;
+	halco::common::typed_array<halco::common::typed_array<ADCChannel, analog_coord>, dnc_coord> mADCChannels;
 	size_t mNumHICANNs;
 	bool mForceListenLocal;
 	boost::shared_ptr<FPGAShared> mSharedSettings;

@@ -66,11 +66,12 @@ void ExperimentRunner::sort_spikes(fpga_list const& fpgas)
 {
 	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 	LOG4CXX_DEBUG(getLogger(), "Sorting spike trains");
-	size_t const num_fpgas = fpgas.size();
 	#pragma omp parallel for schedule(dynamic)
-	for(size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
-		if (fpgas.at(fpga_counter)) {
-			fpgas.at(fpga_counter)->sortSpikes();
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+
+		if (fpgas.at(fpga_c)) {
+			fpgas.at(fpga_c)->sortSpikes();
 		}
 	}
 	LOG4CXX_INFO(getTimeLogger(), "Sorting Spike trains took " << t.get_ms() << "ms");
@@ -84,10 +85,12 @@ void ExperimentRunner::send_spikes(const fpga_list & fpgas, const fpga_handle_li
 	LOG4CXX_DEBUG(logger, "sending spikes to FPGAs");
 
 	#pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_counter = 0; fpga_counter < fpgas.size(); ++fpga_counter) {
-		if (fpgas.at(fpga_counter) && handles.at(fpga_counter)) {
-			FPGA& fpga = *fpgas.at(fpga_counter);
-			::HMF::Handle::FPGA& handle = *handles.at(fpga_counter);
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+
+		if (fpgas.at(fpga_c) && handles.at(fpga_c)) {
+			FPGA& fpga = *fpgas.at(fpga_c);
+			::HMF::Handle::FPGA& handle = *handles.at(fpga_c);
 
 			// reset hostal FPGA timestamp counter
 			::HMF::FPGA::reset_pbmem(handle);
@@ -109,10 +112,11 @@ void ExperimentRunner::send_spikes(const fpga_list & fpgas, const fpga_handle_li
 
 	// Wait for response from all FPGAs that experiment was written to Playback memory
 	#pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_counter = 0; fpga_counter < fpgas.size(); ++fpga_counter) {
-		if (!(fpgas.at(fpga_counter) && handles.at(fpga_counter)))
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		if (!(fpgas.at(fpga_c) && handles.at(fpga_c)))
 			continue;
-		HMF::Handle::FPGA& handle = *handles.at(fpga_counter);
+		HMF::Handle::FPGA& handle = *handles.at(fpga_c);
 
 		auto const start = std::chrono::steady_clock::now();
 		auto now = start;
@@ -139,20 +143,21 @@ void ExperimentRunner::start_experiment(const fpga_list & fpgas, const fpga_hand
 	auto logger = getLogger();
 
 	LOG4CXX_DEBUG(logger, "sending experiment start to FPGAs");
-	const size_t num_fpgas = fpgas.size();
 	#pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
-		if (fpgas.at(fpga_counter) && handles.at(fpga_counter)) {
-			::HMF::Handle::FPGA& handle = *handles.at(fpga_counter);
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		if (fpgas.at(fpga_c) && handles.at(fpga_c)) {
+			::HMF::Handle::FPGA& handle = *handles.at(fpga_c);
 			LOG4CXX_INFO(logger, "prime experiment of FPGA: " << handle.coordinate());
 			::HMF::FPGA::prime_experiment(handle);
 		}
 	}
 
 	#pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
-		if (fpgas.at(fpga_counter) && handles.at(fpga_counter)) {
-			::HMF::Handle::FPGA& handle = *handles.at(fpga_counter);
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		if (fpgas.at(fpga_c) && handles.at(fpga_c)) {
+			::HMF::Handle::FPGA& handle = *handles.at(fpga_c);
 			LOG4CXX_DEBUG(logger, "sending start signal to FPGA: " << handle.coordinate());
 			::HMF::FPGA::start_experiment(handle);
 		}
@@ -167,12 +172,13 @@ void ExperimentRunner::receive_spikes(const fpga_list & fpgas, const fpga_handle
 	LOG4CXX_DEBUG(logger, "receiving spikes from FPGAs");
 	// L1Address(0) is reserved for background events
 	const ::HMF::HICANN::L1Address bkg_address(0);
-	const size_t num_fpgas = fpgas.size();
+
 	#pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_counter = 0; fpga_counter < num_fpgas; ++fpga_counter) {
-		if (fpgas.at(fpga_counter) && handles.at(fpga_counter)) {
-			::HMF::Handle::FPGA& handle = *handles.at(fpga_counter);
-			FPGA& fpga = *fpgas.at(fpga_counter);
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		if (fpgas.at(fpga_c) && handles.at(fpga_c)) {
+			::HMF::Handle::FPGA& handle = *handles.at(fpga_c);
+			FPGA& fpga = *fpgas.at(fpga_c);
 			FPGA::PulseEvent::spiketime_t const duration =
 				FPGA::dnc_freq_in_MHz * this->m_run_time_in_us;
 			auto const& result = ::HMF::FPGA::read_trace_pulses(handle, duration);

@@ -32,10 +32,9 @@ void ESSRunner::run(const fpga_list & fpgas,
 	assert ( fpgas.size() == handles.size() );
 
 	bool const drop_bg_events = drop_background_events();
-	for ( size_t i = 0; i < fpgas.size(); ++i)
-	{
-		auto & handle = handles[i];
-		auto & fpga = fpgas[i];
+	for (auto fpga_c : HMF::Coordinate::iter_all<HMF::Coordinate::FPGAOnWafer>()) {
+		auto & handle = handles[fpga_c];
+		auto & fpga = fpgas[fpga_c];
 
 		if (handle) {
 			FPGAEss& fpga_handle = dynamic_cast<FPGAEss&>(*handle);
@@ -58,9 +57,8 @@ void ESSRunner::run(const fpga_list & fpgas,
 		}
 	}
 
-	for ( size_t i = 0; i < fpgas.size(); ++i)
-	{
-		auto & handle = handles[i];
+	for (auto fpga_c : HMF::Coordinate::iter_all<HMF::Coordinate::FPGAOnWafer>()) {
+		auto & handle = handles[fpga_c];
 
 		if (handle) {
 			// start_experiment(fpgas, handles);
@@ -83,10 +81,9 @@ void ESSRunner::run(const fpga_list & fpgas,
 		}
 	}
 
-	for ( size_t i = 0; i < fpgas.size(); ++i)
-	{
-		auto & handle = handles[i];
-		auto & fpga = fpgas[i];
+	for (auto fpga_c : HMF::Coordinate::iter_all<HMF::Coordinate::FPGAOnWafer>()) {
+		auto & handle = handles[fpga_c];
+		auto & fpga = fpgas[fpga_c];
 
 		if (handle) {
 

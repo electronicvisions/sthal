@@ -1,5 +1,7 @@
 #pragma once
 
+#include "halco/common/typed_array.h"
+
 #include "hal/ADC/USBSerial.h"
 #include "hal/Coordinate/HMFGeometry.h"
 
@@ -38,8 +40,8 @@ struct Status
 	std::array<uint32_t, fpga_coord::size> fpga_rev;
 
 	// adc_channels[dnc_id][analog]
-	typedef std::array<ADCChannel, ::HMF::Coordinate::AnalogOnHICANN::size> dual_channel_t;
-	typedef std::array<dual_channel_t, ::HMF::Coordinate::DNCOnWafer::enum_type::size> adc_channels_t;
+	typedef halco::common::typed_array<ADCChannel, ::HMF::Coordinate::AnalogOnHICANN> dual_channel_t;
+	typedef halco::common::typed_array<dual_channel_t, ::HMF::Coordinate::DNCOnWafer> adc_channels_t;
 	adc_channels_t adc_channels;
 
 private:

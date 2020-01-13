@@ -75,7 +75,13 @@ public:
 
 	CfgStages configuration_stages;
 
-	bool ignore_hicann_checks;
+	PYPP_CLASS_ENUM(HICANNChecksMode) {
+		Check,
+		CheckButIgnore,
+		Skip
+	};
+
+	HICANNChecksMode hicann_checks_mode;
 
 	halco::hicann::v2::JTAGFrequency jtag_frequency;
 private:

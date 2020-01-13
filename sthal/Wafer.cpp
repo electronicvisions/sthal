@@ -474,15 +474,31 @@ void Wafer::configure(HICANNConfigurator & configurator)
 				errors << "Dangerous/invalid HICANN configuration of "
 				       << short_format(hicann->index()) << "!\n";
 
-				bool const ok = hicann->check(errors);
-
-				if (!ok && settings.ignore_hicann_checks) {
-					LOG4CXX_WARN(logger, errors.str());
-				} else if (!ok && !settings.ignore_hicann_checks) {
-					LOG4CXX_ERROR(logger, errors.str());
-					throw std::runtime_error(errors.str());
-				} else {
-					LOG4CXX_DEBUG(logger, short_format(hicann->index()) << ": checks passed.");
+				switch (settings.hicann_checks_mode) {
+					case Settings::HICANNChecksMode::Skip:
+						LOG4CXX_DEBUG(logger, short_format(hicann->index()) << ": checks skipped.");
+						break;
+					case Settings::HICANNChecksMode::CheckButIgnore: {
+						if (!hicann->check(errors)) {
+							LOG4CXX_WARN(logger, errors.str());
+						} else {
+							LOG4CXX_DEBUG(
+							    logger, short_format(hicann->index()) << ": checks passed.");
+						}
+						break;
+					}
+					case Settings::HICANNChecksMode::Check: {
+						if (!hicann->check(errors)) {
+							LOG4CXX_ERROR(logger, errors.str());
+							throw std::runtime_error("HICANN software checks failed");
+						} else {
+							LOG4CXX_DEBUG(
+							    logger, short_format(hicann->index()) << ": checks passed.");
+						}
+						break;
+					}
+					default:
+						throw std::runtime_error("Unknown HICANN checks mode");
 				}
 			}
 		}

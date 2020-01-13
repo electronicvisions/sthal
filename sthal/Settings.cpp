@@ -55,7 +55,7 @@ Settings::Settings() :
 	datadir(getenv_or_default("NMPM_DATADIR", DATADIR) + "/sthal/"),
 	crossbar_switches(),
 	synapse_switches(),
-	ignore_hicann_checks(false),
+	hicann_checks_mode(HICANNChecksMode::Check),
 	jtag_frequency(
 		std::getenv("STHAL_HICANN_JTAG_FREQUENCY") != nullptr
 			? std::stoul(std::getenv("STHAL_HICANN_JTAG_FREQUENCY"))

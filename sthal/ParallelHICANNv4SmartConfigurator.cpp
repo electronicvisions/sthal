@@ -260,7 +260,6 @@ void ParallelHICANNv4SmartConfigurator::config_repeater(
 		LOG4CXX_INFO(getLogger(), "Forcing Repeater write, ignoring previous configuration");
 		return ParallelHICANNv4Configurator::config_repeater(h, hicann);
 	}
-	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 
 	const hicann_coord coord = h->coordinate();
 	const hicann_data_t old_hicann = mWrittenHICANNData[coord];

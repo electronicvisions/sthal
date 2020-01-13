@@ -473,10 +473,13 @@ void Wafer::configure(HICANNConfigurator & configurator)
 			// sync command buffers
 			configurator.sync_command_buffers(fpga_handle, hicann_handles);
 		} // fpgas
-		auto const sleep_interval = std::chrono::milliseconds(sleep_stages.at(stage));
-		LOG4CXX_DEBUG(logger, "sleeping for " << sleep_interval.count() << " ms after stage "
-		                                      << static_cast<size_t>(stage));
-		std::this_thread::sleep_for(sleep_interval);
+		if (sleep_stages.at(stage)) {
+			auto const sleep_interval = std::chrono::milliseconds(sleep_stages.at(stage));
+			LOG4CXX_DEBUG(
+			    logger, "sleeping for " << sleep_interval.count() << " ms after stage "
+			                            << static_cast<size_t>(stage));
+			std::this_thread::sleep_for(sleep_interval);
+		}
 	} // stages
 
     #pragma omp parallel for schedule(dynamic)

@@ -35,6 +35,7 @@ struct Neurons {
 	bool check_enable_spl1_output(std::ostream & errors) const;
 
 	friend bool operator==(const Neurons & a, const Neurons & b);
+	friend bool operator!=(const Neurons & a, const Neurons & b);
 
 	bool check(std::ostream & errors) const;
 

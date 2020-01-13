@@ -39,6 +39,11 @@ bool operator==(const Neurons & a, const Neurons & b)
 	;
 }
 
+bool operator!=(const Neurons & a, const Neurons & b)
+{
+	return !(a == b);
+}
+
 bool Neurons::check(std::ostream & errors) const
 {
 	bool ok = true;

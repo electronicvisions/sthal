@@ -206,7 +206,6 @@ void ParallelHICANNv4Configurator::config(fpga_handle_t const& f,
 				config_dncmerger(handle, hicann);
 				config_background_generators(handle, hicann);
 				config_repeater(handle, hicann);
-				flush_hicann(handle);
 
 				// configure synapse drivers
 				if (std::find(
@@ -218,7 +217,6 @@ void ParallelHICANNv4Configurator::config(fpga_handle_t const& f,
 					    getLogger(), "Skipping synapse driver configuration for non-highspeed "
 					                     << short_format(handle->coordinate()));
 				}
-				flush_hicann(handle);
 				++it_data;
 			}
 			break;
@@ -254,7 +252,6 @@ void ParallelHICANNv4Configurator::config(fpga_handle_t const& f,
 				config_neuron_config(handle, hicann);
 				config_neuron_quads(handle, hicann);
 				config_analog_readout(handle, hicann);
-				flush_hicann(handle);
 				++it_data;
 			}
 			break;

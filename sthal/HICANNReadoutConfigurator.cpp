@@ -116,7 +116,7 @@ void HICANNReadoutConfigurator::read_dnc_link(fpga_handle_t const& f, fpga_t con
 }
 
 void HICANNReadoutConfigurator::read_floating_gates(
-	fpga_handle_t const&,
+	fpga_handle_t const& f,
 	hicann_handle_t const& h,
 	HICANN& hicann,
 	hicann_data_t const& original_hicann)
@@ -146,7 +146,7 @@ void HICANNReadoutConfigurator::read_floating_gates(
 		{
 			namespace ba = boost::accumulators;
 			::HMF::HICANN::set_fg_cell(*h, block, cell);
-			flush_hicann(h);
+			sync_command_buffers(f, hicann_handles_t{h});
 			ba::accumulator_set<AnalogRecorder::voltage_type,
 			                    ba::stats<ba::tag::mean, ba::tag::variance> > acc;
 			record.record(10e-6); // ~960 samples

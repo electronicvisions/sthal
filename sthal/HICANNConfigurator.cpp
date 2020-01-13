@@ -185,7 +185,6 @@ void HICANNConfigurator::config(
 	config_merger_tree(h, hicann);
 	config_dncmerger(h, hicann);
 	config_background_generators(h, hicann);
-	flush_hicann(h);
 	config_synapse_drivers(h, hicann);
 
 	hicann->synapse_controllers.disable_dllreset();

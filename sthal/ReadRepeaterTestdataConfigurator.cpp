@@ -294,7 +294,7 @@ void ReadRepeaterTestdataConfigurator::clear_ignore_vrepeater() {
 	ignore_vrepeater_map.clear();
 }
 
-void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t&,
+void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t& f,
                                               const hicann_handle_t& h,
                                               const hicann_data_t& hicann) {
 	LOG4CXX_TRACE(getLogger(), "ReadRepeaterTestdataConfigurator::config "
@@ -453,14 +453,14 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t&,
 					rb.full_flag[testport] = false;
 				}
 				set_repeater_block(*h, c_rb, rb);
-				flush(*h);
+				sync_command_buffers(f, hicann_handles_t{h});
 
 				// start recording test data
 				for (auto testport : {0, 1}) {
 					rb.start_tdi[testport] = testport_active[c_rb][testport];
 				}
 				set_repeater_block(*h, c_rb, rb);
-				flush(*h);
+				sync_command_buffers(f, hicann_handles_t{h});
 
 				// readout received events
 				rb = get_repeater_block(*h, c_rb);
@@ -514,7 +514,7 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t&,
 				rb.dllresetb = !false;
 				set_repeater_block(*h, c_rb, rb);
 
-				flush(*h);
+				sync_command_buffers(f, hicann_handles_t{h});
 			}
 
 			for (auto c_hr : passive_recorded_hr) {
@@ -541,7 +541,7 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t&,
 				set_repeater(*h, kv.first, r);
 			}
 
-			flush(*h);
+			sync_command_buffers(f, hicann_handles_t{h});
 
 			++n;
 

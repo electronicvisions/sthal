@@ -30,7 +30,6 @@ void OnlyNeuronNoResetNoFGConfigurator::config(
 	config_neuron_config(h, hicann);
 	config_neuron_quads(h, hicann);
 	config_analog_readout(h, hicann);
-	flush_hicann(h);
 }
 
 } // end namespace sthal

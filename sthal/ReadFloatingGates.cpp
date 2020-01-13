@@ -77,7 +77,7 @@ void ReadFloatingGates::config_fpga(fpga_handle_t const& f, fpga_t const& fpga)
 }
 
 void ReadFloatingGates::config(
-	fpga_handle_t const&, hicann_handle_t const& h, hicann_data_t const& hicann)
+	fpga_handle_t const& f, hicann_handle_t const& h, hicann_data_t const& hicann)
 {
 	if (mReset)
 	{
@@ -115,7 +115,7 @@ void ReadFloatingGates::config(
 				continue;
 
 			::HMF::HICANN::set_fg_cell(*h, block, cell);
-			flush_hicann(h);
+			sync_command_buffers(f, hicann_handles_t{h});
 
 			record.record(mRecordTime);
 			ba::accumulator_set<AnalogRecorder::voltage_type,

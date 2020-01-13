@@ -64,7 +64,7 @@ void ProgrammAndReadFloatingGatesConfigurator::config_fpga(
 }
 
 void ProgrammAndReadFloatingGatesConfigurator::config(
-	fpga_handle_t const&, hicann_handle_t const& h, hicann_data_t const& hicann)
+	fpga_handle_t const& f, hicann_handle_t const& h, hicann_data_t const& hicann)
 {
 	if (mReset)
 	{
@@ -134,7 +134,7 @@ void ProgrammAndReadFloatingGatesConfigurator::config(
 
 				FGCellOnFGBlock cell(X(x), row);
 				::HMF::HICANN::set_fg_cell(*h, block, cell);
-				flush_hicann(h);
+				sync_command_buffers(f, hicann_handles_t{h});
 				ba::accumulator_set<AnalogRecorder::voltage_type,
 				                    ba::stats<ba::tag::mean, ba::tag::variance> > acc;
 				record.record(10e-6); // ~960 samples

@@ -39,14 +39,6 @@ def build(bld):
 
     bld(
         target          = 'sthal_inc',
-        use             = [
-            'halbe_coordinate_inc',
-            'halbe_container_inc',
-            'halbe_handle_inc',
-            'calibtic_inc',
-            'redman_inc',
-            'hwdb4cpp_inc',
-        ],
         export_includes = ['.'],
     )
 

@@ -92,7 +92,8 @@ def build(bld):
             'sthal_git_version.h',
             'hwdb4cpp',
             'TBB4STHAL',
-            'redman'
+            'redman',
+            'OPENMP4STHAL',
         ],
         defines         = ['DATADIR="{}"'.format(datadir)],
     )

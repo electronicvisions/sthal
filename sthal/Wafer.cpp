@@ -379,6 +379,71 @@ void Wafer::configure(HICANNConfigurator & configurator)
 		configurator.config_fpga(fpga_handle, fpga);
 	}
 
+    #pragma omp parallel for schedule(dynamic)
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		fpga_t fpga = mFPGA.at(fpga_c);
+		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
+		if (!fpga) {
+			continue;
+		}
+		check_fpga_handle(fpga_handle, fpga);
+		configurator.disable_global(fpga_handle);
+	}
+
+	/// prime systime counters on all fpgas
+	#pragma omp parallel for schedule(dynamic)
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		fpga_t fpga = mFPGA.at(fpga_c);
+		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
+		// Skip if FPGA is not allocated, do as well for master FPGA
+		if (!fpga) {
+			continue;
+		}
+		check_fpga_handle(fpga_handle, fpga);
+		configurator.prime_systime_counter(fpga_handle);
+	}
+
+	/// start systime counters on all fpgas
+	#pragma omp parallel for schedule(dynamic)
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		fpga_t fpga = mFPGA.at(fpga_c);
+		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
+		if (!fpga) {
+			continue;
+		}
+		check_fpga_handle(fpga_handle, fpga);
+		configurator.start_systime_counter(fpga_handle);
+	}
+
+	// for all but master
+	#pragma omp parallel for schedule(dynamic)
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		fpga_t fpga = mFPGA.at(fpga_c);
+		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
+		if (!fpga || fpga_handle->isMaster()) {
+			continue;
+		}
+		check_fpga_handle(fpga_handle, fpga);
+		configurator.disable_global(fpga_handle);
+	}
+
+	// for master
+	#pragma omp parallel for schedule(dynamic)
+	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
+		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
+		fpga_t fpga = mFPGA.at(fpga_c);
+		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
+		if (!fpga || !fpga_handle->isMaster()) {
+			continue;
+		}
+		check_fpga_handle(fpga_handle, fpga);
+		configurator.disable_global(fpga_handle);
+	}
+
 	std::map<ConfigurationStage, size_t> const serial_stage_sleep = {
 	    {ConfigurationStage::TIMING_UNCRITICAL, 0}};
 	const std::vector<ConfigurationStage> serial_stages = {
@@ -481,71 +546,6 @@ void Wafer::configure(HICANNConfigurator & configurator)
 			std::this_thread::sleep_for(sleep_interval);
 		}
 	} // stages
-
-    #pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
-		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
-		fpga_t fpga = mFPGA.at(fpga_c);
-		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
-		if (!fpga) {
-			continue;
-		}
-		check_fpga_handle(fpga_handle, fpga);
-		configurator.disable_global(fpga_handle);
-	}
-
-	/// prime systime counters on all fpgas
-	#pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
-		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
-		fpga_t fpga = mFPGA.at(fpga_c);
-		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
-		// Skip if FPGA is not allocated, do as well for master FPGA
-		if (!fpga) {
-			continue;
-		}
-		check_fpga_handle(fpga_handle, fpga);
-		configurator.prime_systime_counter(fpga_handle);
-	}
-
-	/// start systime counters on all fpgas
-	#pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
-		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
-		fpga_t fpga = mFPGA.at(fpga_c);
-		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
-		if (!fpga) {
-			continue;
-		}
-		check_fpga_handle(fpga_handle, fpga);
-		configurator.start_systime_counter(fpga_handle);
-	}
-
-	// for all but master
-	#pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
-		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
-		fpga_t fpga = mFPGA.at(fpga_c);
-		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
-		if (!fpga || fpga_handle->isMaster()) {
-			continue;
-		}
-		check_fpga_handle(fpga_handle, fpga);
-		configurator.disable_global(fpga_handle);
-	}
-
-	// for master
-	#pragma omp parallel for schedule(dynamic)
-	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
-		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
-		fpga_t fpga = mFPGA.at(fpga_c);
-		fpga_handle_t fpga_handle = mFPGAHandle.at(fpga_c);
-		if (!fpga || !fpga_handle->isMaster()) {
-			continue;
-		}
-		check_fpga_handle(fpga_handle, fpga);
-		configurator.disable_global(fpga_handle);
-	}
 
 	LOG4CXX_DEBUG(getTimeLogger(), short_format(index())
 		      << ": configure took " << t.get_ms()

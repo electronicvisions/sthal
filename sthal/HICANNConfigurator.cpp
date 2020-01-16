@@ -110,17 +110,29 @@ void HICANNConfigurator::init_controllers(hicann_handle_t const& h, hicann_data_
 
 void HICANNConfigurator::prime_systime_counter(fpga_handle_t const& f)
 {
+	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 	::HMF::FPGA::prime_systime_counter(*f);
+	LOG4CXX_DEBUG(
+	    getTimeLogger(), short_format(f->coordinate())
+	                         << ": priming systime counter took " << t.get_ms() << "ms");
 }
 
 void HICANNConfigurator::start_systime_counter(fpga_handle_t const& f)
 {
+	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 	::HMF::FPGA::start_systime_counter(*f);
+	LOG4CXX_DEBUG(
+	    getTimeLogger(), short_format(f->coordinate())
+	                         << ": starting systime counter took " << t.get_ms() << "ms");
 }
 
 void HICANNConfigurator::disable_global(fpga_handle_t const& f)
 {
+	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 	::HMF::FPGA::disable_global(*f);
+	LOG4CXX_DEBUG(
+	    getTimeLogger(), short_format(f->coordinate())
+	                         << ": disabling global took " << t.get_ms() << "ms");
 }
 
 void HICANNConfigurator::config_spinnaker_interface(fpga_handle_t const& f, fpga_t const& fpga)

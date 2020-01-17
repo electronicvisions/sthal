@@ -291,6 +291,8 @@ void ParallelHICANNv4SmartConfigurator::config_fpga(fpga_handle_t const& f, fpga
 	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 	LOG4CXX_INFO(
 	    getLogger(), "Skipping reset and init of FPGA since Wafer has already been initialized");
+	if (fpga->getSpinnakerEnable())
+		config_spinnaker_interface(f, fpga);
 	config_dnc_link(f, fpga);
 	LOG4CXX_INFO(
 	    getTimeLogger(), "finished configuring DNC link of FPGA " << f->coordinate() << " in "

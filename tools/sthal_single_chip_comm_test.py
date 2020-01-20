@@ -29,8 +29,12 @@ redman_fpga_backend = load.FpgaWithBackend(args.backend_path, fpga_global_c)
 hs_exit = 0
 jtag_exit = 0
 
+# reset fpga before each HICANN test
+fpga_reset_cmd = ["fpga_remote_init.py", "-r", "1", "-w", str(args.wafer), "-f", str(fpga_c.value()), "--alloc", "existing"]
+subprocess.call(fpga_reset_cmd)
 hs_exit = subprocess.call(["sthal_single_chip_init.py", "--wafer", str(args.wafer), "--hicann", str(args.hicann)])
 if hs_exit != 0:
+    subprocess.call(fpga_reset_cmd)
     jtag_exit = subprocess.call(["sthal_single_chip_init.py", "--wafer", str(args.wafer), "--hicann", str(args.hicann), "--jtag"])
 
 # highspeed failed, but jtag worked -> blacklist only highspeed

@@ -58,6 +58,15 @@ void ParallelHICANNv4SmartConfigurator::config(
 	bool const syn_drv_locking = ((stage == ConfigurationStage::LOCKING_SYNAPSE_DRIVERS)
 	                               && syn_drv_locking_wanted_any(hicann_handle, hicann_data));
 
+	auto const& first_stage = Settings::get().configuration_stages.order.front();
+	if (stage == first_stage) {
+		omp_set_lock(&mLock);
+		for (auto& handle : hicann_handle) {
+			mWrittenHICANNData[handle->coordinate()] = nullptr;
+		}
+		omp_unset_lock(&mLock);
+	}
+
 	if (!locking_stage || repeater_locking || syn_drv_locking) {
 		ParallelHICANNv4Configurator::config(fpga_handle, hicann_handle, hicann_data, stage);
 	} else {
@@ -93,7 +102,7 @@ void ParallelHICANNv4SmartConfigurator::config_floating_gates(
 	// collect changed hicann handles/datas, skip config for others
 	for (size_t ii = 0; ii != hicanns.size(); ++ii) {
 		const hicann_coord coord = handles[ii]->coordinate();
-		const hicann_data_t old_hicann = mWrittenHICANNData[coord];
+		const hicann_data_t old_hicann = mWrittenHICANNData.at(coord);
 		if (!(fg_config_mode == ConfigMode::Skip) &&
 		    (old_hicann == nullptr || old_hicann->floating_gates != hicanns[ii]->floating_gates)) {
 			changed_handles.push_back(handles[ii]);
@@ -150,7 +159,7 @@ void ParallelHICANNv4SmartConfigurator::config_synapse_array(
 
 	for (size_t ii = 0; ii != n_hicanns; ++ii) {
 		const hicann_coord coord = handles[ii]->coordinate();
-		const hicann_data_t old_hicann = mWrittenHICANNData[coord];
+		const hicann_data_t old_hicann = mWrittenHICANNData.at(coord);
 		if (old_hicann == nullptr || old_hicann->synapses != hicanns[ii]->synapses) {
 			all_changed_handles.push_back(handles[ii]);
 			all_changed_hicanns.push_back(hicanns[ii]);
@@ -172,7 +181,7 @@ void ParallelHICANNv4SmartConfigurator::config_synapse_array(
 			hicann_handles_t drv_changed_handles;
 			for (size_t ii = 0; ii != n_all_changed_hicanns; ++ii) {
 				const hicann_coord coord = all_changed_handles[ii]->coordinate();
-				const hicann_data_t old_hicann = mWrittenHICANNData[coord];
+				const hicann_data_t old_hicann = mWrittenHICANNData.at(coord);
 				if (old_hicann == nullptr ||
 				    old_hicann->synapses.getDecoderDoubleRow(syndrv) !=
 				        all_changed_hicanns[ii]->synapses.getDecoderDoubleRow(syndrv)) {
@@ -197,7 +206,7 @@ void ParallelHICANNv4SmartConfigurator::config_synapse_array(
 				row_changed_handles.reserve(n_all_changed_hicanns);
 				for (size_t ii = 0; ii != n_all_changed_hicanns; ++ii) {
 					const hicann_coord coord = all_changed_handles[ii]->coordinate();
-					const hicann_data_t old_hicann = mWrittenHICANNData[coord];
+					const hicann_data_t old_hicann = mWrittenHICANNData.at(coord);
 					if (!(synapse_config_mode == ConfigMode::Skip) &&
 					    (old_hicann == nullptr ||
 					     old_hicann->synapses[synrow].weights !=
@@ -236,7 +245,7 @@ void ParallelHICANNv4SmartConfigurator::config_synapse_drivers(
 	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 
 	const hicann_coord coord = h->coordinate();
-	const hicann_data_t old_hicann = mWrittenHICANNData[coord];
+	const hicann_data_t old_hicann = mWrittenHICANNData.at(coord);
 
 	LOG4CXX_DEBUG(getLogger(), short_format(h->coordinate()) << ": configure synapse drivers");
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
@@ -262,7 +271,7 @@ void ParallelHICANNv4SmartConfigurator::config_repeater(
 	}
 
 	const hicann_coord coord = h->coordinate();
-	const hicann_data_t old_hicann = mWrittenHICANNData[coord];
+	const hicann_data_t old_hicann = mWrittenHICANNData.at(coord);
 	if (!(repeater_config_mode == ConfigMode::Skip) &&
 	    (old_hicann == nullptr || old_hicann->repeater != hicann->repeater)) {
 		return ParallelHICANNv4Configurator::config_repeater(h, hicann);

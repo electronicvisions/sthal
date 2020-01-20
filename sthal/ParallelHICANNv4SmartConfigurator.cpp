@@ -349,7 +349,7 @@ void ParallelHICANNv4SmartConfigurator::ensure_correct_l1_init_settings(
 		HMF::HICANN::SynapseControlRegister& ctrl_reg = synapse_controller.ctrl_reg;
 		HMF::HICANN::SynapseConfigurationRegister& cnfg_reg = synapse_controller.cnfg_reg;
 
-		if (ctrl_reg.cmd != ::HMF::HICANN::SynapseControlRegister::Opcodes::IDLE) {
+		if (ctrl_reg.cmd != ::HMF::HICANN::SynapseControllerCmd::IDLE) {
 			throw std::runtime_error("Synase controller needs to have the IDLE comand to perform "
 			                         "initialization correctly");
 		}

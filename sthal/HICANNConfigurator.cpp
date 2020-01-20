@@ -80,7 +80,7 @@ void HICANNConfigurator::ensure_correct_l1_init_settings(
 		HMF::HICANN::SynapseControlRegister& ctrl_reg = synapse_controller.ctrl_reg;
 		HMF::HICANN::SynapseConfigurationRegister& cnfg_reg = synapse_controller.cnfg_reg;
 
-		if (ctrl_reg.cmd != ::HMF::HICANN::SynapseControlRegister::Opcodes::IDLE) {
+		if (ctrl_reg.cmd != ::HMF::HICANN::SynapseControllerCmd::IDLE) {
 			throw std::runtime_error("Command in synapse controller has to be IDLE in order to "
 			                         "perform initialization correctly");
 		}

@@ -7,11 +7,6 @@ using namespace ::HMF::Coordinate;
 
 namespace sthal {
 
-SynapseControllers::SynapseControllers() :
-	m_synapse_controller{
-		{syn_controller_t(syn_array_coord_t(top)), syn_controller_t(syn_array_coord_t(bottom))}}
-{}
-
 void SynapseControllers::enable_dllreset()
 {
 	for (auto& synapse_controller : m_synapse_controller) {

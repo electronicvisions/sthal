@@ -14,8 +14,6 @@ namespace sthal {
 class SynapseControllers
 {
 public:
-	SynapseControllers();
-
 	typedef ::HMF::HICANN::SynapseController syn_controller_t;
 	typedef ::HMF::Coordinate::SynapseArrayOnHICANN syn_array_coord_t;
 

@@ -10,8 +10,7 @@
 #include "test/hwtest.h"
 #include "sthal/Wafer.h"
 #include "sthal/HICANNConfigurator.h"
-#include "sthal/ParallelHICANNNoFGConfigurator.h"
-#include "sthal/ParallelHICANNNoResetNoFGConfigurator.h"
+#include "sthal/ParallelHICANNv4SmartConfigurator.h"
 #include "sthal/ExperimentRunner.h"
 #include "sthal/MagicHardwareDatabase.h"
 #include "sthal/Spike.h"
@@ -146,14 +145,13 @@ int main(int argc, char* argv[]) {
 
 	sthal::ExperimentRunner runner{runtime};
 	wafer.connect(sthal::MagicHardwareDatabase());
+	sthal::ParallelHICANNv4SmartConfigurator cfg;
+	cfg.fg_config_mode = sthal::ParallelHICANNv4SmartConfigurator::ConfigMode::Skip;
 	if (skip_reset) {
-		sthal::ParallelHICANNNoResetNoFGConfigurator no_reset_cfg;
-		wafer.configure(no_reset_cfg);
-	} else {
-		sthal::ParallelHICANNNoFGConfigurator cfg;
-		wafer.configure(cfg);
+		cfg.reset_config_mode = sthal::ParallelHICANNv4SmartConfigurator::ConfigMode::Skip;
 	}
 
+	wafer.configure(cfg);
 	wafer.clearSpikes(true, false);
 	wafer.start(runner);
 

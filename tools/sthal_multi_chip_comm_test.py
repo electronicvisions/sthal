@@ -4,7 +4,6 @@ import os
 import argparse
 import subprocess
 
-import Coordinate as C
 from pyredman.load import load
 
 parser = argparse.ArgumentParser()

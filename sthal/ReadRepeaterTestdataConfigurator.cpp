@@ -7,6 +7,7 @@
 #include "hal/HICANNContainer.h"
 #include "hal/Handle/HICANN.h"
 #include "hal/backend/HICANNBackend.h"
+#include "hal/Coordinate/FormatHelper.h"
 #include "sthal/HICANN.h"
 
 using namespace ::HMF::Coordinate;
@@ -128,8 +129,12 @@ std::pair<std::vector<T>, std::vector<T> > analyze_repeater(
 				result.first, result.second, expected_addrs, expected_periods);
 			if (good) {
 				good_repeater.push_back(r_kv.first);
+				LOG4CXX_TRACE(ReadRepeaterTestdataConfigurator::getLogger(),
+				              "analyze_repeater: " << short_format(r_kv.first) << " is good");
 			} else {
 				bad_repeater.push_back(r_kv.first);
+				LOG4CXX_WARN(ReadRepeaterTestdataConfigurator::getLogger(),
+				             "analyze_repeater: " << short_format(r_kv.first) << " is bad");
 			}
 		}
 	}

@@ -16,12 +16,13 @@ extern "C" {
 #include "hal/backend/HICANNBackend.h"
 #include "hal/backend/DNCBackend.h"
 #include "hal/backend/FPGABackend.h"
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 
 #include "sthal/HICANN.h"
 #include "sthal/Timer.h"
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
+using namespace ::halco::common;
 
 namespace sthal {
 

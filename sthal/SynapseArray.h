@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hal/Coordinate/HMFGeometry.h"
+#include "halco/hicann/v2/fwd.h"
 #include "hal/HICANN/SynapseDriver.h"
 #include "hal/HICANNContainer.h"
 
@@ -55,9 +55,9 @@ struct SynapseArray
 	typedef ::HMF::HICANN::WeightRow     weight_row_type;
 	typedef ::HMF::HICANN::DecoderRow    decoder_row_type;
 
-	typedef ::HMF::Coordinate::SynapseDriverOnHICANN driver_coordinate;
-	typedef ::HMF::Coordinate::SynapseRowOnHICANN    row_coordinate;
-	typedef ::HMF::Coordinate::SynapseOnHICANN       synapse_coordinate;
+	typedef ::halco::hicann::v2::SynapseDriverOnHICANN driver_coordinate;
+	typedef ::halco::hicann::v2::SynapseRowOnHICANN    row_coordinate;
+	typedef ::halco::hicann::v2::SynapseOnHICANN       synapse_coordinate;
 
 	static const size_t no_drivers = driver_coordinate::y_type::size; // TODO use enum_type, when correct
 	static const size_t no_lines   = row_coordinate::size;

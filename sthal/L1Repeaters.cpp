@@ -2,7 +2,7 @@
 #include <iterator>
 
 #include "L1Repeaters.h"
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 
 namespace sthal {
 
@@ -18,32 +18,32 @@ void L1Repeaters::clearReapeater()
 	std::fill(mBlocks.begin(), mBlocks.end(), block_type());
 }
 
-::HMF::HICANN::VerticalRepeater L1Repeaters::getRepeater(::HMF::Coordinate::VRepeaterOnHICANN c) const
+::HMF::HICANN::VerticalRepeater L1Repeaters::getRepeater(::halco::hicann::v2::VRepeaterOnHICANN c) const
 {
 	return mVerticalRepeater[c.toVLineOnHICANN()];
 }
 
-::HMF::HICANN::HorizontalRepeater L1Repeaters::getRepeater(::HMF::Coordinate::HRepeaterOnHICANN c) const
+::HMF::HICANN::HorizontalRepeater L1Repeaters::getRepeater(::halco::hicann::v2::HRepeaterOnHICANN c) const
 {
 	return mHorizontalRepeater[c.toHLineOnHICANN()];
 }
 
-::HMF::HICANN::RepeaterBlock L1Repeaters::getRepeaterBlock(::HMF::Coordinate::RepeaterBlockOnHICANN block) const
+::HMF::HICANN::RepeaterBlock L1Repeaters::getRepeaterBlock(::halco::hicann::v2::RepeaterBlockOnHICANN block) const
 {
 	return mBlocks[block.toEnum()];
 }
 
-void L1Repeaters::setRepeater(::HMF::Coordinate::VRepeaterOnHICANN c, ::HMF::HICANN::VerticalRepeater const& r)
+void L1Repeaters::setRepeater(::halco::hicann::v2::VRepeaterOnHICANN c, ::HMF::HICANN::VerticalRepeater const& r)
 {
 	mVerticalRepeater[c.toVLineOnHICANN()] = r;
 }
 
-void L1Repeaters::setRepeater(::HMF::Coordinate::HRepeaterOnHICANN c, ::HMF::HICANN::HorizontalRepeater const& r)
+void L1Repeaters::setRepeater(::halco::hicann::v2::HRepeaterOnHICANN c, ::HMF::HICANN::HorizontalRepeater const& r)
 {
 	mHorizontalRepeater[c.toHLineOnHICANN()] = r;
 }
 
-void L1Repeaters::setRepeaterBlock(::HMF::Coordinate::RepeaterBlockOnHICANN block, ::HMF::HICANN::RepeaterBlock const& r)
+void L1Repeaters::setRepeaterBlock(::halco::hicann::v2::RepeaterBlockOnHICANN block, ::HMF::HICANN::RepeaterBlock const& r)
 {
 	mBlocks[block.toEnum()] = r;
 }
@@ -117,7 +117,7 @@ std::ostream& operator<<(std::ostream& os, L1Repeaters const& a)
 	}
 
 	os << "RepeaterBlocks: " << std::endl;
-	for (auto b_c : ::HMF::Coordinate::iter_all<L1Repeaters::block_coordinate>()) {
+	for (auto b_c : ::halco::common::iter_all<L1Repeaters::block_coordinate>()) {
 		os << b_c << " " << a.mBlocks[b_c.toEnum()] << std::endl;
 	}
 
@@ -125,13 +125,13 @@ std::ostream& operator<<(std::ostream& os, L1Repeaters const& a)
 }
 
 size_t L1Repeaters::count_repeaters(
-    ::HMF::Coordinate::RepeaterBlockOnHICANN rb,
-    ::HMF::Coordinate::TestPortOnRepeaterBlock tp,
+    ::halco::hicann::v2::RepeaterBlockOnHICANN rb,
+    ::halco::hicann::v2::TestPortOnRepeaterBlock tp,
     ::HMF::HICANN::Repeater::Mode mode) const
 {
 	size_t active = 0;
 
-	for (auto r_c : ::HMF::Coordinate::iter_all<L1Repeaters::horizontal_coordinate>()) {
+	for (auto r_c : ::halco::common::iter_all<L1Repeaters::horizontal_coordinate>()) {
 		auto const& r = this->getRepeater(r_c);
 		if (!r_c.isSending() && r.getMode() == mode && r_c.toRepeaterBlockOnHICANN() == rb &&
 		    r_c.toTestPortOnRepeaterBlock() == tp) {
@@ -139,7 +139,7 @@ size_t L1Repeaters::count_repeaters(
 		}
 	}
 
-	for (auto r_c : ::HMF::Coordinate::iter_all<L1Repeaters::vertical_coordinate>()) {
+	for (auto r_c : ::halco::common::iter_all<L1Repeaters::vertical_coordinate>()) {
 		auto const& r = this->getRepeater(r_c);
 		if (r.getMode() == mode && r_c.toRepeaterBlockOnHICANN() == rb &&
 		    r_c.toTestPortOnRepeaterBlock() == tp) {
@@ -152,7 +152,8 @@ size_t L1Repeaters::count_repeaters(
 
 bool L1Repeaters::check_testports(std::ostream& errors) const
 {
-	using namespace ::HMF::Coordinate;
+	using namespace ::halco::hicann::v2;
+	using namespace ::halco::common;
 	using namespace ::HMF::HICANN;
 
 	bool ok = true;

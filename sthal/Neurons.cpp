@@ -1,8 +1,8 @@
 #include "sthal/Neurons.h"
 #include "hal/macro_HALbe.h"
 
-#include "hal/Coordinate/HMFGeometry.h"
-#include "hal/Coordinate/iter_all.h"
+#include "halco/hicann/v2/fwd.h"
+#include "halco/common/iter_all.h"
 
 namespace sthal {
 
@@ -19,7 +19,8 @@ bool Neurons::check_current_io() {
 bool Neurons::check_enable_spl1_output(std::ostream & errors) const
 {
 	bool ok = true;
-	using namespace HMF::Coordinate;
+	using namespace halco::common;
+	using namespace halco::hicann::v2;
 	for (NeuronOnHICANN neuron : iter_all<NeuronOnHICANN>())
 	{
 		if ((*this)[neuron].enable_spl1_output())
@@ -55,7 +56,8 @@ bool Neurons::check(std::ostream & errors) const
 
 namespace
 {
-	using namespace HMF::Coordinate;
+	using namespace halco::hicann::v2;
+	using namespace halco::common;
 	class CheckDenmemConnectivtyHelper
 	{
 	public:

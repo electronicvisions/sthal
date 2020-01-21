@@ -2,7 +2,7 @@
 
 #include "sthal/Layer1.h"
 
-using namespace HMF::Coordinate;
+using namespace halco::hicann::v2;
 
 typedef boost::variant<
 	Merger0OnHICANN,

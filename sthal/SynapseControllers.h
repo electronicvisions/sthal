@@ -3,7 +3,7 @@
 #include <boost/serialization/export.hpp>
 
 #include "sthal/macros.h"
-#include "hal/Coordinate/Synapse.h"
+#include "halco/hicann/v2/synapse.h"
 #include "hal/HICANNContainer.h"
 #include "halco/common/typed_array.h"
 
@@ -15,7 +15,7 @@ class SynapseControllers
 {
 public:
 	typedef ::HMF::HICANN::SynapseController syn_controller_t;
-	typedef ::HMF::Coordinate::SynapseArrayOnHICANN syn_array_coord_t;
+	typedef ::halco::hicann::v2::SynapseArrayOnHICANN syn_array_coord_t;
 
 	STHAL_ARRAY_OPERATOR(syn_controller_t, syn_array_coord_t, return m_synapse_controller[ii];)
 

@@ -8,7 +8,7 @@
 #include <log4cxx/logger.h>
 
 #include "hal/Handle/FPGAHw.h"
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 #include "sthal/ADCHwHandleFactory.h"
 #include "sthal/ADCRemoteHwHandleFactory.h"
 #include "sthal/HardwareDatabaseErrors.h"
@@ -16,7 +16,8 @@
 
 static log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger("YAMLHardwareDAtabase");
 
-using namespace HMF::Coordinate;
+using namespace halco::hicann::v2;
+using namespace halco::common;
 
 namespace sthal
 {
@@ -148,13 +149,13 @@ std::string YAMLHardwareDatabase::get_hicann_label(global_hicann_coord hicann) c
 	return hicann_entry.label;
 }
 
-HMF::Coordinate::SetupType YAMLHardwareDatabase::get_setup_type(wafer_coord wafer) const
+halco::hicann::v2::SetupType YAMLHardwareDatabase::get_setup_type(wafer_coord wafer) const
 {
 	auto const& wafer_entry = mData.get_wafer_entry(wafer);
 	return wafer_entry.setup_type;
 }
 
-::HMF::Coordinate::IPv4 YAMLHardwareDatabase::get_macu(wafer_coord wafer) const
+::halco::hicann::v2::IPv4 YAMLHardwareDatabase::get_macu(wafer_coord wafer) const
 {
 	auto const& wafer_entry = mData.get_wafer_entry(wafer);
 	return wafer_entry.macu;
@@ -166,7 +167,7 @@ void YAMLHardwareDatabase::clear()
 }
 
 void YAMLHardwareDatabase::add_wafer(
-    wafer_coord wafer, SetupType type, ::HMF::Coordinate::IPv4 macu, size_t macu_version)
+    wafer_coord wafer, SetupType type, ::halco::hicann::v2::IPv4 macu, size_t macu_version)
 {
 	::hwdb4cpp::WaferEntry entry;
 	entry.setup_type = type;
@@ -206,7 +207,7 @@ void YAMLHardwareDatabase::add_adc(global_fpga_coord fpga, analog_coord analog, 
 	mData.add_adc_entry(global_analog, entry);
 }
 
-void YAMLHardwareDatabase::add_macu(wafer_coord wafer, ::HMF::Coordinate::IPv4 macu)
+void YAMLHardwareDatabase::add_macu(wafer_coord wafer, ::halco::hicann::v2::IPv4 macu)
 {
 	WaferEntry& wafer_entry = get_wafer(wafer);
 	wafer_entry.macu = macu;

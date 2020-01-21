@@ -12,19 +12,19 @@ warnings.simplefilter("ignore")
 import pysthal
 from HWTest import PyhalbeTest
 
-from Coordinate import iter_all
-from Coordinate import AnalogOnHICANN
-from Coordinate import ADC
-from Coordinate import ChannelOnADC
-from Coordinate import TriggerOnADC
-from Coordinate import Enum
-from Coordinate import FPGAGlobal
-from Coordinate import FPGAOnWafer
-from Coordinate import Wafer
-from Coordinate import IPv4
-from Coordinate import SetupType
-from Coordinate import HICANNGlobal
-from Coordinate import HICANNOnWafer
+from pyhalco_hicann_v2 import iter_all
+from pyhalco_hicann_v2 import AnalogOnHICANN
+from pyhalbe.ADC import USBSerial as ADC
+from pyhalco_hicann_v2 import ChannelOnADC
+from pyhalco_hicann_v2 import TriggerOnADC
+from pyhalco_common import Enum
+from pyhalco_hicann_v2 import FPGAGlobal
+from pyhalco_hicann_v2 import FPGAOnWafer
+from pyhalco_hicann_v2 import Wafer
+from pyhalco_hicann_v2 import IPv4
+from pyhalco_hicann_v2 import SetupType
+from pyhalco_hicann_v2 import HICANNGlobal
+from pyhalco_hicann_v2 import HICANNOnWafer
 
 import pylogging
 

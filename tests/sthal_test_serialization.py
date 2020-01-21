@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 import unittest
 import pysthal
-import Coordinate as C
+from pyhalco_common import Enum
+import pyhalco_hicann_v2 as C
 
 class TestSerialization(unittest.TestCase):
     def test_wafer_pickle(self):
         import pickle
         wafer_c = C.Wafer(33)
         w = pysthal.Wafer(wafer_c)
-        h_c = C.HICANNOnWafer(C.Enum(297))
+        h_c = C.HICANNOnWafer(Enum(297))
         h = w[h_c]
         self.assertTrue(h.has_wafer())
         w_str = pickle.dumps(w)
@@ -24,7 +25,7 @@ class TestSerialization(unittest.TestCase):
         import tempfile
         wafer_c = C.Wafer(33)
         w = pysthal.Wafer(wafer_c)
-        h_c = C.HICANNOnWafer(C.Enum(297))
+        h_c = C.HICANNOnWafer(Enum(297))
         h = w[h_c]
         with tempfile.NamedTemporaryFile() as f:
             w.dump(f.name, True)
@@ -41,7 +42,7 @@ class TestSerialization(unittest.TestCase):
         import copy
         wafer_c = C.Wafer(33)
         w = pysthal.Wafer(wafer_c)
-        h_c = C.HICANNOnWafer(C.Enum(297))
+        h_c = C.HICANNOnWafer(Enum(297))
         h = w[h_c]
         self.assertTrue(h.has_wafer())
         w2 = copy.deepcopy(w)
@@ -77,27 +78,27 @@ class TestSerialization(unittest.TestCase):
         import pickle
         wafer_c = C.Wafer(33)
         w = pysthal.Wafer(wafer_c)
-        h_c = C.HICANNGlobal(C.HICANNOnWafer(C.Enum(297)), wafer_c)
+        h_c = C.HICANNGlobal(C.HICANNOnWafer(Enum(297)), wafer_c)
         h = w[h_c.toHICANNOnWafer()]
         d = w[h_c.toFPGAOnWafer()][h_c.toDNCOnFPGA()]
         d_str = pickle.dumps(d)
         d2 = pickle.loads(d_str)
         self.assertEqual(d, d2)
         # change something to ensure that it's not a mere pointer copy
-        h2 = w[C.HICANNOnWafer(C.Enum(298))]
+        h2 = w[C.HICANNOnWafer(Enum(298))]
         self.assertNotEqual(d, d2)
 
     def test_dnc_copy(self):
         import copy
         wafer_c = C.Wafer(33)
         w = pysthal.Wafer(wafer_c)
-        h_c = C.HICANNGlobal(C.HICANNOnWafer(C.Enum(297)), wafer_c)
+        h_c = C.HICANNGlobal(C.HICANNOnWafer(Enum(297)), wafer_c)
         h = w[h_c.toHICANNOnWafer()]
         d = w[h_c.toFPGAOnWafer()][h_c.toDNCOnFPGA()]
         d2 = copy.deepcopy(d)
         self.assertEqual(d, d2)
         # change something to ensure that it's not a mere pointer copy
-        h2 = w[C.HICANNOnWafer(C.Enum(298))]
+        h2 = w[C.HICANNOnWafer(Enum(298))]
         self.assertNotEqual(d, d2)
 
     def test_fpga_pickle(self):

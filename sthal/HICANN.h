@@ -6,7 +6,7 @@
 #include <boost/serialization/weak_ptr.hpp>
 
 #ifndef PYPLUSPLUS
-#include "hal/Coordinate/typed_array.h"
+#include "halco/common/typed_array.h"
 #endif
 #include "sthal/AnalogRecorder.h"
 #include "sthal/HICANNData.h"
@@ -25,13 +25,13 @@ struct HICANN : public HICANNData {
 public:
 	typedef ::HMF::HICANN::L1Address            L1Address;
 
-	typedef ::HMF::Coordinate::AnalogOnHICANN   analog_coord;
-	typedef ::HMF::Coordinate::GbitLinkOnHICANN dnc_merger_coord;
-	typedef ::HMF::Coordinate::HICANNGlobal     hicann_coord;
-	typedef ::HMF::Coordinate::HICANNGlobal     index_type;
-	typedef ::HMF::Coordinate::NeuronOnHICANN   neuron_coord;
-	typedef ::HMF::Coordinate::SynapseDriverOnHICANN synapse_driver_coord;
-	typedef ::HMF::Coordinate::SynapseRowOnHICANN    synapse_row_coord;
+	typedef ::halco::hicann::v2::AnalogOnHICANN   analog_coord;
+	typedef ::halco::hicann::v2::GbitLinkOnHICANN dnc_merger_coord;
+	typedef ::halco::hicann::v2::HICANNGlobal     hicann_coord;
+	typedef ::halco::hicann::v2::HICANNGlobal     index_type;
+	typedef ::halco::hicann::v2::NeuronOnHICANN   neuron_coord;
+	typedef ::halco::hicann::v2::SynapseDriverOnHICANN synapse_driver_coord;
+	typedef ::halco::hicann::v2::SynapseRowOnHICANN    synapse_row_coord;
 
 	// for backward compatibility
 	typedef sthal::SpeedUp SpeedUp;
@@ -184,14 +184,14 @@ public:
 
 	/// Connects all denmems to neurons of size with n denmens each
 	/// @return vector containing firing denmems
-	std::vector< ::HMF::Coordinate::NeuronOnHICANN >
+	std::vector< ::halco::hicann::v2::NeuronOnHICANN >
 	set_neuron_size(const size_t n);
 
 	/// Connect denmems colums
 	/// The top left denmem in given columns is configured as the firing denmem
 	/// @return returns firing denmem
-	::HMF::Coordinate::NeuronOnHICANN connect_denmems(
-		::HMF::Coordinate::X first_column, ::HMF::Coordinate::X last_column);
+	::halco::hicann::v2::NeuronOnHICANN connect_denmems(
+		::halco::common::X first_column, ::halco::common::X last_column);
 
 	/// Connect denmems colums
 	/// and specify the denmem that fires.
@@ -199,7 +199,7 @@ public:
 	/// all vertical connections in the given columns are connected.
 	/// Overall, this results in a comb-like structure.
 	void connect_denmems(
-		::HMF::Coordinate::X first_column, ::HMF::Coordinate::X last_column, ::HMF::Coordinate::NeuronOnHICANN firing_denmem);
+		::halco::common::X first_column, ::halco::common::X last_column, ::halco::hicann::v2::NeuronOnHICANN firing_denmem);
 
 	/// check the state of the current Configuration for dangerous settings
 	/// @return true if everything is fine
@@ -219,15 +219,15 @@ public:
 	/// The function will throw if no route can be realized
 	/// @param num Index to select one of the four available routes
 	/// @throw std::invalid_argument When the index is out of range
-	void route(::HMF::Coordinate::DNCMergerOnHICANN from,
-	           ::HMF::Coordinate::SynapseDriverOnHICANN to,
+	void route(::halco::hicann::v2::DNCMergerOnHICANN from,
+	           ::halco::hicann::v2::SynapseDriverOnHICANN to,
 	           size_t num = 0);
 
 	/// Find the neuron connected to a given analog output. If there is none
 	/// or multiple neurons connected.
 	/// @throw std::runtime_error if a invalid configuration was found
 	/// @throw not_found if no neuron is connencted
-	::HMF::Coordinate::NeuronOnHICANN find_neuron_in_analog_output(
+	::halco::hicann::v2::NeuronOnHICANN find_neuron_in_analog_output(
 			analog_coord analog) const;
 
 	/// check if HICANN knows its wafer

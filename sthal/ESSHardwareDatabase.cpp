@@ -9,13 +9,13 @@
 #include "hal/Handle/FPGAEss.h"
 #include "hal/Handle/ADCEss.h"
 
-using namespace HMF::Coordinate;
+using namespace halco::hicann::v2;
 
 static log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger("sthal.ESSHardwareDatabase");
 
 namespace sthal {
 
-ESSHardwareDatabase::ESSHardwareDatabase(HMF::Coordinate::Wafer wafer, std::string const& path)
+ESSHardwareDatabase::ESSHardwareDatabase(halco::hicann::v2::Wafer wafer, std::string const& path)
     : mESS(new HMF::Handle::Ess(wafer, path))
 {
 	// see halbe/hal/Handle/Ess.h for all the nicities.
@@ -58,22 +58,22 @@ ESSHardwareDatabase::get_adc_of_hicann(const global_hicann_coord & hicann,
 		                                 const analog_coord & analog) const
 {
     //get the ADC coordinate
-    HMF::Coordinate::DNCOnWafer dnc = hicann.toDNCGlobal();
+    halco::hicann::v2::DNCOnWafer dnc = hicann.toDNCGlobal();
     HMF::ADC::USBSerial adc_coord = HMF::Handle::ADCEss::getVirtualADCCoordinate(dnc,analog);
 
     return ADCConfig{
 		adc_coord,
-        ::HMF::Coordinate::ChannelOnADC(0),
-		::HMF::Coordinate::TriggerOnADC(0),
+        ::halco::hicann::v2::ChannelOnADC(0),
+		::halco::hicann::v2::TriggerOnADC(0),
 		boost::make_shared<ADCEssHandleFactory>(mESS),
 		ADCConfig::CalibrationMode::ESS_CALIBRATION
 	};
 }
 
-::HMF::Coordinate::IPv4
+::halco::hicann::v2::IPv4
 ESSHardwareDatabase::get_fpga_ip(global_fpga_coord const&) const
 {
-	return ::HMF::Coordinate::IPv4();
+	return ::halco::hicann::v2::IPv4();
 }
 
 boost::shared_ptr<HardwareDatabase> ESSHardwareDatabase::clone() const

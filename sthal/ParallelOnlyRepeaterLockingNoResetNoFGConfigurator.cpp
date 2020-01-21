@@ -4,17 +4,17 @@
 
 #include "hal/Handle/FPGA.h"
 #include "hal/backend/HICANNBackend.h"
-#include "hal/Coordinate/FormatHelper.h"
+#include "halco/hicann/v2/format_helper.h"
 
 #include "sthal/Timer.h"
 #include "sthal/HICANN.h"
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
 
 namespace sthal {
 
 ParallelOnlyRepeaterLockingNoResetNoFGConfigurator::ParallelOnlyRepeaterLockingNoResetNoFGConfigurator(
-	std::set<::HMF::Coordinate::RepeaterBlockOnWafer> rbs)
+	std::set<::halco::hicann::v2::RepeaterBlockOnWafer> rbs)
 {
 	for (auto rb : rbs) {
 		add_repeater_block(rb);
@@ -22,7 +22,7 @@ ParallelOnlyRepeaterLockingNoResetNoFGConfigurator::ParallelOnlyRepeaterLockingN
 }
 
 void ParallelOnlyRepeaterLockingNoResetNoFGConfigurator::add_repeater_block(
-	::HMF::Coordinate::RepeaterBlockOnWafer rb)
+	::halco::hicann::v2::RepeaterBlockOnWafer rb)
 {
 	m_repeater_blocks[rb.toHICANNOnWafer()].insert(rb.toRepeaterBlockOnHICANN());
 }

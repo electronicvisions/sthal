@@ -1,7 +1,7 @@
 /* This configurator enables DNC Loopback and PlaybackSystimeReplacing */
 
 #include "sthal/DNCLoopbackConfigurator.h"
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 #include "hal/Handle/HMFRun.h"
 #include "hal/Handle/FPGAHw.h"
 #include "hal/backend/DNCBackend.h"
@@ -15,13 +15,13 @@ void DNCLoopbackConfigurator::config_fpga(fpga_handle_t const& f, fpga_t const& 
 	HostALController& host_al = hw.getPowerBackend().get_host_al(hw);
 	host_al.setPlaybackSystimeReplacing(true);
 
-	for (auto dnc : HMF::Coordinate::iter_all<HMF::Coordinate::DNCOnFPGA>() )
+	for (auto dnc : halco::common::iter_all<halco::hicann::v2::DNCOnFPGA>() )
 	{
 		if (!f->dnc_active(dnc))
 			continue;
                 
 		HMF::DNC::Loopback loopback;
-		for (auto hicann : HMF::Coordinate::iter_all<HMF::Coordinate::HICANNOnDNC>() )
+		for (auto hicann : halco::common::iter_all<halco::hicann::v2::HICANNOnDNC>() )
 		{
 			loopback[hicann] = true;
 		}

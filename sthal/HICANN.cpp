@@ -10,7 +10,7 @@
 #include "sthal/Settings.h"
 #include "sthal_exception.h"
 
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 
 #include <stdexcept>
 
@@ -25,7 +25,8 @@
 
 #include <log4cxx/logger.h>
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
+using namespace ::halco::common;
 
 static log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger("sthal.HICANN");
 
@@ -101,7 +102,7 @@ bool operator!=(const HICANN & a, const HICANN & b)
 	return !(a == b);
 }
 
-ADCConfig HICANN::getADCConfig(const ::HMF::Coordinate::AnalogOnHICANN & ii)
+ADCConfig HICANN::getADCConfig(const ::halco::hicann::v2::AnalogOnHICANN & ii)
 {
 	if(!mADCConfig[ii].has_value()) {
 		wafer().populate_adc_config(index().toHICANNOnWafer(), ii);
@@ -116,7 +117,7 @@ ADCConfig HICANN::getADCConfig(const ::HMF::Coordinate::AnalogOnHICANN & ii)
 	}
 }
 
-void HICANN::setADCConfig(const ::HMF::Coordinate::AnalogOnHICANN & ii,
+void HICANN::setADCConfig(const ::halco::hicann::v2::AnalogOnHICANN & ii,
 		const ADCConfig & adc)
 {
 	mADCConfig[ii].emplace(boost::make_shared<ADCConfig>(adc));
@@ -148,7 +149,7 @@ size_t HICANN::get_version() const
 }
 
 AnalogRecorder
-HICANN::analogRecorder(const ::HMF::Coordinate::AnalogOnHICANN & ii)
+HICANN::analogRecorder(const ::halco::hicann::v2::AnalogOnHICANN & ii)
 {
 	if(!mADCConfig[ii].has_value()) {
 		wafer().populate_adc_config(index().toHICANNOnWafer(), ii);
@@ -450,7 +451,7 @@ HICANN::SpeedUp HICANN::get_speed_up_radapt()
 
 size_t HICANN::capacity()
 {
-	return ::HMF::Coordinate::NeuronOnHICANN::enum_type::end;
+	return ::halco::hicann::v2::NeuronOnHICANN::enum_type::end;
 }
 
 void HICANN::clear()
@@ -493,7 +494,7 @@ std::vector<NeuronOnHICANN> HICANN::set_neuron_size(const size_t n)
 
 	if (n == 1)
 	{
-		for (auto quad_c : iter_all< ::HMF::Coordinate::QuadOnHICANN>())
+		for (auto quad_c : iter_all< ::halco::hicann::v2::QuadOnHICANN>())
 		{
 			auto & quad = neurons[quad_c];
 			quad.setVerticalInterconnect(X(0), false);
@@ -522,7 +523,7 @@ std::vector<NeuronOnHICANN> HICANN::set_neuron_size(const size_t n)
 }
 
 namespace {
-	using namespace ::HMF::Coordinate;
+	using namespace ::halco::hicann::v2;
 	// Connects to the Neuron
 	void connect_horizontally(Neurons & neurons, X left, bool connect)
 	{
@@ -691,18 +692,18 @@ std::ostream& operator<<(std::ostream& os, const sthal::HICANN & h)
 
 		os << s_coord << '\n' << sd << '\n';
 
-		const sthal::HICANN::synapse_row_coord c_top_row(s_coord, geometry::top);
-		const sthal::HICANN::synapse_row_coord c_bottom_row(s_coord, geometry::bottom);
+		const sthal::HICANN::synapse_row_coord c_top_row(s_coord, halco::common::top);
+		const sthal::HICANN::synapse_row_coord c_bottom_row(s_coord, halco::common::bottom);
 
 		const auto& top_row_proxy    = h.synapses[c_top_row];
 		const auto& bottom_row_proxy = h.synapses[c_bottom_row];
 
 		// even neuron id -> top strobe line
 		// odd neuron id -> bottom strobe line
-		const auto& top_even_driver_decoder    = sd[geometry::top].get_decoder(geometry::top);
-		const auto& bottom_even_driver_decoder = sd[geometry::bottom].get_decoder(geometry::top);
-		const auto& top_odd_driver_decoder     = sd[geometry::top].get_decoder(geometry::bottom);
-		const auto& bottom_odd_driver_decoder  = sd[geometry::bottom].get_decoder(geometry::bottom);
+		const auto& top_even_driver_decoder    = sd[halco::common::top].get_decoder(halco::common::top);
+		const auto& bottom_even_driver_decoder = sd[halco::common::bottom].get_decoder(halco::common::top);
+		const auto& top_odd_driver_decoder     = sd[halco::common::top].get_decoder(halco::common::bottom);
+		const auto& bottom_odd_driver_decoder  = sd[halco::common::bottom].get_decoder(halco::common::bottom);
 
 		std::vector<std::string> top;    top.reserve(256);
 		std::vector<std::string> bottom; bottom.reserve(256);
@@ -821,7 +822,7 @@ void HICANN::route(DNCMergerOnHICANN from,
 	repeater[repeater_coord].setOutput(right, true);
 }
 
-::HMF::Coordinate::NeuronOnHICANN HICANN::find_neuron_in_analog_output(
+::halco::hicann::v2::NeuronOnHICANN HICANN::find_neuron_in_analog_output(
 	analog_coord analog_c) const
 {
 	// We will only check the neurons connected to an analog output.
@@ -842,7 +843,7 @@ void HICANN::route(DNCMergerOnHICANN from,
 	}
 
 	size_t neurons_found = 0;
-	::HMF::Coordinate::NeuronOnHICANN last;
+	::halco::hicann::v2::NeuronOnHICANN last;
 	for (auto neuron : iter_all<NeuronOnHICANN>()) {
 		if (neuron.toSharedFGBlockOnHICANN() == block
 			    && neurons[neuron].enable_aout()) {

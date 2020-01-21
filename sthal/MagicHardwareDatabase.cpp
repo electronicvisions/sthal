@@ -2,9 +2,9 @@
 
 #include "sthal/YAMLHardwareDatabase.h"
 #include "sthal/Settings.h"
-#include "hal/Coordinate/HMFGeometry.h"
+#include "halco/hicann/v2/fwd.h"
 
-using namespace HMF::Coordinate;
+using namespace halco::hicann::v2;
 
 namespace sthal {
 
@@ -45,13 +45,13 @@ MagicHardwareDatabase::get_hicann_version(global_hicann_coord hicann) const
 	return mDatabase->get_hicann_version(hicann);
 }
 
-::HMF::Coordinate::IPv4
+::halco::hicann::v2::IPv4
 MagicHardwareDatabase::get_fpga_ip(const global_fpga_coord & fpga) const
 {
 	return mDatabase->get_fpga_ip(fpga);
 }
 
-::HMF::Coordinate::IPv4
+::halco::hicann::v2::IPv4
 MagicHardwareDatabase::get_fpga_ip(const global_hicann_coord & hicann) const
 {
 	return mDatabase->get_fpga_ip(hicann);

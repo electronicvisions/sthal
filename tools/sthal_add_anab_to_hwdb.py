@@ -1,5 +1,4 @@
 import pandas
-import Coordinate
 
 # Connector: (analog, channel, tigger, FPGA slave/top, FPGA master/bottom)
 # Extracted from:

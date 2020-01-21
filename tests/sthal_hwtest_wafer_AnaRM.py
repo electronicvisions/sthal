@@ -9,7 +9,8 @@ import unittest
 
 import pandas
 
-import Coordinate
+from pyhalco_common import Enum
+import pyhalco_hicann_v2 as Coordinate
 import pyhalbe
 import pysthal
 
@@ -132,7 +133,7 @@ class UpdateFGRowConfigurator(pysthal.HICANNConfigurator):
     def config(self, fpga, handle, hicann):
         fg = hicann.floating_gates
         for fgpass in range(fg.getNoProgrammingPasses()):
-            cfg = fg.getFGConfig(Coordinate.Enum(fgpass))
+            cfg = fg.getFGConfig(Enum(fgpass))
             for block in Coordinate.iter_all(Coordinate.FGBlockOnHICANN):
                 pyhalbe.HICANN.set_fg_config(handle, block, cfg)
             pyhalbe.HICANN.set_fg_row_values(
@@ -245,9 +246,9 @@ class TestRecticleAout(unittest.TestCase):
 
         fg_blocks = {
             Coordinate.AnalogOnHICANN(0): (
-                Coordinate.FGBlockOnHICANN(Coordinate.Enum(0)), 300),
+                Coordinate.FGBlockOnHICANN(Enum(0)), 300),
             Coordinate.AnalogOnHICANN(1): (
-                Coordinate.FGBlockOnHICANN(Coordinate.Enum(3)), 600),
+                Coordinate.FGBlockOnHICANN(Enum(3)), 600),
         }
 
         self.wafer.configure(UpdateFGRowConfigurator(self.ROW))

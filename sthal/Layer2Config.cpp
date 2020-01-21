@@ -23,7 +23,7 @@ void config(Handle::FPGA& f, const SpinnIFConfig & cfg) {
 
 namespace DNC{
 
-void config(Handle::FPGA& f, Coordinate::DNCOnFPGA const & dnc, const DNCConfig& cfg) {
+void config(Handle::FPGA& f, halco::hicann::v2::DNCOnFPGA const & dnc, const DNCConfig& cfg) {
 	set_hicann_directions(f, dnc, cfg.gbit_reticle);
 	set_loopback(f, dnc, cfg.loopback);
 }

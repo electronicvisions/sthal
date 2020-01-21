@@ -34,15 +34,16 @@ extern "C" {
 
 #include "hal/Handle/FPGA.h"
 #include "hal/Handle/HICANN.h"
-#include "hal/Coordinate/iter_all.h"
-#include "hal/Coordinate/FormatHelper.h"
+#include "halco/common/iter_all.h"
+#include "halco/hicann/v2/format_helper.h"
 #include "hal/backend/HMFBackend.h"
 
 #include "slurm/vision_defines.h"
 
 #include "sthal_git_version.h"
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
+using namespace ::halco::common;
 
 namespace {
 
@@ -139,7 +140,7 @@ Wafer::get_fpga_handle(fpga_coord const& fpga)
 Wafer::hicann_handle_t
 Wafer::get_hicann_handle(hicann_coord const& hicann)
 {
-	::HMF::Coordinate::HICANNGlobal hg{hicann, index()};
+	::halco::hicann::v2::HICANNGlobal hg{hicann, index()};
 	fpga_handle_t fpga_handle = get_fpga_handle(hg.toFPGAOnWafer());
 	hicann_handle_t hh = fpga_handle->get(hicann);
 	return hh;
@@ -175,8 +176,8 @@ void Wafer::allocate(const hicann_coord& c)
 
 	if (!mHICANN[c])
 	{
-		::HMF::Coordinate::HICANNGlobal hicann_global(c, mWafer);
-	    ::HMF::Coordinate::FPGAGlobal f = hicann_global.toFPGAGlobal();
+		::halco::hicann::v2::HICANNGlobal hicann_global(c, mWafer);
+	    ::halco::hicann::v2::FPGAGlobal f = hicann_global.toFPGAGlobal();
 		auto & fpga = mFPGA[f];
 		auto & hicann = mHICANN[c];
 		if (!fpga)
@@ -192,7 +193,7 @@ void Wafer::allocate(const hicann_coord& c)
 		    [](const boost::shared_ptr<FPGA>& f) { return f != nullptr; });
 		// allocate master fpga if more than one fpga is used
 		if (!mForceListenLocal && (num_fpgas > 1)) {
-			::HMF::Coordinate::FPGAGlobal f{::HMF::Coordinate::FPGAOnWafer::Master,
+			::halco::hicann::v2::FPGAGlobal f{::halco::hicann::v2::FPGAOnWafer::Master,
 			                                mWafer};
 			auto& fpga = mFPGA[f];
 			if (fpga == nullptr) {
@@ -209,14 +210,14 @@ void Wafer::allocate(const hicann_coord& c)
 }
 
 namespace {
-	std::string printHICANNS(std::vector< ::HMF::Coordinate::HICANNOnWafer> const& hicanns)
+	std::string printHICANNS(std::vector< ::halco::hicann::v2::HICANNOnWafer> const& hicanns)
 	{
 		std::stringstream out;
 		out << "{";
 		if (!hicanns.empty()) {
 			out << " ";
 			std::copy(hicanns.begin(), hicanns.end() - 1,
-			          std::ostream_iterator< ::HMF::Coordinate::HICANNOnWafer>(out, ", "));
+			          std::ostream_iterator< ::halco::hicann::v2::HICANNOnWafer>(out, ", "));
 			out << hicanns.back() << " ";
 		}
 		out << "}";
@@ -616,7 +617,7 @@ Wafer::operator[](const fpga_coord & fc)
 	auto & fpga = mFPGA[fc];
 	if (!fpga)
 	{
-		fpga.reset(new FPGA(::HMF::Coordinate::FPGAGlobal(fc, index()) , mSharedSettings));
+		fpga.reset(new FPGA(::halco::hicann::v2::FPGAGlobal(fc, index()) , mSharedSettings));
 	}
 	return *fpga;
 }
@@ -632,12 +633,12 @@ Wafer::operator[](const fpga_coord & fc) const
 	return *fpga;
 }
 
-SynapseProxy Wafer::operator[](const ::HMF::Coordinate::SynapseOnWafer& s)
+SynapseProxy Wafer::operator[](const ::halco::hicann::v2::SynapseOnWafer& s)
 {
 	return (*this)[s.toHICANNOnWafer()].synapses[s.toSynapseOnHICANN()];
 }
 
-SynapseConstProxy Wafer::operator[](const ::HMF::Coordinate::SynapseOnWafer& s) const
+SynapseConstProxy Wafer::operator[](const ::halco::hicann::v2::SynapseOnWafer& s) const
 {
 	return (*this)[s.toHICANNOnWafer()].synapses[s.toSynapseOnHICANN()];
 }

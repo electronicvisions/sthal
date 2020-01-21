@@ -1,7 +1,7 @@
 #pragma once
 
 #include "pywrap/compat/macros.hpp"
-#include "hal/Coordinate/L1.h"
+#include "halco/hicann/v2/l1.h"
 #include "sthal/ParallelHICANNv4Configurator.h"
 
 namespace sthal {
@@ -20,9 +20,9 @@ public:
 	 *
 	 */
 	ParallelOnlyRepeaterLockingNoResetNoFGConfigurator(
-		std::set<::HMF::Coordinate::RepeaterBlockOnWafer> rbs);
+		std::set<::halco::hicann::v2::RepeaterBlockOnWafer> rbs);
 
-	void add_repeater_block(::HMF::Coordinate::RepeaterBlockOnWafer rb);
+	void add_repeater_block(::halco::hicann::v2::RepeaterBlockOnWafer rb);
 
 	void config(fpga_handle_t const& f,
 	            hicann_handles_t const& handles,
@@ -36,7 +36,7 @@ public:
 	void disable_global(fpga_handle_t const& f) PYPP_OVERRIDE;
 
 private:
-	std::map<::HMF::Coordinate::HICANNOnWafer, std::set<::HMF::Coordinate::RepeaterBlockOnHICANN>>
+	std::map<::halco::hicann::v2::HICANNOnWafer, std::set<::halco::hicann::v2::RepeaterBlockOnHICANN>>
 		m_repeater_blocks;
 };
 

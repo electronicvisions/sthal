@@ -15,7 +15,8 @@ class TestSthalAlgorithms(PyhalbeTest):
 
     def test_neuronsize(self):
         import pysthal
-        from Coordinate import iter_all, NeuronOnHICANN, QuadOnHICANN, X
+        from pyhalco_common import iter_all, X
+        from pyhalco_hicann_v2 import NeuronOnHICANN, QuadOnHICANN
         hicann = pysthal.HICANN()
         sizes = [2**x for x in range(7)]
         # There and back again
@@ -33,10 +34,11 @@ class TestSthalAlgorithms(PyhalbeTest):
 
     def test_save_and_load(self):
         import pysthal
-        import Coordinate
+        from pyhalco_common import Enum
+        import pyhalco_hicann_v2 as Coordinate
         from pyhalbe import HICANN
         wafer = pysthal.Wafer(Coordinate.Wafer(3))
-        hicann1 = wafer[Coordinate.HICANNOnWafer(Coordinate.Enum(30))]
+        hicann1 = wafer[Coordinate.HICANNOnWafer(Enum(30))]
 
         for row in Coordinate.iter_all(Coordinate.SynapseRowOnHICANN):
             d_pattern = numpy.random.randint(0, 16, 256)
@@ -47,7 +49,7 @@ class TestSthalAlgorithms(PyhalbeTest):
             hicann1.synapses[row].weights[:] = [HICANN.SynapseWeight(int(ii)) for ii in w_pattern]
 
         wafer2 = pysthal.Wafer(Coordinate.Wafer(0))
-        hicann2 = wafer2[Coordinate.HICANNOnWafer(Coordinate.Enum(42))]
+        hicann2 = wafer2[Coordinate.HICANNOnWafer(Enum(42))]
         self.assertNotEqual(str(wafer.status()), str(wafer2.status()))
 
         for row in Coordinate.iter_all(Coordinate.SynapseRowOnHICANN):
@@ -64,8 +66,8 @@ class TestSthalAlgorithms(PyhalbeTest):
             wafer2.load(f.name)
 
         self.assertEqual(wafer.size(), wafer2.size())
-        hicann1 = wafer[Coordinate.HICANNOnWafer(Coordinate.Enum(30))]
-        hicann2 = wafer2[Coordinate.HICANNOnWafer(Coordinate.Enum(30))]
+        hicann1 = wafer[Coordinate.HICANNOnWafer(Enum(30))]
+        hicann2 = wafer2[Coordinate.HICANNOnWafer(Enum(30))]
         self.assertEqual(hicann1.index(), hicann2.index())
         self.assertEqual(str(wafer.status()), str(wafer2.status()))
 
@@ -85,31 +87,32 @@ class TestSthalAlgorithms(PyhalbeTest):
         """
         import pyhalbe
         import pysthal
-        import Coordinate as C
+        from pyhalco_common import Enum, left, top
+        import pyhalco_hicann_v2 as C
 
         hicann = pysthal.HICANN()
 
         # HRepeaterOnHICANN 0 and 2 are on different test ports
-        hicann.repeater[C.HRepeaterOnHICANN(C.Enum(0))].setOutput(C.left)
-        hicann.repeater[C.HRepeaterOnHICANN(C.Enum(2))].setOutput(C.left)
+        hicann.repeater[C.HRepeaterOnHICANN(Enum(0))].setOutput(left)
+        hicann.repeater[C.HRepeaterOnHICANN(Enum(2))].setOutput(left)
         self.assertEqual(hicann.check(), "")
         hicann.repeater.clearReapeater()
 
         # HRepeaterOnHICANN 0 and 4 are on the same test port
-        hicann.repeater[C.HRepeaterOnHICANN(C.Enum(0))].setOutput(C.left)
-        hicann.repeater[C.HRepeaterOnHICANN(C.Enum(4))].setOutput(C.left)
+        hicann.repeater[C.HRepeaterOnHICANN(Enum(0))].setOutput(left)
+        hicann.repeater[C.HRepeaterOnHICANN(Enum(4))].setOutput(left)
         self.assertNotEqual(hicann.check(), "")
         hicann.repeater.clearReapeater()
 
         # VRepeaterOnHICANN 0 and 2 are on the same test port
-        hicann.repeater[C.VRepeaterOnHICANN(C.Enum(0))].setOutput(C.top)
-        hicann.repeater[C.VRepeaterOnHICANN(C.Enum(2))].setOutput(C.top)
+        hicann.repeater[C.VRepeaterOnHICANN(Enum(0))].setOutput(top)
+        hicann.repeater[C.VRepeaterOnHICANN(Enum(2))].setOutput(top)
         self.assertNotEqual(hicann.check(), "")
         hicann.repeater.clearReapeater()
 
         # VRepeaterOnHICANN 0 and 4 are on different test ports
-        hicann.repeater[C.VRepeaterOnHICANN(C.Enum(0))].setOutput(C.top)
-        hicann.repeater[C.VRepeaterOnHICANN(C.Enum(1))].setOutput(C.top)
+        hicann.repeater[C.VRepeaterOnHICANN(Enum(0))].setOutput(top)
+        hicann.repeater[C.VRepeaterOnHICANN(Enum(1))].setOutput(top)
         self.assertEqual(hicann.check(), "")
         hicann.repeater.clearReapeater()
 
@@ -121,7 +124,7 @@ class TestSthalAlgorithms(PyhalbeTest):
         """
 
         import pysthal
-        import Coordinate as C
+        import pyhalco_hicann_v2 as C
 
         hicann = pysthal.HICANN()
         settings = pysthal.Settings.get()
@@ -175,14 +178,15 @@ class TestSthalAlgorithms(PyhalbeTest):
 
         from pyhalbe.HICANN import SynapseSwitch
         import pysthal
-        import Coordinate as C
+        from pyhalco_common import iter_all, SideHorizontal
+        import pyhalco_hicann_v2 as C
 
         hicann = pysthal.HICANN()
         settings = pysthal.Settings.get()
 
         # check per vline
-        for side in C.iter_all(C.SideHorizontal):
-            for vline in C.iter_all(C.VLineOnHICANN):
+        for side in iter_all(SideHorizontal):
+            for vline in iter_all(C.VLineOnHICANN):
                 syn_drvs = [syn_drv for syn_drv in vline.toSynapseDriverOnHICANN(side)]
                 for syn_drv1, syn_drv2 in zip(syn_drvs, syn_drvs[1:]):
 
@@ -228,7 +232,8 @@ class TestSthalAlgorithms(PyhalbeTest):
         Check if find_neuron_in_analog_output works.
         """
         import pysthal
-        from Coordinate import iter_all, X, Y, NeuronOnHICANN, AnalogOnHICANN
+        from pyhalco_common import iter_all, X, Y
+        from pyhalco_hicann_v2 import NeuronOnHICANN, AnalogOnHICANN
         hicann = pysthal.HICANN()
 
         NeuronOnHICANN.__repr__ = NeuronOnHICANN.__str__
@@ -310,11 +315,12 @@ class TestSthalAlgorithms(PyhalbeTest):
     def test_has_outbound_mergers(self):
         import pyhalbe
         import pysthal
-        import Coordinate as C
+        from pyhalco_common import Enum
+        import pyhalco_hicann_v2 as C
 
         wafer_c = C.Wafer(33)
-        gbitlink_c = C.GbitLinkOnHICANN(C.Enum(0))
-        fpga_on_wafer_c = C.FPGAOnWafer(C.Enum(0))
+        gbitlink_c = C.GbitLinkOnHICANN(Enum(0))
+        fpga_on_wafer_c = C.FPGAOnWafer(Enum(0))
         fpga_c = C.FPGAGlobal(fpga_on_wafer_c, wafer_c)
         hicann_cs = [C.HICANNGlobal(h, wafer_c) for h in fpga_c.toHICANNOnWafer()]
         hicann_c = hicann_cs[0]

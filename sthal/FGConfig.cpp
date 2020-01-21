@@ -1,8 +1,8 @@
 #include "sthal/FGConfig.h"
 
-#include "hal/Coordinate/HMFGeometry.h"
+#include "halco/hicann/v2/fwd.h"
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
 
 namespace sthal {
 

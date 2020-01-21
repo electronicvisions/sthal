@@ -3,7 +3,7 @@
 #include <boost/serialization/export.hpp>
 #include <boost/serialization/version.hpp>
 
-#include "hal/Coordinate/HMFGeometry.h"
+#include "halco/hicann/v2/fwd.h"
 #include "hal/HICANNContainer.h"
 #include "hal/DNCContainer.h"
 
@@ -41,7 +41,7 @@ public:
 	SynapseSwitches  synapse_switches;
 	CrossbarSwitches crossbar_switches;
 
-	std::array<FGStimulus, ::HMF::Coordinate::FGBlockOnHICANN::enum_type::size> current_stimuli;
+	std::array<FGStimulus, ::halco::hicann::v2::FGBlockOnHICANN::enum_type::size> current_stimuli;
 
 	/// Copy HICANN configuration from an other HICANN, needed from python
 	void copy(const HICANNData & other);

@@ -17,7 +17,8 @@ pylogging.set_loglevel(pylogging.get("halbe"), pylogging.LogLevel.INFO)
 
 import pysthal
 import pyhalbe
-import Coordinate as C
+from pyhalco_common import Enum
+import pyhalco_hicann_v2 as C
 
 from pysthal.command_line_util import add_logger_options
 
@@ -80,7 +81,7 @@ if __name__ == "__main__":
     w.force_listen_local(True)
     w.commonFPGASettings().setPLL(args.freq)
 
-    for fpga in [C.FPGAOnWafer(C.Enum(f)) for f in args.fpga]:
+    for fpga in [C.FPGAOnWafer(Enum(f)) for f in args.fpga]:
         DNC = fpga.toDNCOnWafer()
         for hicann_on_dnc in C.iter_all(C.HICANNOnDNC):
             if w.has(hicann_on_dnc.toHICANNOnWafer(DNC)):

@@ -12,7 +12,7 @@ mb = wrap.mb
 ns_std      = mb.namespace('::std')
 ns_sthal    = mb.namespace('::sthal')
 included_ns = [ns_sthal]
-already_exposed_ns = [ mb.namespace('::HMF'), mb.namespace('::geometry') ]
+already_exposed_ns = [ mb.namespace('::HMF') ]
 
 for ns in ['::boost::serialization', '::boost::archive']:
     try:
@@ -117,7 +117,7 @@ for cls in list_of_configurators:
     if cls not in ["HICANNReadoutConfigurator"]:
         custom_create = 'def("__init__", boost::python::make_constructor(+[]() { return boost::make_shared<%s_wrapper>(); }))'%cls
     elif cls == "HICANNReadoutConfigurator":
-        custom_create = 'def("__init__", boost::python::make_constructor(+[](sthal::Wafer& wafer, std::vector< ::HMF::Coordinate::HICANNOnWafer> read_hicanns) { return boost::make_shared<%s_wrapper>(wafer, read_hicanns); }))'%cls
+        custom_create = 'def("__init__", boost::python::make_constructor(+[](sthal::Wafer& wafer, std::vector< ::halco::hicann::v2::HICANNOnWafer> read_hicanns) { return boost::make_shared<%s_wrapper>(wafer, read_hicanns); }))'%cls
     c = ns_sthal.class_(cls)
     c.add_registration_code(custom_create)
 

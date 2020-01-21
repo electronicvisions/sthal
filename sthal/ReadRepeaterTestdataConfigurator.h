@@ -7,7 +7,7 @@
 #include "pywrap/compat/macros.hpp"
 
 #include "sthal/HICANNConfigurator.h"
-#include "hal/Coordinate/HMFGeometry.h"
+#include "halco/hicann/v2/fwd.h"
 #include "hal/HICANNContainer.h"
 
 PYPP_INSTANTIATE(std::vector<size_t>)
@@ -31,33 +31,33 @@ public:
 
 	static log4cxx::LoggerPtr getLogger();
 
-	bool get_full_flag(::HMF::Coordinate::HRepeaterOnWafer) const;
+	bool get_full_flag(::halco::hicann::v2::HRepeaterOnWafer) const;
 
-	bool get_full_flag(::HMF::Coordinate::VRepeaterOnWafer) const;
+	bool get_full_flag(::halco::hicann::v2::VRepeaterOnWafer) const;
 
 	typedef std::array< ::HMF::HICANN::RepeaterBlock::TestEvent, 3> test_data_t;
 
-	test_data_t get_test_events(::HMF::Coordinate::HRepeaterOnWafer) const;
+	test_data_t get_test_events(::halco::hicann::v2::HRepeaterOnWafer) const;
 
-	test_data_t get_test_events(::HMF::Coordinate::VRepeaterOnWafer) const;
+	test_data_t get_test_events(::halco::hicann::v2::VRepeaterOnWafer) const;
 
-	std::vector< ::HMF::Coordinate::HRepeaterOnHICANN> get_active_hrepeater(
-	    ::HMF::Coordinate::HICANNOnWafer) const;
-	std::vector< ::HMF::Coordinate::VRepeaterOnHICANN> get_active_vrepeater(
-	    ::HMF::Coordinate::HICANNOnWafer) const;
+	std::vector< ::halco::hicann::v2::HRepeaterOnHICANN> get_active_hrepeater(
+	    ::halco::hicann::v2::HICANNOnWafer) const;
+	std::vector< ::halco::hicann::v2::VRepeaterOnHICANN> get_active_vrepeater(
+	    ::halco::hicann::v2::HICANNOnWafer) const;
 
 	// first: bad repeaters, second: good repeaters
 	std::pair<
-	    std::vector< ::HMF::Coordinate::VRepeaterOnWafer>,
-	    std::vector< ::HMF::Coordinate::VRepeaterOnWafer> >
+	    std::vector< ::halco::hicann::v2::VRepeaterOnWafer>,
+	    std::vector< ::halco::hicann::v2::VRepeaterOnWafer> >
 	analyze_vrepeater(
 	    std::vector< ::HMF::HICANN::L1Address> expected_addrs,
 	    std::vector<size_t> expected_periods) const;
 
 	// first: bad repeaters, second: good repeaters
 	std::pair<
-	    std::vector< ::HMF::Coordinate::HRepeaterOnWafer>,
-	    std::vector< ::HMF::Coordinate::HRepeaterOnWafer> >
+	    std::vector< ::halco::hicann::v2::HRepeaterOnWafer>,
+	    std::vector< ::halco::hicann::v2::HRepeaterOnWafer> >
 	analyze_hrepeater(
 	    std::vector< ::HMF::HICANN::L1Address> expected_addrs,
 	    std::vector<size_t> expected_periods) const;
@@ -69,14 +69,14 @@ public:
 	                    std::vector< ::HMF::HICANN::L1Address> expected_addrs,
 	                    std::vector<size_t> expected_periods);
 
-	void add_passive_hrepeater(::HMF::Coordinate::HRepeaterOnWafer hr);
+	void add_passive_hrepeater(::halco::hicann::v2::HRepeaterOnWafer hr);
 
-	void add_passive_vrepeater(::HMF::Coordinate::VRepeaterOnWafer vr);
+	void add_passive_vrepeater(::halco::hicann::v2::VRepeaterOnWafer vr);
 
 	// add horizontal repeater that is to be ignored in checks
-	void add_ignore_hrepeater(::HMF::Coordinate::HRepeaterOnWafer hr);
+	void add_ignore_hrepeater(::halco::hicann::v2::HRepeaterOnWafer hr);
 	// add vertical repeater that is to be ignored in checks
-	void add_ignore_vrepeater(::HMF::Coordinate::VRepeaterOnWafer vr);
+	void add_ignore_vrepeater(::halco::hicann::v2::VRepeaterOnWafer vr);
 
 	// clear ignoring of horizontal repeaters
 	void clear_ignore_hrepeater();
@@ -90,41 +90,41 @@ private:
 
 #ifndef PYPLUSPLUS
 	tbb::concurrent_unordered_map<
-		::HMF::Coordinate::HICANNOnWafer,
-		std::set< ::HMF::Coordinate::HRepeaterOnWafer>,
-		std::hash< ::HMF::Coordinate::HICANNOnWafer> >
+		::halco::hicann::v2::HICANNOnWafer,
+		std::set< ::halco::hicann::v2::HRepeaterOnWafer>,
+		std::hash< ::halco::hicann::v2::HICANNOnWafer> >
 		passive_hrepeater_map;
 
 	tbb::concurrent_unordered_map<
-		::HMF::Coordinate::HICANNOnWafer,
-		std::set< ::HMF::Coordinate::VRepeaterOnWafer>,
-		std::hash< ::HMF::Coordinate::HICANNOnWafer> >
+		::halco::hicann::v2::HICANNOnWafer,
+		std::set< ::halco::hicann::v2::VRepeaterOnWafer>,
+		std::hash< ::halco::hicann::v2::HICANNOnWafer> >
 		passive_vrepeater_map;
 
 	tbb::concurrent_unordered_map<
-		::HMF::Coordinate::HICANNOnWafer,
-		std::set< ::HMF::Coordinate::HRepeaterOnWafer>,
-		std::hash< ::HMF::Coordinate::HICANNOnWafer> >
+		::halco::hicann::v2::HICANNOnWafer,
+		std::set< ::halco::hicann::v2::HRepeaterOnWafer>,
+		std::hash< ::halco::hicann::v2::HICANNOnWafer> >
 		ignore_hrepeater_map;
 
 	tbb::concurrent_unordered_map<
-		::HMF::Coordinate::HICANNOnWafer,
-		std::set< ::HMF::Coordinate::VRepeaterOnWafer>,
-		std::hash< ::HMF::Coordinate::HICANNOnWafer> >
+		::halco::hicann::v2::HICANNOnWafer,
+		std::set< ::halco::hicann::v2::VRepeaterOnWafer>,
+		std::hash< ::halco::hicann::v2::HICANNOnWafer> >
 		ignore_vrepeater_map;
 
 	tbb::concurrent_unordered_map<
-		::HMF::Coordinate::HICANNOnWafer,
-		std::map< ::HMF::Coordinate::HRepeaterOnWafer,
+		::halco::hicann::v2::HICANNOnWafer,
+		std::map< ::halco::hicann::v2::HRepeaterOnWafer,
 		std::pair<bool, test_data_t> >,
-		std::hash< ::HMF::Coordinate::HICANNOnWafer> >
+		std::hash< ::halco::hicann::v2::HICANNOnWafer> >
 		result_hr;
 
 	tbb::concurrent_unordered_map<
-		::HMF::Coordinate::HICANNOnWafer,
-		std::map< ::HMF::Coordinate::VRepeaterOnWafer,
+		::halco::hicann::v2::HICANNOnWafer,
+		std::map< ::halco::hicann::v2::VRepeaterOnWafer,
 		std::pair<bool, test_data_t> >,
-		std::hash< ::HMF::Coordinate::HICANNOnWafer> >
+		std::hash< ::halco::hicann::v2::HICANNOnWafer> >
 		result_vr;
 #endif
 

@@ -3,10 +3,10 @@
 #include <log4cxx/logger.h>
 
 #include "hal/backend/HICANNBackend.h"
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 #include "sthal/HICANN.h"
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
 
 namespace sthal {
 

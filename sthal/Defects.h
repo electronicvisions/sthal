@@ -32,5 +32,5 @@ boost::shared_ptr< ::redman::backend::Backend> load_defects_backend();
 /// Loads the redman wafer resources via load_defects_backend
 /// returns new wafer resources if backend is not loaded
 boost::shared_ptr< ::redman::resources::Wafer> load_resources_wafer(
-    HMF::Coordinate::Wafer const& wafer);
+    halco::hicann::v2::Wafer const& wafer);
 } //sthal

@@ -6,7 +6,7 @@
 
 #include "halco/common/typed_array.h"
 
-#include "hal/Coordinate/External.h"
+#include "halco/hicann/v2/external.h"
 
 namespace HMF {
 namespace Handle {
@@ -18,7 +18,7 @@ namespace sthal {
 
 class FPGA;
 
-typedef ::HMF::Coordinate::FPGAOnWafer fpga_coord;
+typedef ::halco::hicann::v2::FPGAOnWafer fpga_coord;
 typedef boost::shared_ptr< ::HMF::Handle::FPGA > fpga_handle_t;
 typedef halco::common::typed_array< boost::shared_ptr<FPGA>, fpga_coord> fpga_list;
 typedef halco::common::typed_array<fpga_handle_t, fpga_coord> fpga_handle_list;

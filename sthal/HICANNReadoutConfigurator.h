@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sthal/HICANNConfigurator.h"
-#include "hal/Coordinate/HMFGeometry.h"
+#include "halco/hicann/v2/fwd.h"
 
 namespace sthal {
 
@@ -13,7 +13,7 @@ class HICANNReadoutConfigurator : public HICANNConfigurator
 public:
 	// @param read_hicanns: HICANNs to be read, reads all when empty
 	HICANNReadoutConfigurator(
-	    sthal::Wafer& wafer, std::vector< ::HMF::Coordinate::HICANNOnWafer> read_hicanns);
+	    sthal::Wafer& wafer, std::vector< ::halco::hicann::v2::HICANNOnWafer> read_hicanns);
 
 	virtual void config_fpga(fpga_handle_t const& f, fpga_t const& fg);
 	virtual void config(fpga_handle_t const& f, hicann_handle_t const& h, hicann_data_t const& fg);
@@ -47,7 +47,7 @@ public:
 private:
 	Wafer & wafer;
 	HICANN& getHICANN(hicann_data_t const& hicann);
-	std::set< ::HMF::Coordinate::HICANNOnWafer> read_hicanns;
+	std::set< ::halco::hicann::v2::HICANNOnWafer> read_hicanns;
 };
 
 } // end namespace sthal

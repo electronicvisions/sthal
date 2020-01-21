@@ -6,7 +6,7 @@
 
 #include <boost/program_options.hpp>
 
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 #include "test/hwtest.h"
 #include "sthal/Wafer.h"
 #include "sthal/HICANNConfigurator.h"
@@ -18,7 +18,8 @@
 #include "logger.h"
 
 namespace po = boost::program_options;
-using namespace HMF::Coordinate;
+using namespace halco::hicann::v2;
+using namespace halco::common;
 
 int main(int argc, char* argv[]) {
 	sthal::Timer t;
@@ -141,7 +142,7 @@ int main(int argc, char* argv[]) {
 			wafer[hicann_coord].sendSpikes(link, spikes);
 		}
 	}
-	std::vector< ::HMF::Coordinate::FPGAOnWafer> fpgas = wafer.getAllocatedFpgaCoordinates();
+	std::vector< ::halco::hicann::v2::FPGAOnWafer> fpgas = wafer.getAllocatedFpgaCoordinates();
 
 	sthal::ExperimentRunner runner{runtime};
 	wafer.connect(sthal::MagicHardwareDatabase());
@@ -159,7 +160,7 @@ int main(int argc, char* argv[]) {
 
 	std::vector<double> first_spikes;
 	//read out of spike events per FPGA
-	for(std::vector< ::HMF::Coordinate::FPGAOnWafer>::iterator fpga_it = fpgas.begin(); fpga_it != fpgas.end(); ++fpga_it) {
+	for(std::vector< ::halco::hicann::v2::FPGAOnWafer>::iterator fpga_it = fpgas.begin(); fpga_it != fpgas.end(); ++fpga_it) {
 		const ::HMF::FPGA::PulseEventContainer & received_spikes = wafer[*fpga_it].getReceivedSpikes();
 		const ::HMF::FPGA::PulseEventContainer & sent_spikes = wafer[*fpga_it].getSendSpikes();
 		if(received_spikes.size() != sent_spikes.size()) {

@@ -5,7 +5,7 @@
 
 #include "pythonic/zip.h"
 
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 #include "hal/Handle/FPGA.h"
 #include "hal/Handle/HICANN.h"
 #include "hal/Handle/HICANNHw.h"
@@ -15,7 +15,7 @@
 #include "sthal/Timer.h"
 
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
 
 namespace sthal {
 

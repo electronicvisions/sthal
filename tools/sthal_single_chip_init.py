@@ -11,7 +11,8 @@ pylogging.set_loglevel(pylogging.get("sthal"), pylogging.LogLevel.INFO)
 pylogging.set_loglevel(pylogging.get("Default"), pylogging.LogLevel.INFO)
 pylogging.set_loglevel(pylogging.get("halbe"), pylogging.LogLevel.INFO)
 
-import Coordinate as C
+from pyhalco_common import Enum
+import pyhalco_hicann_v2 as C
 import pysthal
 
 def set_floating_gate_to_zero(hicann):
@@ -36,7 +37,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     wafer_c = C.Wafer(args.wafer)
-    hicann_c = C.HICANNOnWafer(C.Enum(args.hicann))
+    hicann_c = C.HICANNOnWafer(Enum(args.hicann))
     fpga_c = hicann_c.toFPGAOnWafer()
     dnc_c = fpga_c.toDNCOnWafer()
 

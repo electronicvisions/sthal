@@ -2,7 +2,7 @@
 
 #include "pywrap/compat/macros.hpp"
 
-#include "hal/Coordinate/HMFGeometry.h"
+#include "halco/hicann/v2/external.h"
 #include "hal/ADC/Status.h"
 #include "hal/ADC/USBSerial.h"
 #include "calibtic/HMF/ADC/ADCCalibration.h"
@@ -25,8 +25,8 @@ class AnalogRecorder
 {
 public:
 	typedef ::HMF::ADC::USBSerial adc_coord;
-	typedef ::HMF::Coordinate::ChannelOnADC channel_coord;
-	typedef ::HMF::Coordinate::TriggerOnADC trigger_coord;
+	typedef ::halco::hicann::v2::ChannelOnADC channel_coord;
+	typedef ::halco::hicann::v2::TriggerOnADC trigger_coord;
 	typedef float time_type;
 	typedef float voltage_type;
 

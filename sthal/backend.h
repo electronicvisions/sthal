@@ -37,7 +37,7 @@ public:
 
 
 		// configure HW
-		using namespace geometry;
+		using namespace halco::common;
 		HMF::HICANNBackend hicann(
 			Enum(chip.index()[1]),
 			HMF::WaferId(chip.index()[0]));
@@ -46,9 +46,9 @@ public:
 		// Crossbar
 		size_t cnt = 0;
 		for(auto& row : chip.crossbar.switches()) {
-			hicann.set_crossbar_switch_row(Coordinate::HLineOnHICANN(cnt), LEFT,
+			hicann.set_crossbar_switch_row(halco::hicann::v2::HLineOnHICANN(cnt), LEFT,
 				reinterpret_cast<std::array<bool, 4> const&>(row));
-			hicann.set_crossbar_switch_row(Coordinate::HLineOnHICANN(cnt), RIGHT,
+			hicann.set_crossbar_switch_row(halco::hicann::v2::HLineOnHICANN(cnt), RIGHT,
 				reinterpret_cast<std::array<bool, 4> const&>(row));
 
 			++cnt;
@@ -57,9 +57,9 @@ public:
 		// synapse driver switches
 		cnt = 0;
 		for(auto& row : chip.synapse_switch.switches()) {
-			hicann.set_syndriver_switch_row(Coordinate::HLineOnHICANN(cnt), LEFT,
+			hicann.set_syndriver_switch_row(halco::hicann::v2::HLineOnHICANN(cnt), LEFT,
 				reinterpret_cast<std::array<bool, 4*4> const&>(row));
-			hicann.set_syndriver_switch_row(Coordinate::HLineOnHICANN(cnt), RIGHT,
+			hicann.set_syndriver_switch_row(halco::hicann::v2::HLineOnHICANN(cnt), RIGHT,
 				reinterpret_cast<std::array<bool, 4*4> const&>(row[4*4]));
 
 			++cnt;

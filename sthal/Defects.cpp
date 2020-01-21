@@ -32,7 +32,7 @@ boost::shared_ptr<redman::backend::Backend> load_defects_backend()
 }
 
 boost::shared_ptr<redman::resources::Wafer> load_resources_wafer(
-    HMF::Coordinate::Wafer const& wafer)
+    halco::hicann::v2::Wafer const& wafer)
 {
 	auto backend = load_defects_backend();
 	return backend ? boost::make_shared<redman::resources::Wafer>(

@@ -271,7 +271,7 @@ void AnalogRecorder::freeHandle()
 void AnalogRecorder::switchToGND()
 {
 	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
-	using ::HMF::Coordinate::ChannelOnADC;
+	using ::halco::hicann::v2::ChannelOnADC;
 	::HMF::ADC::Config cfg(mSamples, ChannelOnADC::GND, mTrigger);
 	::HMF::ADC::config(handle(), cfg);
 	LOG4CXX_INFO(logger, "AnalogRecorder " << mCoordinate << " set to GND");

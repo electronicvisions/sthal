@@ -1,7 +1,7 @@
 #pragma once
 
 #include "sthal/HICANNConfigurator.h"
-#include "hal/Coordinate/HMFGeometry.h"
+#include "halco/hicann/v2/fwd.h"
 
 #include "boost/io/ios_state.hpp"
 
@@ -14,9 +14,9 @@ class Wafer;
 class ReadFloatingGates : public HICANNConfigurator
 {
 public:
-	typedef ::HMF::Coordinate::FGBlockOnHICANN block_t;
-	typedef ::HMF::Coordinate::FGRowOnFGBlock row_t;
-	typedef ::HMF::Coordinate::FGCellOnFGBlock cell_t;
+	typedef ::halco::hicann::v2::FGBlockOnHICANN block_t;
+	typedef ::halco::hicann::v2::FGRowOnFGBlock row_t;
+	typedef ::halco::hicann::v2::FGCellOnFGBlock cell_t;
 
 	static const size_t number_of_cells = cell_t::enum_type::size * block_t::enum_type::size;
 

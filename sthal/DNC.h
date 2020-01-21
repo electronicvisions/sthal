@@ -3,7 +3,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 
-#include "hal/Coordinate/HMFGeometry.h"
+#include "halco/hicann/v2/hicann.h"
 #include "sthal/macros.h"
 
 namespace boost {
@@ -20,7 +20,7 @@ class DNC
 {
 public:
 	typedef boost::shared_ptr<HICANN>      hicann_t;
-	typedef ::HMF::Coordinate::HICANNOnDNC hicann_coord;
+	typedef ::halco::hicann::v2::HICANNOnDNC hicann_coord;
 
 	STHAL_ARRAY_OPERATOR(hicann_t, hicann_coord, return mHICANNs[ii.toEnum()];)
 

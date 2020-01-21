@@ -5,8 +5,8 @@
 #include <boost/algorithm/string/join.hpp>
 #include <boost/range/iterator_range.hpp>
 
-#include "hal/Coordinate/iter_all.h"
-#include "hal/Coordinate/FormatHelper.h"
+#include "halco/common/iter_all.h"
+#include "halco/hicann/v2/format_helper.h"
 #include "hal/HICANN/FGBlock.h"
 #include "hal/Handle/FPGA.h"
 #include "hal/Handle/HICANN.h"
@@ -24,7 +24,8 @@
 
 #include <log4cxx/logger.h>
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
+using namespace ::halco::common;
 
 namespace sthal {
 

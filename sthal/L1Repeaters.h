@@ -1,7 +1,7 @@
 #pragma once
 
 #include "hal/HICANNContainer.h"
-#include "hal/Coordinate/HMFGeometry.h"
+#include "halco/hicann/v2/fwd.h"
 
 #include "sthal/macros.h"
 
@@ -22,9 +22,9 @@ public:
 	typedef ::HMF::HICANN::VerticalRepeater   vertical_type;
 	typedef ::HMF::HICANN::RepeaterBlock      block_type;
 
-	typedef ::HMF::Coordinate::HRepeaterOnHICANN       horizontal_coordinate;
-	typedef ::HMF::Coordinate::VRepeaterOnHICANN       vertical_coordinate;
-	typedef ::HMF::Coordinate::RepeaterBlockOnHICANN   block_coordinate;
+	typedef ::halco::hicann::v2::HRepeaterOnHICANN       horizontal_coordinate;
+	typedef ::halco::hicann::v2::VRepeaterOnHICANN       vertical_coordinate;
+	typedef ::halco::hicann::v2::RepeaterBlockOnHICANN   block_coordinate;
 
 	STHAL_ARRAY_OPERATOR(horizontal_type, horizontal_coordinate,
 			return mHorizontalRepeater[ii.toHLineOnHICANN()];)
@@ -32,16 +32,16 @@ public:
 			return mVerticalRepeater[ii.toVLineOnHICANN()];)
 	STHAL_ARRAY_OPERATOR(block_type, block_coordinate, return mBlocks[ii.toEnum()];)
 
-	::HMF::HICANN::VerticalRepeater   getRepeater(::HMF::Coordinate::VRepeaterOnHICANN) const;
-	::HMF::HICANN::HorizontalRepeater getRepeater(::HMF::Coordinate::HRepeaterOnHICANN) const;
-	::HMF::HICANN::RepeaterBlock      getRepeaterBlock(::HMF::Coordinate::RepeaterBlockOnHICANN) const;
+	::HMF::HICANN::VerticalRepeater   getRepeater(::halco::hicann::v2::VRepeaterOnHICANN) const;
+	::HMF::HICANN::HorizontalRepeater getRepeater(::halco::hicann::v2::HRepeaterOnHICANN) const;
+	::HMF::HICANN::RepeaterBlock      getRepeaterBlock(::halco::hicann::v2::RepeaterBlockOnHICANN) const;
 
 	/// Clears all repeater settings
 	void clearReapeater();
 
-	void setRepeater(::HMF::Coordinate::VRepeaterOnHICANN, ::HMF::HICANN::VerticalRepeater const&);
-	void setRepeater(::HMF::Coordinate::HRepeaterOnHICANN, ::HMF::HICANN::HorizontalRepeater const&);
-	void setRepeaterBlock(::HMF::Coordinate::RepeaterBlockOnHICANN, ::HMF::HICANN::RepeaterBlock const&);
+	void setRepeater(::halco::hicann::v2::VRepeaterOnHICANN, ::HMF::HICANN::VerticalRepeater const&);
+	void setRepeater(::halco::hicann::v2::HRepeaterOnHICANN, ::HMF::HICANN::HorizontalRepeater const&);
+	void setRepeaterBlock(::halco::hicann::v2::RepeaterBlockOnHICANN, ::HMF::HICANN::RepeaterBlock const&);
 
 	// TODO: add iterator for all horizontal repeaters (including sending repeaters)
 
@@ -63,8 +63,8 @@ public:
 
 	// return the number of repeaters that are in mode, assigned to testport tp on repeaterblock rb
 	size_t count_repeaters(
-	    ::HMF::Coordinate::RepeaterBlockOnHICANN rb,
-	    ::HMF::Coordinate::TestPortOnRepeaterBlock tp,
+	    ::halco::hicann::v2::RepeaterBlockOnHICANN rb,
+	    ::halco::hicann::v2::TestPortOnRepeaterBlock tp,
 	    ::HMF::HICANN::Repeater::Mode mode) const;
 
 	// return false if an erroneous configuration w.r.t. to testport is detected

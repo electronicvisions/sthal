@@ -3,18 +3,19 @@
 #include <vector>
 
 #include "ReadRepeaterTestdataConfigurator.h"
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 #include "hal/HICANNContainer.h"
 #include "hal/Handle/HICANN.h"
 #include "hal/backend/HICANNBackend.h"
-#include "hal/Coordinate/FormatHelper.h"
+#include "halco/hicann/v2/format_helper.h"
 #include "sthal/HICANN.h"
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
+using namespace ::halco::common;
 using namespace ::HMF::HICANN;
 
 
-geometry::SideHorizontal get_forwarding_direction(const HorizontalRepeater& hr) {
+halco::common::SideHorizontal get_forwarding_direction(const HorizontalRepeater& hr) {
 	if (hr.getMode() != Repeater::FORWARDING) {
 		throw std::runtime_error("repeater not in forwarding mode");
 	}
@@ -30,7 +31,7 @@ geometry::SideHorizontal get_forwarding_direction(const HorizontalRepeater& hr) 
 	return to_left ? left : right;
 }
 
-geometry::SideVertical get_forwarding_direction(const VerticalRepeater& vr) {
+halco::common::SideVertical get_forwarding_direction(const VerticalRepeater& vr) {
 	if (vr.getMode() != Repeater::FORWARDING) {
 		throw std::runtime_error("repeater not in forwarding mode");
 	}
@@ -57,7 +58,7 @@ log4cxx::LoggerPtr ReadRepeaterTestdataConfigurator::getLogger() {
 }
 
 bool ReadRepeaterTestdataConfigurator::get_full_flag(
-    ::HMF::Coordinate::HRepeaterOnWafer c_hr) const {
+    ::halco::hicann::v2::HRepeaterOnWafer c_hr) const {
 	const bool full_flag = this->result_hr.at(c_hr.toHICANNOnWafer()).at(c_hr).first;
 	LOG4CXX_TRACE(getLogger(), "get_full_flag: " << c_hr << " full flag: " << full_flag);
 
@@ -65,7 +66,7 @@ bool ReadRepeaterTestdataConfigurator::get_full_flag(
 }
 
 bool ReadRepeaterTestdataConfigurator::get_full_flag(
-    ::HMF::Coordinate::VRepeaterOnWafer c_vr) const {
+    ::halco::hicann::v2::VRepeaterOnWafer c_vr) const {
 	const bool full_flag = this->result_vr.at(c_vr.toHICANNOnWafer()).at(c_vr).first;
 	LOG4CXX_TRACE(getLogger(), "get_full_flag: " << c_vr << " full flag: " << full_flag);
 
@@ -74,20 +75,20 @@ bool ReadRepeaterTestdataConfigurator::get_full_flag(
 
 std::array< ::HMF::HICANN::RepeaterBlock::TestEvent, 3>
 ReadRepeaterTestdataConfigurator::get_test_events(
-    ::HMF::Coordinate::HRepeaterOnWafer c_hr) const {
+    ::halco::hicann::v2::HRepeaterOnWafer c_hr) const {
 	return this->result_hr.at(c_hr.toHICANNOnWafer()).at(c_hr).second;
 }
 
 std::array< ::HMF::HICANN::RepeaterBlock::TestEvent, 3>
 ReadRepeaterTestdataConfigurator::get_test_events(
-    ::HMF::Coordinate::VRepeaterOnWafer c_vr) const {
+    ::halco::hicann::v2::VRepeaterOnWafer c_vr) const {
 	return this->result_vr.at(c_vr.toHICANNOnWafer()).at(c_vr).second;
 }
 
-std::vector< ::HMF::Coordinate::HRepeaterOnHICANN>
+std::vector< ::halco::hicann::v2::HRepeaterOnHICANN>
 ReadRepeaterTestdataConfigurator::get_active_hrepeater(
-    ::HMF::Coordinate::HICANNOnWafer hicann) const {
-	std::vector< ::HMF::Coordinate::HRepeaterOnHICANN> active_hrepeater;
+    ::halco::hicann::v2::HICANNOnWafer hicann) const {
+	std::vector< ::halco::hicann::v2::HRepeaterOnHICANN> active_hrepeater;
 
 	for (auto kv : this->result_hr.at(hicann)) {
 		active_hrepeater.push_back(kv.first);
@@ -96,10 +97,10 @@ ReadRepeaterTestdataConfigurator::get_active_hrepeater(
 	return active_hrepeater;
 }
 
-std::vector< ::HMF::Coordinate::VRepeaterOnHICANN>
+std::vector< ::halco::hicann::v2::VRepeaterOnHICANN>
 ReadRepeaterTestdataConfigurator::get_active_vrepeater(
-    ::HMF::Coordinate::HICANNOnWafer hicann) const {
-	std::vector< ::HMF::Coordinate::VRepeaterOnHICANN> active_vrepeater;
+    ::halco::hicann::v2::HICANNOnWafer hicann) const {
+	std::vector< ::halco::hicann::v2::VRepeaterOnHICANN> active_vrepeater;
 
 	for (auto kv : this->result_vr.at(hicann)) {
 		active_vrepeater.push_back(kv.first);
@@ -145,24 +146,24 @@ std::pair<std::vector<T>, std::vector<T> > analyze_repeater(
 }
 
 std::pair<
-    std::vector< ::HMF::Coordinate::HRepeaterOnWafer>,
-    std::vector< ::HMF::Coordinate::HRepeaterOnWafer> >
+    std::vector< ::halco::hicann::v2::HRepeaterOnWafer>,
+    std::vector< ::halco::hicann::v2::HRepeaterOnWafer> >
 ReadRepeaterTestdataConfigurator::analyze_hrepeater(
     std::vector< ::HMF::HICANN::L1Address> expected_addrs,
     std::vector<size_t> expected_periods) const
 {
-	return analyze_repeater< ::HMF::Coordinate::HRepeaterOnWafer>(
+	return analyze_repeater< ::halco::hicann::v2::HRepeaterOnWafer>(
 	    expected_addrs, expected_periods, result_hr);
 }
 
 std::pair<
-    std::vector< ::HMF::Coordinate::VRepeaterOnWafer>,
-    std::vector< ::HMF::Coordinate::VRepeaterOnWafer> >
+    std::vector< ::halco::hicann::v2::VRepeaterOnWafer>,
+    std::vector< ::halco::hicann::v2::VRepeaterOnWafer> >
 ReadRepeaterTestdataConfigurator::analyze_vrepeater(
     std::vector< ::HMF::HICANN::L1Address> expected_addrs,
     std::vector<size_t> expected_periods) const
 {
-	return analyze_repeater< ::HMF::Coordinate::VRepeaterOnWafer>(
+	return analyze_repeater< ::halco::hicann::v2::VRepeaterOnWafer>(
 	    expected_addrs, expected_periods, result_vr);
 }
 
@@ -274,20 +275,20 @@ bool ReadRepeaterTestdataConfigurator::analyze(
 }
 
 void ReadRepeaterTestdataConfigurator::add_passive_hrepeater(
-    ::HMF::Coordinate::HRepeaterOnWafer hr) {
+    ::halco::hicann::v2::HRepeaterOnWafer hr) {
 	passive_hrepeater_map[hr.toHICANNOnWafer()].insert(hr);
 }
 
 void ReadRepeaterTestdataConfigurator::add_passive_vrepeater(
-    ::HMF::Coordinate::VRepeaterOnWafer vr) {
+    ::halco::hicann::v2::VRepeaterOnWafer vr) {
 	passive_vrepeater_map[vr.toHICANNOnWafer()].insert(vr);
 }
 
-void ReadRepeaterTestdataConfigurator::add_ignore_hrepeater(::HMF::Coordinate::HRepeaterOnWafer hr) {
+void ReadRepeaterTestdataConfigurator::add_ignore_hrepeater(::halco::hicann::v2::HRepeaterOnWafer hr) {
 	ignore_hrepeater_map[hr.toHICANNOnWafer()].insert(hr);
 }
 
-void ReadRepeaterTestdataConfigurator::add_ignore_vrepeater(::HMF::Coordinate::VRepeaterOnWafer vr) {
+void ReadRepeaterTestdataConfigurator::add_ignore_vrepeater(::halco::hicann::v2::VRepeaterOnWafer vr) {
 	ignore_vrepeater_map[vr.toHICANNOnWafer()].insert(vr);
 }
 
@@ -421,8 +422,8 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t& f,
 
 		if (!to_be_read_hrepeater.empty() || !to_be_read_vrepeater.empty()) {
 			// original forwarding directions
-			std::map<HRepeaterOnHICANN, geometry::SideHorizontal> directions_hr;
-			std::map<VRepeaterOnHICANN, geometry::SideVertical> directions_vr;
+			std::map<HRepeaterOnHICANN, halco::common::SideHorizontal> directions_hr;
+			std::map<VRepeaterOnHICANN, halco::common::SideVertical> directions_vr;
 
 			std::vector<HRepeaterOnHICANN> passive_recorded_hr;
 			std::vector<VRepeaterOnHICANN> passive_recorded_vr;

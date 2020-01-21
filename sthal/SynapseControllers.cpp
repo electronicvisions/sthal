@@ -1,9 +1,10 @@
 #include "sthal/SynapseControllers.h"
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 #include <boost/serialization/export.hpp>
 #include <boost/serialization/serialization.hpp>
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
+using namespace ::halco::common;
 
 namespace sthal {
 

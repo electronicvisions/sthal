@@ -2,14 +2,15 @@
 
 import unittest
 
-import Coordinate
+from pyhalco_common import Enum
+import pyhalco_hicann_v2 as Coordinate
 import pysthal
 
 
 class TestSthalSpeedup(unittest.TestCase):
     def setUp(self):
         """Create HICANN object"""
-        c_hicann = Coordinate.HICANNOnWafer(Coordinate.Enum(0))
+        c_hicann = Coordinate.HICANNOnWafer(Enum(0))
         wafer = pysthal.Wafer()
         self.hicann = wafer[c_hicann]
         self.options = [

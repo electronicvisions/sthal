@@ -2,10 +2,10 @@
 
 #include <boost/variant.hpp>
 
-#include "hal/Coordinate/Merger0OnHICANN.h"
-#include "hal/Coordinate/Merger1OnHICANN.h"
-#include "hal/Coordinate/Merger2OnHICANN.h"
-#include "hal/Coordinate/Merger3OnHICANN.h"
+#include "halco/hicann/v2/merger0onhicann.h"
+#include "halco/hicann/v2/merger1onhicann.h"
+#include "halco/hicann/v2/merger2onhicann.h"
+#include "halco/hicann/v2/merger3onhicann.h"
 
 #include "hal/HICANNContainer.h"
 #include "hal/HICANN/GbitLink.h"
@@ -22,13 +22,13 @@ public:
 	typedef ::HMF::HICANN::DNCMerger             dncmerger_type;
 	typedef ::HMF::HICANN::GbitLink::Direction   gbitlink_type;
 
-	typedef ::HMF::Coordinate::BackgroundGeneratorOnHICANN bg_coordinate;
-	typedef ::HMF::Coordinate::Merger0OnHICANN merger0_coordinate;
-	typedef ::HMF::Coordinate::Merger1OnHICANN merger1_coordinate;
-	typedef ::HMF::Coordinate::Merger2OnHICANN merger2_coordinate;
-	typedef ::HMF::Coordinate::Merger3OnHICANN merger3_coordinate;
-	typedef ::HMF::Coordinate::DNCMergerOnHICANN dncmerger_coordinate;
-	typedef ::HMF::Coordinate::GbitLinkOnHICANN gbitlink_coordinate;
+	typedef ::halco::hicann::v2::BackgroundGeneratorOnHICANN bg_coordinate;
+	typedef ::halco::hicann::v2::Merger0OnHICANN merger0_coordinate;
+	typedef ::halco::hicann::v2::Merger1OnHICANN merger1_coordinate;
+	typedef ::halco::hicann::v2::Merger2OnHICANN merger2_coordinate;
+	typedef ::halco::hicann::v2::Merger3OnHICANN merger3_coordinate;
+	typedef ::halco::hicann::v2::DNCMergerOnHICANN dncmerger_coordinate;
+	typedef ::halco::hicann::v2::GbitLinkOnHICANN gbitlink_coordinate;
 
 	bg_type & operator[](const bg_coordinate & bg);
 	const bg_type & operator[](const bg_coordinate & bg) const;

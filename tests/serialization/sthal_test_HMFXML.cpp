@@ -20,8 +20,8 @@ namespace sthal {
 
 TEST(HMFConfig, XMLSerialization)
 {
-	std::unique_ptr<sthal::Wafer> wafer(new Wafer(HMF::Coordinate::Wafer(HMF::Coordinate::Enum(0))));
-	wafer->operator[](HMF::Coordinate::HICANNOnWafer(HMF::Coordinate::Enum(0)));
+	std::unique_ptr<sthal::Wafer> wafer(new Wafer(halco::hicann::v2::Wafer(halco::common::Enum(0))));
+	wafer->operator[](halco::hicann::v2::HICANNOnWafer(halco::common::Enum(0)));
 
 	nullbuf      devnull;
 	std::ostream st(&devnull);

@@ -3,13 +3,13 @@
 #include "halco/common/typed_array.h"
 
 #include "hal/ADC/USBSerial.h"
-#include "hal/Coordinate/HMFGeometry.h"
+#include "halco/hicann/v2/external.h"
 
 namespace sthal {
 
 struct ADCChannel {
 	HMF::ADC::USBSerial board_id;
-	HMF::Coordinate::ChannelOnADC channel;
+	halco::hicann::v2::ChannelOnADC channel;
 	std::string bitfile_version;
 
 	friend bool operator==(const ADCChannel & a, const ADCChannel & b);
@@ -27,10 +27,10 @@ private:
 
 struct Status
 {
-	typedef ::HMF::Coordinate::FPGAOnWafer fpga_coord;
+	typedef ::halco::hicann::v2::FPGAOnWafer fpga_coord;
 
-	::HMF::Coordinate::Wafer wafer;
-	std::vector< ::HMF::Coordinate::HICANNOnWafer > hicanns;
+	::halco::hicann::v2::Wafer wafer;
+	std::vector< ::halco::hicann::v2::HICANNOnWafer > hicanns;
 
 	std::string git_rev_halbe;
 	std::string git_rev_hicann_system;
@@ -40,8 +40,8 @@ struct Status
 	std::array<uint32_t, fpga_coord::size> fpga_rev;
 
 	// adc_channels[dnc_id][analog]
-	typedef halco::common::typed_array<ADCChannel, ::HMF::Coordinate::AnalogOnHICANN> dual_channel_t;
-	typedef halco::common::typed_array<dual_channel_t, ::HMF::Coordinate::DNCOnWafer> adc_channels_t;
+	typedef halco::common::typed_array<ADCChannel, ::halco::hicann::v2::AnalogOnHICANN> dual_channel_t;
+	typedef halco::common::typed_array<dual_channel_t, ::halco::hicann::v2::DNCOnWafer> adc_channels_t;
 	adc_channels_t adc_channels;
 
 private:
@@ -79,4 +79,4 @@ std::ostream& operator<<(std::ostream& out, ADCChannel const& obj);
 
 } // end namespace sthal
 
-BOOST_CLASS_VERSION(sthal::Status, (::HMF::Coordinate::FPGAOnWafer::size == 12 ? 0 : 1))
+BOOST_CLASS_VERSION(sthal::Status, (::halco::hicann::v2::FPGAOnWafer::size == 12 ? 0 : 1))

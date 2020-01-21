@@ -4,7 +4,7 @@
 #include <tbb/concurrent_vector.h>
 #endif
 
-#include "hal/Coordinate/HICANN.h"
+#include "halco/hicann/v2/hicann.h"
 
 #include "sthal/HICANNConfigurator.h"
 
@@ -15,7 +15,7 @@ class Wafer;
 
 struct VerificationResult
 {
-	::HMF::Coordinate::HICANNGlobal hicann; ///< result from HICANN
+	::halco::hicann::v2::HICANNGlobal hicann; ///< result from HICANN
 	std::string subsystem;                  ///< Read HICANN subsystem
 	std::string msg;                        ///< Description of error occured
 	size_t tested; ///< number of tested entities, e.g. a synapse weight, or a FGConfig
@@ -76,14 +76,14 @@ public:
 	friend std::ostream& operator<<(std::ostream& out, const VerifyConfigurator& cfg);
 
 private:
-	void data_not_readable(::HMF::Coordinate::HICANNGlobal hicann, std::string subsystem);
+	void data_not_readable(::halco::hicann::v2::HICANNGlobal hicann, std::string subsystem);
 	void post_merge_errors(
-	    ::HMF::Coordinate::HICANNGlobal hicann,
+	    ::halco::hicann::v2::HICANNGlobal hicann,
 	    std::string subsystem,
 	    std::vector<std::string>& errors,
 	    bool reliable = true);
 	void post_error(
-	    ::HMF::Coordinate::HICANNGlobal hicann,
+	    ::halco::hicann::v2::HICANNGlobal hicann,
 	    std::string subsystem,
 	    std::string errors,
 	    bool reliable = true);

@@ -7,9 +7,8 @@ import numpy as np
 import pysthal
 import pyhalbe
 import pylogging
-import Coordinate
-
-C = Coord = Coordinate
+from pyhalco_common import Enum
+import pyhalco_hicann_v2 as Coord
 
 class TestMultiHICANN(PysthalTest):
 
@@ -25,8 +24,8 @@ class TestMultiHICANN(PysthalTest):
         self.wafer_c = Coord.Wafer(self.WAFER)
 
         self.w = pysthal.Wafer(self.wafer_c)
-        self.h1 = self.w[Coord.HICANNOnWafer(Coord.Enum(324))]
-        self.h2 = self.w[Coord.HICANNOnWafer(Coord.Enum(120))]
+        self.h1 = self.w[Coord.HICANNOnWafer(Enum(324))]
+        self.h2 = self.w[Coord.HICANNOnWafer(Enum(120))]
 
         self.addCleanup(self.w.disconnect)
 

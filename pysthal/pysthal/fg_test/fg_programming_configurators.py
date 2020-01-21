@@ -4,7 +4,8 @@ HICANN configurators that are used for the automated floating gate tests.
 
 import pysthal
 import pyhalbe
-import Coordinate as C
+from pyhalco_common import Enum
+import pyhalco_hicann_v2 as C
 import pylogging
 
 from copy import deepcopy
@@ -40,7 +41,7 @@ class TestConfigurator(pysthal.HICANNConfigurator):
 
         num_passes = fgc.getNoProgrammingPasses()
         for step in xrange(num_passes):
-            fgconfig = fgc.getFGConfig(C.Enum(step))
+            fgconfig = fgc.getFGConfig(Enum(step))
 
             logger = pylogging.get("test_fg_writing_precision")
             logger.debug("using FGConfig:")
@@ -85,7 +86,7 @@ class TestConfigurator(pysthal.HICANNConfigurator):
 
         num_passes = fgc.getNoProgrammingPasses()
         for step in xrange(num_passes):
-            fgconfig = fgc.getFGConfig(C.Enum(step))
+            fgconfig = fgc.getFGConfig(Enum(step))
 
             logger = pylogging.get("test_fg_writing_precision")
             logger.debug("using FGConfig:")

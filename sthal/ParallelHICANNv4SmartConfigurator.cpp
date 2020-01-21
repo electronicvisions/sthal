@@ -8,10 +8,11 @@
 #include "sthal/Timer.h"
 #include "sthal/Wafer.h"
 
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 #include "hal/backend/HICANNBackend.h"
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
+using namespace ::halco::common;
 
 namespace sthal {
 
@@ -526,7 +527,7 @@ bool ParallelHICANNv4SmartConfigurator::syn_drv_locking_needed(hicann_coord coor
 	const hicann_data_t old_hicann = search_old_hicann->second;
 
 	if (old_hicann) {
-		for (auto const ii : iter_all<::HMF::Coordinate::SynapseDriverOnHICANN>()) {
+		for (auto const ii : iter_all<::halco::hicann::v2::SynapseDriverOnHICANN>()) {
 			driver_changes |= (old_hicann->synapses[ii] != hicann->synapses[ii]);
 		}
 	}

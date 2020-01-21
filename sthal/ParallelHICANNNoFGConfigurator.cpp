@@ -3,10 +3,11 @@
 #include "sthal/HICANN.h"
 #include "sthal/Timer.h"
 
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 #include "hal/backend/HICANNBackend.h"
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
+using namespace ::halco::common;
 
 namespace sthal {
 

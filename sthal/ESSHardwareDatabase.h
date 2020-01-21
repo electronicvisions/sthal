@@ -13,7 +13,7 @@ class ESSHardwareDatabase :
 	public HardwareDatabase
 {
 public:
-	ESSHardwareDatabase(HMF::Coordinate::Wafer wafer, std::string const& path);
+	ESSHardwareDatabase(halco::hicann::v2::Wafer wafer, std::string const& path);
 	~ESSHardwareDatabase();
 
 	virtual fpga_handle_t get_fpga_handle(
@@ -28,7 +28,7 @@ public:
 				const global_hicann_coord & hicann,
 				const analog_coord & analog) const PYPP_OVERRIDE;
 
-	virtual ::HMF::Coordinate::IPv4
+	virtual ::halco::hicann::v2::IPv4
 		get_fpga_ip(const global_fpga_coord& fpga) const;
 
     void freeHandle();

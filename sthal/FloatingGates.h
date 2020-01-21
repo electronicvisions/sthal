@@ -13,8 +13,8 @@ namespace sthal {
 class FloatingGates : public ::HMF::HICANN::FGControl
 {
 public:
-	typedef ::HMF::Coordinate::FGBlockOnHICANN FGBlockOnHICANN;
-	typedef ::HMF::Coordinate::Enum Enum;
+	typedef ::halco::hicann::v2::FGBlockOnHICANN FGBlockOnHICANN;
+	typedef ::halco::common::Enum Enum;
 
 	FloatingGates();
 	FloatingGates(const ::HMF::HICANN::FGControl &);

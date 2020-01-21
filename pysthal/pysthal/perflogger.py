@@ -36,10 +36,10 @@ import threading
 import subprocess
 import time
 
-from Coordinate import FPGAOnWafer
-from Coordinate import Wafer
-from Coordinate import gridLookupFPGAOnWafer
-from Coordinate import DNCGlobal
+from pyhalco_hicann_v2 import FPGAOnWafer
+from pyhalco_hicann_v2 import Wafer
+from pyhalco_hicann_v2 import gridLookupFPGAOnWafer
+from pyhalco_hicann_v2 import DNCGlobal
 
 class Perflogger():
 

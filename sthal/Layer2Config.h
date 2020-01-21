@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hal/Coordinate/External.h"
+#include "halco/hicann/v2/external.h"
 
 namespace HMF {
 
@@ -17,7 +17,7 @@ void config(const Handle::FPGA& f, const SpinnIFConfig & cfg);
 } // namespace FPGA
 
 namespace DNC{
-void config(Coordinate::DNCGlobal const& dnc, const DNCConfig& cfg);
+void config(halco::hicann::v2::DNCGlobal const& dnc, const DNCConfig& cfg);
 } // namespace DNC
 
 } // HMF

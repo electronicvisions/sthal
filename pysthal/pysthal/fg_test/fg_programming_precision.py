@@ -6,7 +6,8 @@ import pandas
 import unittest
 import pyhalbe
 from pyhalbe.HICANN import shared_parameter, neuron_parameter
-import Coordinate as C
+from pyhalco_common import Enum
+import pyhalco_hicann_v2 as C
 import pylogging
 
 
@@ -121,7 +122,7 @@ class TestPattern(object):
         may be a floating point number.
         """
         for idx in xrange(start_nrn, start_nrn + num_nrns):
-            nrn = C.NeuronOnHICANN(C.Enum(idx))
+            nrn = C.NeuronOnHICANN(Enum(idx))
             value = int(lookup_func((idx - start_nrn) / float(num_nrns)))
 
             self.set_value(nrn, parameter, value)
@@ -138,10 +139,10 @@ class TestPattern(object):
         blocks to 'safe' values.
         """
         nrn_list = [
-            C.NeuronOnHICANN(C.Enum(254)),
-            C.NeuronOnHICANN(C.Enum(255)),
-            C.NeuronOnHICANN(C.Enum(510)),
-            C.NeuronOnHICANN(C.Enum(511))]
+            C.NeuronOnHICANN(Enum(254)),
+            C.NeuronOnHICANN(Enum(255)),
+            C.NeuronOnHICANN(Enum(510)),
+            C.NeuronOnHICANN(Enum(511))]
 
         for nrn in nrn_list:
             self.set_value(nrn, shared_parameter.int_op_bias, 1023, False)
@@ -154,10 +155,10 @@ class TestPattern(object):
         each block) using the lookup function `lookup_func`
         """
         nrns = [
-            C.NeuronOnHICANN(C.Enum(204)),
-            C.NeuronOnHICANN(C.Enum(205)),
-            C.NeuronOnHICANN(C.Enum(460)),
-            C.NeuronOnHICANN(C.Enum(461))]
+            C.NeuronOnHICANN(Enum(204)),
+            C.NeuronOnHICANN(Enum(205)),
+            C.NeuronOnHICANN(Enum(460)),
+            C.NeuronOnHICANN(Enum(461))]
 
         neuron_param_list = [
             neuron_parameter.E_l,
@@ -204,10 +205,10 @@ class TestPattern(object):
         block.
         """
         nrns = [
-            C.NeuronOnHICANN(C.Enum(254)),
-            C.NeuronOnHICANN(C.Enum(255)),
-            C.NeuronOnHICANN(C.Enum(510)),
-            C.NeuronOnHICANN(C.Enum(511))]
+            C.NeuronOnHICANN(Enum(254)),
+            C.NeuronOnHICANN(Enum(255)),
+            C.NeuronOnHICANN(Enum(510)),
+            C.NeuronOnHICANN(Enum(511))]
 
         shared_param_list = [
             shared_parameter.V_reset,

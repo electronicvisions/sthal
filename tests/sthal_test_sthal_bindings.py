@@ -12,7 +12,8 @@ class Test_PyhalbeBindings(PyhalbeTest):
     def test_SynapseProxies(self):
         import pysthal
         import pyhalbe
-        C = pyhalbe.Coordinate
+        import pyhalco_hicann_v2
+        C = pyhalco_hicann_v2
 
         hicann = pysthal.HICANN()
         row_c = C.SynapseRowOnHICANN(40)
@@ -27,14 +28,15 @@ class Test_PyhalbeBindings(PyhalbeTest):
     def test_synapse_access(self):
         import pysthal
         import numpy
-        from pyhalbe import Coordinate
+        import pyhalco_common
+        import pyhalco_hicann_v2
         from pyhalbe import HICANN
 
         d_patterns = {}
         w_patterns = {}
 
         hicann = pysthal.HICANN()
-        for row in Coordinate.iter_all(Coordinate.SynapseRowOnHICANN):
+        for row in pyhalco_common.iter_all(pyhalco_hicann_v2.SynapseRowOnHICANN):
             d_pattern = numpy.random.randint(0, 16, 256)
             d_patterns[row] = d_pattern
             hicann.synapses[row].decoders[:] = [HICANN.SynapseDecoder(int(ii)) for ii in d_pattern]
@@ -43,22 +45,22 @@ class Test_PyhalbeBindings(PyhalbeTest):
             w_patterns[row] = w_pattern
             hicann.synapses[row].weights[:] = w_pattern
 
-        for drv in Coordinate.iter_all(Coordinate.SynapseDriverOnHICANN):
+        for drv in pyhalco_common.iter_all(pyhalco_hicann_v2.SynapseDriverOnHICANN):
             double_row = hicann.synapses.getDecoderDoubleRow(drv)
-            for x in (Coordinate.top, Coordinate.bottom):
-                row = Coordinate.SynapseRowOnHICANN(drv, x)
+            for x in (pyhalco_common.top, pyhalco_common.bottom):
+                row = pyhalco_hicann_v2.SynapseRowOnHICANN(drv, x)
                 data = numpy.array([int(ii) for ii in double_row[x.value()]])
                 if not numpy.all(data == d_patterns[row]):
                     err = "Missmatch in decoder values: {!s} != {!s} in {!s}".format(data, d_patterns[row], row)
                     self.fail(err)
 
-        for syn in Coordinate.iter_all(Coordinate.SynapseOnHICANN):
+        for syn in pyhalco_common.iter_all(pyhalco_hicann_v2.SynapseOnHICANN):
             hicann.synapses[syn]
 
     def test_common_FPGA_config(self):
         import pysthal
-        import Coordinate
-        w = pysthal.Wafer(Coordinate.Wafer())
+        import pyhalco_hicann_v2
+        w = pysthal.Wafer(pyhalco_hicann_v2.Wafer())
         s1 = w.commonFPGASettings()
         s2 = w.commonFPGASettings()
         s1.setPLL(200.0e6)
@@ -76,10 +78,10 @@ class Test_PyhalbeBindings(PyhalbeTest):
     def test_numpy_policies(self):
         import numpy
         import pysthal
-        import Coordinate
+        import pyhalco_hicann_v2
         from pyhalbe import HICANN
-        w = pysthal.Wafer(Coordinate.Wafer())
-        h = w[Coordinate.HICANNOnWafer()]
+        w = pysthal.Wafer(pyhalco_hicann_v2.Wafer())
+        h = w[pyhalco_hicann_v2.HICANNOnWafer()]
 
         addrs = numpy.array(numpy.random.randint(64, size=100), dtype=numpy.ushort)
         times = numpy.cumsum(numpy.random.poisson(10.0, size=100)) * 1.e-6
@@ -87,7 +89,7 @@ class Test_PyhalbeBindings(PyhalbeTest):
         for addr, t in zip(addrs, times):
             in_spikes.append(pysthal.Spike(HICANN.L1Address(addr), t))
 
-        link = Coordinate.GbitLinkOnHICANN(3)
+        link = pyhalco_hicann_v2.GbitLinkOnHICANN(3)
         h.sendSpikes(link, in_spikes)
         h.sortSpikes()
         x = h.sentSpikes(link)

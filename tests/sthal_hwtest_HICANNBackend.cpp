@@ -6,7 +6,7 @@
 
 #include "test/hwtest.h"
 
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 
 #include "sthal/Wafer.h"
 #include "sthal/HICANNConfigurator.h"
@@ -15,7 +15,8 @@
 
 #include "SthalHWTest.h"
 
-using namespace HMF::Coordinate;
+using namespace halco::hicann::v2;
+using namespace halco::common;
 
 // Same test as in HALBE but via sthal
 // denmem 0 stimulated with a current stimulus and readout with FPGA

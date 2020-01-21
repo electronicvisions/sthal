@@ -1,5 +1,5 @@
 #include "SynapseArray.h"
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 
 namespace sthal {
 
@@ -47,7 +47,7 @@ void SynapseArray::set_all(::HMF::HICANN::SynapseDecoder decoder, ::HMF::HICANN:
 std::ostream& operator<<(std::ostream& os, SynapseArray const& a)
 {
 	os << "active Synapses: " << std::endl;
-	for (auto const& syn : HMF::Coordinate::iter_all<SynapseArray::synapse_coordinate>())
+	for (auto const& syn : halco::common::iter_all<SynapseArray::synapse_coordinate>())
 	{
 		SynapseConstProxy const proxy = a[syn];
 		if (proxy.weight.value() > 0)
@@ -55,7 +55,7 @@ std::ostream& operator<<(std::ostream& os, SynapseArray const& a)
 	}
 
 	os << "active SyanpseDrivers: " << std::endl;
-	for (auto const& d : HMF::Coordinate::iter_all<SynapseArray::driver_coordinate>())
+	for (auto const& d : halco::common::iter_all<SynapseArray::driver_coordinate>())
 	{
 		SynapseArray::driver_type const& drv = a[d];
 		if (drv.is_enabled())

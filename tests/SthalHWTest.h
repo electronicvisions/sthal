@@ -9,7 +9,7 @@ class SthalHWTest : public ::testing::Test
 {
 public:
 	SthalHWTest() :
-		wafer_c{::HMF::Coordinate::Enum{0}},
+		wafer_c{::halco::common::Enum{0}},
 		hicann_c{getHICANNCoordinate()},
 		wafer{wafer_c},
 		hicann(allocateHICANN(wafer, hicann_c))
@@ -22,18 +22,18 @@ public:
 	}
 
 private:
-	::HMF::Coordinate::Wafer         wafer_c;
-	::HMF::Coordinate::HICANNOnWafer hicann_c;
+	::halco::hicann::v2::Wafer         wafer_c;
+	::halco::hicann::v2::HICANNOnWafer hicann_c;
 
-	static ::HMF::Coordinate::HICANNOnWafer getHICANNCoordinate()
+	static ::halco::hicann::v2::HICANNOnWafer getHICANNCoordinate()
 	{
-		::HMF::Coordinate::HICANNOnDNC h = g_conn.h;
-		::HMF::Coordinate::DNCGlobal   d = g_conn.d.toDNCOnWafer(g_conn.f);
+		::halco::hicann::v2::HICANNOnDNC h = g_conn.h;
+		::halco::hicann::v2::DNCGlobal   d = g_conn.d.toDNCOnWafer(g_conn.f);
 
 		return h.toHICANNOnWafer(d);
 	}
 
-	static sthal::HICANN & allocateHICANN(sthal::Wafer & w, ::HMF::Coordinate::HICANNOnWafer h)
+	static sthal::HICANN & allocateHICANN(sthal::Wafer & w, ::halco::hicann::v2::HICANNOnWafer h)
 	{
 		return w[h];
 	}

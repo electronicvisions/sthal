@@ -3,7 +3,8 @@ import pylogging
 import collections
 import os
 
-from pyhalbe.Coordinate import X, Y, Enum, Wafer, HICANNOnDNC, DNCOnWafer, \
+from pyhalco_common import X, Y, Enum
+from pyhalco_hicann_v2 import Wafer, HICANNOnDNC, DNCOnWafer, \
     DNCOnFPGA, FPGAGlobal, FPGAOnWafer, HICANNOnWafer, PowerCoordinate, \
     gridLookupDNCGlobal, AnalogOnHICANN
 

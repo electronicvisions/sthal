@@ -28,13 +28,13 @@ class HICANNConfigurator;
 class Wafer : private boost::noncopyable
 {
 public:
-	typedef ::HMF::Coordinate::Wafer          wafer_coord;
-	typedef ::HMF::Coordinate::HICANNOnWafer  hicann_coord;
-	typedef ::HMF::Coordinate::FPGAOnWafer    fpga_coord;
-	typedef ::HMF::Coordinate::DNCOnWafer     dnc_coord;
-	typedef ::HMF::Coordinate::AnalogOnHICANN analog_coord;
-	typedef ::HMF::Coordinate::Enum           enum_t;
-	typedef ::HMF::Coordinate::IPv4           ip_t;
+	typedef ::halco::hicann::v2::Wafer          wafer_coord;
+	typedef ::halco::hicann::v2::HICANNOnWafer  hicann_coord;
+	typedef ::halco::hicann::v2::FPGAOnWafer    fpga_coord;
+	typedef ::halco::hicann::v2::DNCOnWafer     dnc_coord;
+	typedef ::halco::hicann::v2::AnalogOnHICANN analog_coord;
+	typedef ::halco::common::Enum           enum_t;
+	typedef ::halco::hicann::v2::IPv4           ip_t;
 
 	typedef boost::shared_ptr< ::HMF::Handle::FPGA >   fpga_handle_t;
 	typedef boost::shared_ptr< ::HMF::Handle::HICANN > hicann_handle_t;
@@ -53,10 +53,10 @@ public:
 	const FPGA & operator[](const fpga_coord & fpga) const;
 	
 	/// Returns synapse proxy
-	SynapseProxy operator[](const ::HMF::Coordinate::SynapseOnWafer& s);
+	SynapseProxy operator[](const ::halco::hicann::v2::SynapseOnWafer& s);
 
 	/// Returns constant synapse proxy
-	SynapseConstProxy operator[](const ::HMF::Coordinate::SynapseOnWafer& s) const;
+	SynapseConstProxy operator[](const ::halco::hicann::v2::SynapseOnWafer& s) const;
 
 	/// Get Wafer Coordiante
 	wafer_coord const& index() const;

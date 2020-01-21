@@ -10,7 +10,7 @@
 #include "sthal/Spike.h"
 #include "sthal/FPGAShared.h"
 #include "hal/FPGAContainer.h"
-#include "hal/Coordinate/L1.h"
+#include "halco/hicann/v2/l1.h"
 
 #include "sthal/macros.h"
 
@@ -22,11 +22,11 @@ class FPGA
 {
 public:
 	typedef boost::shared_ptr<sthal::HICANN>    hicann_t;
-	typedef ::HMF::Coordinate::FPGAGlobal       fpga_coord;
-	typedef ::HMF::Coordinate::HICANNOnWafer    hicann_coord;
-	typedef ::HMF::Coordinate::HICANNGlobal     hicann_coord_global;
-	typedef ::HMF::Coordinate::DNCOnFPGA        dnc_coord;
-	typedef ::HMF::Coordinate::GbitLinkOnHICANN dnc_merger_coord;
+	typedef ::halco::hicann::v2::FPGAGlobal       fpga_coord;
+	typedef ::halco::hicann::v2::HICANNOnWafer    hicann_coord;
+	typedef ::halco::hicann::v2::HICANNGlobal     hicann_coord_global;
+	typedef ::halco::hicann::v2::DNCOnFPGA        dnc_coord;
+	typedef ::halco::hicann::v2::GbitLinkOnHICANN dnc_merger_coord;
 
 	typedef ::HMF::FPGA::PulseEvent PulseEvent;
 	typedef std::vector<PulseEvent> pulse_event_container_type;
@@ -96,7 +96,7 @@ public:
 
 	std::vector<hicann_coord> getAllocatedHICANNs() const;
 
-	::HMF::Coordinate::Wafer wafer() const;
+	::halco::hicann::v2::Wafer wafer() const;
 	fpga_coord coordinate() const;
 
 	/// Clear spikes
@@ -118,14 +118,14 @@ public:
 	HMF::FPGA::SpinnRoutingTable getSpinnakerRoutingTable() const;
 
 	/// use highspeed links for given HICANN
-	void setHighspeed(const HMF::Coordinate::HICANNOnDNC& highspeed_hicann, bool use_hs);
+	void setHighspeed(const halco::hicann::v2::HICANNOnDNC& highspeed_hicann, bool use_hs);
 	/// get if highspeed links are used
-	bool getHighspeed(const HMF::Coordinate::HICANNOnDNC& highspeed_hicann) const;
+	bool getHighspeed(const halco::hicann::v2::HICANNOnDNC& highspeed_hicann) const;
 
 	/// blacklisted given HICANN
-	void setBlacklisted(const HMF::Coordinate::HICANNOnDNC& blacklisted_hicann, bool blacklist);
+	void setBlacklisted(const halco::hicann::v2::HICANNOnDNC& blacklisted_hicann, bool blacklist);
 	/// get if HICANN is blacklisted
-	bool getBlacklisted(const HMF::Coordinate::HICANNOnDNC& blacklisted_hicann) const;
+	bool getBlacklisted(const halco::hicann::v2::HICANNOnDNC& blacklisted_hicann) const;
 
 	// return if has at least one HICANN configured to send spikes back
 	bool hasOutboundMergers() const;
@@ -146,8 +146,8 @@ private:
 	pulse_event_container_type m_received_pulses;
 
 #ifndef PYPLUSPLUS
-	mutable std::unordered_map<HMF::Coordinate::DNCMergerOnWafer, SpikeVector> m_received_spikes;
-	mutable std::unordered_map<HMF::Coordinate::DNCMergerOnWafer, SpikeVector> m_sent_spikes_cache;
+	mutable std::unordered_map<halco::hicann::v2::DNCMergerOnWafer, SpikeVector> m_received_spikes;
+	mutable std::unordered_map<halco::hicann::v2::DNCMergerOnWafer, SpikeVector> m_sent_spikes_cache;
 #endif // !PYPLUSPLUS
 	boost::shared_ptr<FPGAShared> mSharedSettings;
 
@@ -160,8 +160,8 @@ private:
 	// routing table (spinnaker address <=> pulse address)
 	HMF::FPGA::SpinnRoutingTable spinnaker_routing_table;
 
-	std::set<HMF::Coordinate::HICANNOnDNC> highspeed_hicanns;
-	std::set<HMF::Coordinate::HICANNOnDNC> blacklisted_hicanns;
+	std::set<halco::hicann::v2::HICANNOnDNC> highspeed_hicanns;
+	std::set<halco::hicann::v2::HICANNOnDNC> blacklisted_hicanns;
 
 	friend class boost::serialization::access;
 	template<typename Archiver>

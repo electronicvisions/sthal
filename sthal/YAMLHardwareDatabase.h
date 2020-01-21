@@ -12,16 +12,16 @@ namespace sthal
 class YAMLHardwareDatabase : public HardwareDatabase
 {
 public:
-	typedef ::HMF::Coordinate::AnalogOnHICANN analog_coord;
-	typedef ::HMF::Coordinate::DNCGlobal global_dnc_coord;
-	typedef ::HMF::Coordinate::Wafer wafer_coord;
+	typedef ::halco::hicann::v2::AnalogOnHICANN analog_coord;
+	typedef ::halco::hicann::v2::DNCGlobal global_dnc_coord;
+	typedef ::halco::hicann::v2::Wafer wafer_coord;
 
 	typedef ::hwdb4cpp::FPGAEntry FPGAEntry;
 	typedef ::hwdb4cpp::HICANNEntry HICANNEntry;
 
 	struct ADCEntry : ADCConfig {
-		::HMF::Coordinate::IPv4 remote_ip;
-		::HMF::Coordinate::TCPPort remote_port;
+		::halco::hicann::v2::IPv4 remote_ip;
+		::halco::hicann::v2::TCPPort remote_port;
 	};
 
 	/// @arg path: Path to the database file, if empty no file is loaded
@@ -38,12 +38,12 @@ public:
 	virtual ADCConfig get_adc_of_hicann(const global_hicann_coord& hicann,
 	                                    const analog_coord& analog) const PYPP_OVERRIDE;
 
-	virtual ::HMF::Coordinate::IPv4 get_fpga_ip(const global_fpga_coord& fpga) const PYPP_OVERRIDE;
+	virtual ::halco::hicann::v2::IPv4 get_fpga_ip(const global_fpga_coord& fpga) const PYPP_OVERRIDE;
 
 	size_t get_hicann_version(global_hicann_coord hicann) const PYPP_OVERRIDE;
-	HMF::Coordinate::SetupType get_setup_type(wafer_coord wafer) const;
+	halco::hicann::v2::SetupType get_setup_type(wafer_coord wafer) const;
 
-	::HMF::Coordinate::IPv4 get_macu(wafer_coord wafer) const;
+	::halco::hicann::v2::IPv4 get_macu(wafer_coord wafer) const;
 
 	std::string get_hicann_label(global_hicann_coord hicann) const;
 
@@ -51,13 +51,13 @@ public:
 	/// All entries for an existing wafer will be replaced by the new one
 	void add_wafer(
 	    wafer_coord wafer,
-	    HMF::Coordinate::SetupType type,
-	    ::HMF::Coordinate::IPv4 macu = ::HMF::Coordinate::IPv4(),
+	    halco::hicann::v2::SetupType type,
+	    ::halco::hicann::v2::IPv4 macu = ::halco::hicann::v2::IPv4(),
 	    size_t macu_version = 0);
 
 	/// Insert an FPGA into the database
 	/// An existing FPGA will be replaced
-	void add_fpga(global_fpga_coord fpga, HMF::Coordinate::IPv4 ip, bool highspeed = true);
+	void add_fpga(global_fpga_coord fpga, halco::hicann::v2::IPv4 ip, bool highspeed = true);
 
 	/// Insert a HICANN into the database, the FPGA belonging to the HICANN
 	/// must be already inserted
@@ -67,11 +67,11 @@ public:
 	/// Add an ADC to the database
 	/// An existing ADC will be replaced
 	void add_adc(global_fpga_coord fpga, analog_coord analog, ::HMF::ADC::USBSerial adc,
-	             ::HMF::Coordinate::ChannelOnADC channel, ::HMF::Coordinate::TriggerOnADC trigger,
-				 ::HMF::Coordinate::IPv4 ip = ::HMF::Coordinate::IPv4(),
-				 ::HMF::Coordinate::TCPPort port = ::HMF::Coordinate::TCPPort());
+	             ::halco::hicann::v2::ChannelOnADC channel, ::halco::hicann::v2::TriggerOnADC trigger,
+				 ::halco::hicann::v2::IPv4 ip = ::halco::hicann::v2::IPv4(),
+				 ::halco::hicann::v2::TCPPort port = ::halco::hicann::v2::TCPPort());
 
-	void add_macu(wafer_coord wafer, ::HMF::Coordinate::IPv4 macu);
+	void add_macu(wafer_coord wafer, ::halco::hicann::v2::IPv4 macu);
 
 	/// remove fpga from database, all HICANN belonging to the FPGA ar also
 	/// removed
@@ -98,10 +98,10 @@ public:
 	friend std::ostream& operator<<(std::ostream& out, const YAMLHardwareDatabase& database);
 
 private:
-	typedef HMF::Coordinate::FPGAOnWafer fpga_key;
-	typedef HMF::Coordinate::HICANNOnWafer hicann_key;
+	typedef halco::hicann::v2::FPGAOnWafer fpga_key;
+	typedef halco::hicann::v2::HICANNOnWafer hicann_key;
 
-	typedef std::pair<HMF::Coordinate::DNCOnWafer, HMF::Coordinate::AnalogOnHICANN> adc_key;
+	typedef std::pair<halco::hicann::v2::DNCOnWafer, halco::hicann::v2::AnalogOnHICANN> adc_key;
 
 	typedef ::hwdb4cpp::WaferEntry WaferEntry;
 

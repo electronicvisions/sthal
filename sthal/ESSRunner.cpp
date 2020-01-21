@@ -9,7 +9,7 @@
 #include "sthal/Timer.h"
 #include "hal/backend/FPGABackend.h"
 
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 
 using namespace HMF::Handle;
 
@@ -32,7 +32,7 @@ void ESSRunner::run(const fpga_list & fpgas,
 	assert ( fpgas.size() == handles.size() );
 
 	bool const drop_bg_events = drop_background_events();
-	for (auto fpga_c : HMF::Coordinate::iter_all<HMF::Coordinate::FPGAOnWafer>()) {
+	for (auto fpga_c : halco::common::iter_all<halco::hicann::v2::FPGAOnWafer>()) {
 		auto & handle = handles[fpga_c];
 		auto & fpga = fpgas[fpga_c];
 
@@ -57,7 +57,7 @@ void ESSRunner::run(const fpga_list & fpgas,
 		}
 	}
 
-	for (auto fpga_c : HMF::Coordinate::iter_all<HMF::Coordinate::FPGAOnWafer>()) {
+	for (auto fpga_c : halco::common::iter_all<halco::hicann::v2::FPGAOnWafer>()) {
 		auto & handle = handles[fpga_c];
 
 		if (handle) {
@@ -81,7 +81,7 @@ void ESSRunner::run(const fpga_list & fpgas,
 		}
 	}
 
-	for (auto fpga_c : HMF::Coordinate::iter_all<HMF::Coordinate::FPGAOnWafer>()) {
+	for (auto fpga_c : halco::common::iter_all<halco::hicann::v2::FPGAOnWafer>()) {
 		auto & handle = handles[fpga_c];
 		auto & fpga = fpgas[fpga_c];
 

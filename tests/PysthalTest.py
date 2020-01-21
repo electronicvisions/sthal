@@ -7,13 +7,13 @@ import pysthal
 import pyhalbe
 import pylogging
 
-import Coordinate as Coord
+import pyhalco_hicann_v2 as Coord
 
-from Coordinate import Enum
-from Coordinate import SynapseDriverOnHICANN
-from Coordinate import SynapseRowOnHICANN
-from Coordinate import DNCMergerOnHICANN
-from Coordinate import GbitLinkOnHICANN
+from pyhalco_common import Enum
+from pyhalco_hicann_v2 import SynapseDriverOnHICANN
+from pyhalco_hicann_v2 import SynapseRowOnHICANN
+from pyhalco_hicann_v2 import DNCMergerOnHICANN
+from pyhalco_hicann_v2 import GbitLinkOnHICANN
 
 from pysthal.command_line_util import add_default_coordinate_options
 from pysthal.command_line_util import add_logger_options

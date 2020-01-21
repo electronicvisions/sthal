@@ -19,8 +19,8 @@ class System :
 	private boost::noncopyable
 {
 public:
-	typedef ::HMF::Coordinate::Wafer        wafer_coord;
-	typedef ::HMF::Coordinate::HICANNGlobal hicann_coord;
+	typedef ::halco::hicann::v2::Wafer        wafer_coord;
+	typedef ::halco::hicann::v2::HICANNGlobal hicann_coord;
 
 
 	Wafer&       operator[] (wafer_coord const& wafer);

@@ -25,10 +25,10 @@ public:
 
 	virtual size_t get_hicann_version(global_hicann_coord) const;
 
-	virtual ::HMF::Coordinate::IPv4 get_fpga_ip(
+	virtual ::halco::hicann::v2::IPv4 get_fpga_ip(
 				const global_hicann_coord & hicann) const;
 
-	virtual ::HMF::Coordinate::IPv4 get_fpga_ip(
+	virtual ::halco::hicann::v2::IPv4 get_fpga_ip(
 				const global_fpga_coord & fpga) const;
 
 	boost::shared_ptr<HardwareDatabase> clone() const;

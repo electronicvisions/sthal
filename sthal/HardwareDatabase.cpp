@@ -7,7 +7,7 @@ HardwareDatabase::~HardwareDatabase()
 {
 }
 
-::HMF::Coordinate::IPv4 HardwareDatabase::get_fpga_ip(
+::halco::hicann::v2::IPv4 HardwareDatabase::get_fpga_ip(
 				const global_hicann_coord & hicann) const {
 	return get_fpga_ip(hicann.toFPGAGlobal());
 }

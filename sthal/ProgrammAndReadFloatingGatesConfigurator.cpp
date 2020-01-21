@@ -11,7 +11,7 @@
 #include "hal/HICANN/FGBlock.h"
 #include "hal/Handle/HICANN.h"
 #include "hal/Handle/FPGA.h"
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 
 #include "sthal/HICANN.h"
 #include "sthal/FPGA.h"
@@ -25,7 +25,8 @@
 static log4cxx::LoggerPtr logger = log4cxx::Logger::getLogger(
 		"sthal.ProgrammAndReadFloatingGatesConfigurator");
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
+using namespace ::halco::common;
 
 namespace sthal {
 

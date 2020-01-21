@@ -4,7 +4,7 @@
 
 namespace sthal {
 
-ADCRemoteHwHandleFactory::ADCRemoteHwHandleFactory(::HMF::Coordinate::IPv4 ip_, ::HMF::Coordinate::TCPPort port_)
+ADCRemoteHwHandleFactory::ADCRemoteHwHandleFactory(::halco::hicann::v2::IPv4 ip_, ::halco::hicann::v2::TCPPort port_)
 	: ip(ip_)
 	, port(port_)
 {}

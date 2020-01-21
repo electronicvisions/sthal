@@ -28,8 +28,8 @@ class Wafer;
 class ParallelHICANNv4SmartConfigurator : public ParallelHICANNv4Configurator
 {
 public:
-	typedef ::HMF::Coordinate::HICANNOnWafer hicann_coord;
-	typedef ::HMF::Coordinate::FPGAOnWafer fpga_coord;
+	typedef ::halco::hicann::v2::HICANNOnWafer hicann_coord;
+	typedef ::halco::hicann::v2::FPGAOnWafer fpga_coord;
 	PYPP_CLASS_ENUM(ConfigMode){Skip, Smart, Force};
 
 	ParallelHICANNv4SmartConfigurator();

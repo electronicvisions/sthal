@@ -1,12 +1,13 @@
 #include "sthal/FPGA.h"
 #include "sthal/Timer.h"
 
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 #include "hal/HICANN/GbitLink.h"
 #include "hal/FPGAContainer.h"
 #include "sthal/HICANN.h"
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
+using namespace ::halco::common;
 
 namespace sthal {
 
@@ -169,7 +170,7 @@ auto FPGA::getReceivedSpikes() const -> pulse_event_container_type const&
 std::vector<FPGA::hicann_coord> FPGA::getAllocatedHICANNs() const
 {
 	std::vector<hicann_coord> result;
-	for (auto dnc : ::HMF::Coordinate::iter_all<dnc_coord>()) {
+	for (auto dnc : ::halco::common::iter_all<dnc_coord>()) {
 		auto dnc_on_wafer = dnc.toDNCOnWafer(coordinate());
 		for (auto hicann : mDNCs[dnc].getAllocatedHicanns()) {
 			result.emplace_back(hicann.toHICANNOnWafer(dnc_on_wafer));
@@ -178,7 +179,7 @@ std::vector<FPGA::hicann_coord> FPGA::getAllocatedHICANNs() const
 	return result;
 }
 
-::HMF::Coordinate::Wafer FPGA::wafer() const
+::halco::hicann::v2::Wafer FPGA::wafer() const
 {
 	return mCoordinate.toWafer();
 }
@@ -255,7 +256,7 @@ HMF::FPGA::SpinnRoutingTable FPGA::getSpinnakerRoutingTable() const
 	return spinnaker_routing_table;
 }
 
-void FPGA::setHighspeed(const HMF::Coordinate::HICANNOnDNC& highspeed_hicann, bool use_hs)
+void FPGA::setHighspeed(const halco::hicann::v2::HICANNOnDNC& highspeed_hicann, bool use_hs)
 {
 	if (use_hs) {
 		highspeed_hicanns.insert(highspeed_hicann);
@@ -264,12 +265,12 @@ void FPGA::setHighspeed(const HMF::Coordinate::HICANNOnDNC& highspeed_hicann, bo
 	}
 }
 
-bool FPGA::getHighspeed(const HMF::Coordinate::HICANNOnDNC& highspeed_hicann) const
+bool FPGA::getHighspeed(const halco::hicann::v2::HICANNOnDNC& highspeed_hicann) const
 {
 	return highspeed_hicanns.count(highspeed_hicann);
 }
 
-void FPGA::setBlacklisted(const HMF::Coordinate::HICANNOnDNC& blacklisted_hicann, bool blacklist)
+void FPGA::setBlacklisted(const halco::hicann::v2::HICANNOnDNC& blacklisted_hicann, bool blacklist)
 {
 	if (blacklist) {
 		blacklisted_hicanns.insert(blacklisted_hicann);
@@ -278,7 +279,7 @@ void FPGA::setBlacklisted(const HMF::Coordinate::HICANNOnDNC& blacklisted_hicann
 	}
 }
 
-bool FPGA::getBlacklisted(const HMF::Coordinate::HICANNOnDNC& blacklisted_hicann) const
+bool FPGA::getBlacklisted(const halco::hicann::v2::HICANNOnDNC& blacklisted_hicann) const
 {
 	return blacklisted_hicanns.count(blacklisted_hicann);
 }

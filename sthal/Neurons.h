@@ -1,6 +1,6 @@
 #pragma once
 
-#include "hal/Coordinate/HMFGeometry.h"
+#include "halco/hicann/v2/fwd.h"
 #include "hal/HICANNContainer.h"
 
 #include "sthal/macros.h"
@@ -9,8 +9,8 @@ namespace sthal {
 
 struct Neurons {
 	Neurons();
-	typedef ::HMF::Coordinate::QuadOnHICANN   quad_coordinate;
-	typedef ::HMF::Coordinate::NeuronOnHICANN neuron_coordinate;
+	typedef ::halco::hicann::v2::QuadOnHICANN   quad_coordinate;
+	typedef ::halco::hicann::v2::NeuronOnHICANN neuron_coordinate;
 	typedef ::HMF::HICANN::NeuronQuad         quad_type;
 	typedef ::HMF::HICANN::Neuron             neuron_type;
 	typedef ::HMF::HICANN::NeuronConfig       config_type;

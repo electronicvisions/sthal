@@ -5,14 +5,14 @@
 
 #include "sthal/HICANN.h"
 
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 
 namespace sthal {
 
 std::vector<DNC::hicann_coord> DNC::getAllocatedHicanns() const
 {
 	std::vector<hicann_coord> result;
-	for (auto hicann : ::HMF::Coordinate::iter_all<hicann_coord>())
+	for (auto hicann : ::halco::common::iter_all<hicann_coord>())
 	{
 		if (mHICANNs[hicann.toEnum()])
 			result.push_back(hicann);

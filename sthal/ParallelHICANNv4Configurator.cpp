@@ -9,8 +9,8 @@
 #include "pythonic/enumerate.h"
 #include "pythonic/zip.h"
 
-#include "hal/Coordinate/iter_all.h"
-#include "hal/Coordinate/FormatHelper.h"
+#include "halco/common/iter_all.h"
+#include "halco/hicann/v2/format_helper.h"
 #include "hal/HICANNContainer.h"
 #include "hal/Handle/FPGA.h"
 #include "hal/Handle/HICANN.h"
@@ -20,7 +20,8 @@
 #include "sthal/HICANN.h"
 #include "sthal/Timer.h"
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
+using namespace ::halco::common;
 
 namespace sthal {
 

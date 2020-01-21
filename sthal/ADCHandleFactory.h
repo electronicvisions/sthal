@@ -3,7 +3,7 @@
 #include <boost/shared_ptr.hpp>
 
 #include "hal/ADC/USBSerial.h"
-#include "hal/Coordinate/HMFGeometry.h"
+#include "halco/hicann/v2/fwd.h"
 
 namespace HMF {
 namespace Handle {

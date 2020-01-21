@@ -8,7 +8,8 @@ import numpy as np
 import pysthal
 import pyhalbe
 import pylogging
-import Coordinate
+from pyhalco_common import Enum
+import pyhalco_hicann_v2
 
 C = Coord = Coordinate
 FPGA_FREQ=250e6
@@ -1119,7 +1120,7 @@ class TestSingleHICANN(PysthalTest):
                     n = c * 32 + addr
                 else:
                     n = 256 + c * 32 + addr - 32
-                neuron = Coord.NeuronOnHICANN(Coord.Enum(n))
+                neuron = Coord.NeuronOnHICANN(Enum(n))
                 self.assertEqual(neuron.x().value() % 32 + neuron.y().value() * 32, addr)
                 neuronspikes[neuron].append(time)
 

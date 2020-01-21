@@ -7,7 +7,7 @@
 #include "pywrap/compat/macros.hpp"
 #include "log4cxx/provisionnode.h"
 
-#include "hal/Coordinate/FG.h"
+#include "halco/hicann/v2/fg.h"
 
 
 namespace HMF {
@@ -144,7 +144,7 @@ static boost::shared_ptr<HICANNConfigurator> create(Ps&... ps) {
 
 	virtual void write_fg_row(
 		hicann_handle_t const& h,
-		const ::HMF::Coordinate::FGRowOnFGBlock& row,
+		const ::halco::hicann::v2::FGRowOnFGBlock& row,
 		const FloatingGates& fg,
 		bool writeDown);
 

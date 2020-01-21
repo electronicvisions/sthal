@@ -5,7 +5,8 @@ import argparse
 import subprocess
 import glob
 
-import Coordinate as C
+from pyhalco_common import Enum
+import pyhalco_hicann_v2 as C
 from pyredman.load import load
 
 parser = argparse.ArgumentParser()
@@ -19,7 +20,7 @@ if not args.skip_empty_backend_path_check and glob.glob(os.path.join(args.backen
     raise RuntimeError("{} is not empty".format(args.backend_path))
 
 wafer_c = C.Wafer(args.wafer)
-hicann_c = C.HICANNOnWafer(C.Enum(args.hicann))
+hicann_c = C.HICANNOnWafer(Enum(args.hicann))
 fpga_c = hicann_c.toFPGAOnWafer()
 fpga_global_c = C.FPGAGlobal(fpga_c, wafer_c)
 

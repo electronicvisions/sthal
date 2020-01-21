@@ -11,7 +11,7 @@
 #include "hal/HICANN/FGBlock.h"
 #include "hal/Handle/HICANN.h"
 #include "hal/Handle/FPGA.h"
-#include "hal/Coordinate/iter_all.h"
+#include "halco/common/iter_all.h"
 
 #include "sthal/HICANN.h"
 #include "sthal/FPGA.h"
@@ -21,7 +21,8 @@
 
 #include <log4cxx/logger.h>
 
-using namespace ::HMF::Coordinate;
+using namespace ::halco::hicann::v2;
+using namespace ::halco::common;
 
 namespace sthal {
 

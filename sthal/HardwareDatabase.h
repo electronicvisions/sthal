@@ -4,7 +4,7 @@
 
 #include <pywrap/compat/macros.hpp>
 
-#include "hal/Coordinate/HMFGeometry.h"
+#include "halco/hicann/v2/fwd.h"
 
 #include "sthal/ADCConfig.h"
 #include "sthal/Wafer.h"
@@ -25,10 +25,10 @@ class HardwareDatabase
 public:
 	typedef boost::shared_ptr< ::HMF::Handle::FPGA > fpga_handle_t;
 
-	typedef ::HMF::Coordinate::AnalogOnHICANN analog_coord;
-	typedef ::HMF::Coordinate::FPGAGlobal     global_fpga_coord;
-	typedef ::HMF::Coordinate::HICANNOnWafer  hicann_coord;
-	typedef ::HMF::Coordinate::HICANNGlobal   global_hicann_coord;
+	typedef ::halco::hicann::v2::AnalogOnHICANN analog_coord;
+	typedef ::halco::hicann::v2::FPGAGlobal     global_fpga_coord;
+	typedef ::halco::hicann::v2::HICANNOnWafer  hicann_coord;
+	typedef ::halco::hicann::v2::HICANNGlobal   global_hicann_coord;
 
 	virtual ~HardwareDatabase();
 
@@ -49,10 +49,10 @@ public:
 
 	// the base class implementation convertes the HICANN coorindate into its
 	// parent FPGA coordinate and calls the fpga coordinate-based overload
-	virtual ::HMF::Coordinate::IPv4 get_fpga_ip(
+	virtual ::halco::hicann::v2::IPv4 get_fpga_ip(
 				const global_hicann_coord & hicann) const;
 
-	virtual ::HMF::Coordinate::IPv4 get_fpga_ip(
+	virtual ::halco::hicann::v2::IPv4 get_fpga_ip(
 				const global_fpga_coord & fpga) const = 0;
 
 	virtual boost::shared_ptr<HardwareDatabase> clone() const = 0;

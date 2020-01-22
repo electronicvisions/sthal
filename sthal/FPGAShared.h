@@ -15,7 +15,7 @@ public:
 	~FPGAShared();
 
 	/// PLL frequency (Hz) of the HICANNs associated to this FPGA
-	/// Must be 50, 75, 100, 125, 150, 175, 200, 225 or 250e6
+	/// Must be 100, 125, 150, 175, 200, 225 or 250e6
 	void setPLL(double freq);
 	double getPLL() const;
 

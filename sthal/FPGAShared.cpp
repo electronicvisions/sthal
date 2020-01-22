@@ -20,9 +20,9 @@ FPGAShared::~FPGAShared()
 
 void FPGAShared::setPLL(double freq)
 {
-	if ( freq < 50e6 || freq > 250e6 || fmod(freq, 25e6) != 0.0)
+	if ( freq < 100e6 || freq > 250e6 || fmod(freq, 25e6) != 0.0)
 	{
-		throw std::invalid_argument("only 50, 75, 100, 125, 150, 175, 200, 225 "
+		throw std::invalid_argument("only 100, 125, 150, 175, 200, 225 "
 				                    "and 250Mhz are supported for PLL");
 	}
 	// TODO add range check

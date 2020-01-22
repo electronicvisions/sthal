@@ -66,7 +66,7 @@ class Test_PyhalbeBindings(PyhalbeTest):
         s3 = w.commonFPGASettings()
         self.assertEqual(s1.getPLL(), s3.getPLL())
 
-        for pll in (50.0e6, 100.0e6, 150.0e6, 200.0e6, 250.0e6):
+        for pll in (100.0e6, 150.0e6, 200.0e6, 250.0e6):
             s1.setPLL(pll)
 
         for pll in (53.0e6, 32.0e6, 430.e6, 170.e6):

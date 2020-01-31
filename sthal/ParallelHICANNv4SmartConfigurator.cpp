@@ -180,7 +180,9 @@ void ParallelHICANNv4SmartConfigurator::config_synapse_array(
 	if (n_all_changed_hicanns != 0) {
 		for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
 			std::vector<HMF::HICANN::DecoderDoubleRow> decoder_data;
+			std::vector<HMF::HICANN::SynapseController> synapse_controllers_dec;
 			decoder_data.reserve(n_all_changed_hicanns);
+			synapse_controllers_dec.reserve(n_all_changed_hicanns);
 			hicann_handles_t drv_changed_handles;
 			for (size_t ii = 0; ii != n_all_changed_hicanns; ++ii) {
 				const hicann_coord coord = all_changed_handles[ii]->coordinate();
@@ -191,10 +193,12 @@ void ParallelHICANNv4SmartConfigurator::config_synapse_array(
 					decoder_data.push_back(
 					    all_changed_hicanns[ii]->synapses.getDecoderDoubleRow(syndrv));
 					drv_changed_handles.push_back(all_changed_handles[ii]);
+					synapse_controllers_dec.push_back(
+						all_changed_hicanns[ii]->synapse_controllers[syndrv.toSynapseArrayOnHICANN()]);
 				}
 			}
 
-			set_decoder_double_row(drv_changed_handles, syndrv, decoder_data);
+			set_decoder_double_row(drv_changed_handles, synapse_controllers_dec, syndrv, decoder_data);
 			LOG4CXX_DEBUG(
 			    getLogger(), "Smartly set decoder double row, skipped " +
 			                     std::to_string(handles.size() - drv_changed_handles.size()) +
@@ -205,8 +209,10 @@ void ParallelHICANNv4SmartConfigurator::config_synapse_array(
 
 				std::vector<HMF::HICANN::WeightRow> weight_data;
 				hicann_handles_t row_changed_handles;
+				std::vector<HMF::HICANN::SynapseController> synapse_controllers_weight;
 				weight_data.reserve(n_all_changed_hicanns);
 				row_changed_handles.reserve(n_all_changed_hicanns);
+				synapse_controllers_weight.reserve(n_all_changed_hicanns);
 				for (size_t ii = 0; ii != n_all_changed_hicanns; ++ii) {
 					const hicann_coord coord = all_changed_handles[ii]->coordinate();
 					const hicann_data_t old_hicann = mWrittenHICANNData.at(coord);
@@ -216,10 +222,12 @@ void ParallelHICANNv4SmartConfigurator::config_synapse_array(
 					         all_changed_hicanns[ii]->synapses[synrow].weights)) {
 						weight_data.push_back(all_changed_hicanns[ii]->synapses[synrow].weights);
 						row_changed_handles.push_back(all_changed_handles[ii]);
+					synapse_controllers_weight.push_back(
+						all_changed_hicanns[ii]->synapse_controllers[syndrv.toSynapseArrayOnHICANN()]);
 					}
 				}
 
-				set_weights_row(row_changed_handles, synrow, weight_data);
+				set_weights_row(row_changed_handles, synapse_controllers_weight, synrow, weight_data);
 				LOG4CXX_DEBUG(
 				    getLogger(), "Smartly configured synapse row " + std::to_string(synrow) +
 				                     ", skipped " +

@@ -359,12 +359,15 @@ void ParallelHICANNv4Configurator::config_synapse_array(
 	// TODO: interleave calls to top / bottom synapse controllers
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
 		std::vector<HMF::HICANN::DecoderDoubleRow> decoder_data;
+		std::vector<HMF::HICANN::SynapseController> synapse_controllers;
 		decoder_data.reserve(n_hicanns);
+		synapse_controllers.reserve(n_hicanns);
 		for (auto data : hicanns) {
 			decoder_data.push_back(data->synapses.getDecoderDoubleRow(syndrv));
+			synapse_controllers.push_back(data->synapse_controllers[syndrv.toSynapseArrayOnHICANN()]);
 		}
 
-		set_decoder_double_row(handles, syndrv, decoder_data);
+		set_decoder_double_row(handles, synapse_controllers, syndrv, decoder_data);
 		for (auto side : iter_all<SideVertical>()) {
 			SynapseRowOnHICANN const synrow(syndrv, RowOnSynapseDriver(side));
 
@@ -374,7 +377,7 @@ void ParallelHICANNv4Configurator::config_synapse_array(
 				weight_data.push_back(data->synapses[synrow].weights);
 			}
 
-			set_weights_row(handles, synrow, weight_data);
+			set_weights_row(handles, synapse_controllers, synrow, weight_data);
 		}
 	}
 

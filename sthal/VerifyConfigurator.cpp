@@ -368,6 +368,9 @@ void VerifyConfigurator::read_synapse_weights(
 		::HMF::HICANN::SynapseDriver expected_synapse_driver = expected.synapses[syndrv];
 		::HMF::HICANN::SynapseDriver configured_synapse_driver = ::HMF::HICANN::get_synapse_driver(*h, syndrv);
 
+		::HMF::HICANN::SynapseController const& synapse_controller =
+			expected.synapse_controllers[syndrv.toSynapseArrayOnHICANN()];
+
 		if(m_verify_only_enabled &&
 		   !expected_synapse_driver.is_enabled() &&
 		   !configured_synapse_driver.is_enabled()) {
@@ -378,7 +381,7 @@ void VerifyConfigurator::read_synapse_weights(
 			SynapseRowOnHICANN row(syndrv, RowOnSynapseDriver(side_vertical));
 			LOG4CXX_TRACE(getLogger(), "read back: " << row);
 			::HMF::HICANN::WeightRow const weights =
-				  ::HMF::HICANN::get_weights_row(*h, row);
+				  ::HMF::HICANN::get_weights_row(*h, synapse_controller, row);
 			for (auto column : iter_all<SynapseColumnOnHICANN>()) {
 				SynapseOnHICANN synapse(row, column);
 				if (!not_usable(expected, synapse)) {
@@ -412,8 +415,13 @@ void VerifyConfigurator::read_synapse_decoders(
 	std::vector<std::string> errors;
 	SynapseArray values;
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
+
+		::HMF::HICANN::SynapseController const& synapse_controller =
+			expected.synapse_controllers[syndrv.toSynapseArrayOnHICANN()];
+
 		LOG4CXX_TRACE(getLogger(), "read back: " << syndrv);
-		values.setDecoderDoubleRow(syndrv, ::HMF::HICANN::get_decoder_double_row(*h, syndrv));
+		values.setDecoderDoubleRow(
+			syndrv, ::HMF::HICANN::get_decoder_double_row(*h, synapse_controller, syndrv));
 	}
 
 	halco::common::typed_array<

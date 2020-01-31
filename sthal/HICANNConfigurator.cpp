@@ -405,13 +405,15 @@ void HICANNConfigurator::config_synapse_array(hicann_handle_t const& h,
 	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 	LOG4CXX_DEBUG(getLogger(), short_format(h->coordinate()) << ": configure synapses");
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
+		::HMF::HICANN::SynapseController const& synapse_controller =
+			hicann->synapse_controllers[syndrv.toSynapseArrayOnHICANN()];
 		::HMF::HICANN::set_decoder_double_row(
-		    *h, syndrv, hicann->synapses.getDecoderDoubleRow(syndrv));
+		    *h, synapse_controller, syndrv, hicann->synapses.getDecoderDoubleRow(syndrv));
 
 		for (auto side : iter_all<SideVertical>()) {
 			SynapseRowOnHICANN row(syndrv, RowOnSynapseDriver(side));
 			LOG4CXX_TRACE(getLogger(), format_debug(row, hicann->synapses[row].weights));
-			::HMF::HICANN::set_weights_row(*h, row, hicann->synapses[row].weights);
+			::HMF::HICANN::set_weights_row(*h, synapse_controller, row, hicann->synapses[row].weights);
 		}
 	}
 	LOG4CXX_DEBUG(getTimeLogger(), short_format(h->coordinate())

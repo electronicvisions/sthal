@@ -839,7 +839,11 @@ class TestSingleHICANN(PysthalTest):
                 for driver in iter_all(C.SynapseDriverOnHICANN):
                     if driver in PysthalTest.COORDINATE_BLACKLIST:
                         continue
-                    d = pyhalbe.HICANN.get_synapse_driver(handle, driver)
+                    synapse_controller = pyhalbe.HICANN.SynapseController(
+                                         data.synapse_controllers[driver.toSynapseArrayOnHICANN()])
+                    d = pyhalbe.HICANN.get_synapse_driver(handle,
+                                                          synapse_controller,
+                                                          driver)
                     if data.synapses[driver] != d:
                         self.dd_err[driver] = d
 

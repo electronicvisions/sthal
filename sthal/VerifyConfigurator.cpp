@@ -332,10 +332,14 @@ void VerifyConfigurator::read_synapse_drivers(
 	LOG4CXX_DEBUG(getLogger(), "read back synapse drivers");
 	std::vector<std::string> errors;
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
+		::HMF::HICANN::SynapseController synapse_controller =
+		    static_cast<HMF::HICANN::SynapseController>(
+		        expected.synapse_controllers[syndrv.toSynapseArrayOnHICANN()]);
 		LOG4CXX_TRACE(getLogger(), "read back: " << syndrv);
 		if (!not_usable(expected, syndrv)) {
 			::HMF::HICANN::SynapseDriver expected_synapse_driver = expected.synapses[syndrv];
-			::HMF::HICANN::SynapseDriver configured_synapse_driver = ::HMF::HICANN::get_synapse_driver(*h, syndrv);
+			::HMF::HICANN::SynapseDriver configured_synapse_driver =
+			    ::HMF::HICANN::get_synapse_driver(*h, synapse_controller, syndrv);
 
 			// expected: disabled but configured enabled
 
@@ -367,11 +371,13 @@ void VerifyConfigurator::read_synapse_weights(
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
 
 		::HMF::HICANN::SynapseDriver expected_synapse_driver = expected.synapses[syndrv];
-		::HMF::HICANN::SynapseDriver configured_synapse_driver = ::HMF::HICANN::get_synapse_driver(*h, syndrv);
 
 		::HMF::HICANN::SynapseController const& synapse_controller =
 		    static_cast<HMF::HICANN::SynapseController>(
 		        expected.synapse_controllers[syndrv.toSynapseArrayOnHICANN()]);
+
+		::HMF::HICANN::SynapseDriver configured_synapse_driver =
+			::HMF::HICANN::get_synapse_driver(*h, synapse_controller, syndrv);
 
 		if(m_verify_only_enabled &&
 		   !expected_synapse_driver.is_enabled() &&
@@ -432,9 +438,13 @@ void VerifyConfigurator::read_synapse_decoders(
 	    syndrvs;
 
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
+		::HMF::HICANN::SynapseController synapse_controller =
+		    static_cast<HMF::HICANN::SynapseController>(
+		        expected.synapse_controllers[syndrv.toSynapseArrayOnHICANN()]);
+
 		::HMF::HICANN::SynapseDriver expected_synapse_driver = expected.synapses[syndrv];
 		::HMF::HICANN::SynapseDriver configured_synapse_driver =
-			  ::HMF::HICANN::get_synapse_driver(*h, syndrv);
+		    ::HMF::HICANN::get_synapse_driver(*h, synapse_controller, syndrv);
 		syndrvs[syndrv].first = expected_synapse_driver;
 		syndrvs[syndrv].second = configured_synapse_driver;
 	}

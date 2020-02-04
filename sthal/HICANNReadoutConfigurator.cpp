@@ -283,7 +283,11 @@ void HICANNReadoutConfigurator::read_synapse_drivers(hicann_handle_t const& h, H
 	LOG4CXX_DEBUG(getLogger(), "read back synapse drivers");
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>() )
 	{
-		hicann.synapses[syndrv] = ::HMF::HICANN::get_synapse_driver(*h, syndrv);
+		hicann.synapses[syndrv] = ::HMF::HICANN::get_synapse_driver(
+		    *h,
+		    static_cast< ::HMF::HICANN::SynapseController>(
+		        hicann.synapse_controllers[syndrv.toSynapseArrayOnHICANN()]),
+		    syndrv);
 	}
 	LOG4CXX_DEBUG(getTimeLogger(),
 			"read back synapse drivers took " << t.get_ms() << "ms");

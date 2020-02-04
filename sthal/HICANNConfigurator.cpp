@@ -362,7 +362,11 @@ void HICANNConfigurator::config_synapse_drivers(
 	LOG4CXX_DEBUG(getLogger(), short_format(h->coordinate())
 	                               << ": configure synapse drivers");
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
-		::HMF::HICANN::set_synapse_driver(*h, syndrv, hicann->synapses[syndrv]);
+		::HMF::HICANN::set_synapse_driver(
+		    *h,
+		    static_cast< ::HMF::HICANN::SynapseController>(
+		        hicann->synapse_controllers[syndrv.toSynapseArrayOnHICANN()]),
+		    syndrv, hicann->synapses[syndrv]);
 	}
 	LOG4CXX_DEBUG(getTimeLogger(), short_format(h->coordinate())
 	                                   << ": configure synapse drivers took "
@@ -390,7 +394,8 @@ void HICANNConfigurator::config_synapse_controllers(
 	LOG4CXX_DEBUG(getLogger(), short_format(h->coordinate()) << ": configure synapse controllers");
 
 	for (auto addr : iter_all<SynapseArrayOnHICANN>()) {
-		::HMF::HICANN::set_synapse_controller(*h, addr,
+		::HMF::HICANN::set_synapse_controller(
+		    *h, addr,
 		    static_cast<HMF::HICANN::SynapseController>(hicann->synapse_controllers[addr]));
 	}
 

@@ -271,7 +271,11 @@ void ParallelHICANNv4SmartConfigurator::config_synapse_drivers(
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
 		if (!(synapse_drv_config_mode == ConfigMode::Skip) &&
 		    (old_hicann == nullptr || old_hicann->synapses[syndrv] != hicann->synapses[syndrv])) {
-			::HMF::HICANN::set_synapse_driver(*h, syndrv, hicann->synapses[syndrv]);
+			::HMF::HICANN::set_synapse_driver(
+			    *h,
+			    static_cast< ::HMF::HICANN::SynapseController>(
+			        hicann->synapse_controllers[syndrv.toSynapseArrayOnHICANN()]),
+			    syndrv, hicann->synapses[syndrv]);
 			LOG4CXX_DEBUG(getLogger(), "Configuring synapse driver");
 		} else {
 			LOG4CXX_DEBUG(getLogger(), "Skipping synapse driver configuration");

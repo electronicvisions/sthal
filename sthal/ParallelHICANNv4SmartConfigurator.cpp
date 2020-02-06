@@ -62,7 +62,9 @@ void ParallelHICANNv4SmartConfigurator::config(
 	if (stage == first_stage) {
 		omp_set_lock(&mLock);
 		for (auto& handle : hicann_handle) {
-			mWrittenHICANNData[handle->coordinate()] = nullptr;
+			if (mWrittenHICANNData.find(handle->coordinate()) == mWrittenHICANNData.end()) {
+				mWrittenHICANNData[handle->coordinate()] = nullptr;
+			}
 		}
 		omp_unset_lock(&mLock);
 	}

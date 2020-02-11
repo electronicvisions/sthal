@@ -19,10 +19,7 @@ import pysthal
 import pyhalbe
 import Coordinate as C
 
-from pysthal.command_line_util import add_default_coordinate_options
-from pysthal.command_line_util import add_fpga_coordinate_options
 from pysthal.command_line_util import add_logger_options
-from pysthal.command_line_util import init_logger
 
 class ConfigFPGAOnlyHICANNConfigurator(pysthal.HICANNConfigurator):
     """

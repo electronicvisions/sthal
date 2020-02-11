@@ -357,10 +357,6 @@ class TestRecticleAout(unittest.TestCase):
             raise unittest.SkipTest("No DNC selected, skipping hardware test")
             return
 
-        self.hicanns = [
-            self.toHICANNOnWafer(hicann_on_dnc)
-            for hicann_on_dnc in Coordinate.iter_all(Coordinate.HICANNOnDNC)]
-
         self.data_adcs = {}
 
         # Dump data in case of an error in setup
@@ -430,6 +426,7 @@ class TestRecticleAout(unittest.TestCase):
     def main(cls, *was_args, **was_kwargs):
         import argparse
         from pysthal.command_line_util import add_fpga_coordinate_options
+        from pysthal.command_line_util import parse_hicann
         from pysthal.command_line_util import add_logger_options
         from pysthal.command_line_util import folder
         from pysthal.command_line_util import init_logger
@@ -439,6 +436,10 @@ class TestRecticleAout(unittest.TestCase):
         parser = argparse.ArgumentParser(
                 description='SthalHWTest: %s' % cls.__name__)
         add_fpga_coordinate_options(parser)
+        parser.add_argument(
+            '--hicann', action='store', required=False,
+            type=parse_hicann, metavar='<enum>|<x>,<y>', dest='hicann',
+            help="specify the HICANN on the wafer system to use")
         parser.add_argument(
             '--hwdb', type=str, default=None,
             help="full path to hardware database")
@@ -469,6 +470,14 @@ class TestRecticleAout(unittest.TestCase):
 
         cls.WAFER = args.wafer
         cls.DNC = args.dnc
+        if args.hicann:
+            cls.hicanns = [args.hicann]
+            cls.DNC = Coordinate.DNCOnWafer((cls.hicanns[0].toDNCOnWafer()))
+        else:
+            cls.hicanns = [
+                hicann_on_dnc.toHICANNOnWafer(cls.DNC)
+                for hicann_on_dnc in Coordinate.iter_all(Coordinate.HICANNOnDNC)]
+
         cls.DATA_FOLDER = output_dir
 
         if args.replot:

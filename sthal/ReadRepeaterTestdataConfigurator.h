@@ -69,10 +69,6 @@ public:
 	                    std::vector< ::HMF::HICANN::L1Address> expected_addrs,
 	                    std::vector<size_t> expected_periods);
 
-	void add_passive_hrepeater(::halco::hicann::v2::HRepeaterOnWafer hr);
-
-	void add_passive_vrepeater(::halco::hicann::v2::VRepeaterOnWafer vr);
-
 	// add horizontal repeater that is to be ignored in checks
 	void add_ignore_hrepeater(::halco::hicann::v2::HRepeaterOnWafer hr);
 	// add vertical repeater that is to be ignored in checks
@@ -89,18 +85,6 @@ public:
 private:
 
 #ifndef PYPLUSPLUS
-	tbb::concurrent_unordered_map<
-		::halco::hicann::v2::HICANNOnWafer,
-		std::set< ::halco::hicann::v2::HRepeaterOnWafer>,
-		std::hash< ::halco::hicann::v2::HICANNOnWafer> >
-		passive_hrepeater_map;
-
-	tbb::concurrent_unordered_map<
-		::halco::hicann::v2::HICANNOnWafer,
-		std::set< ::halco::hicann::v2::VRepeaterOnWafer>,
-		std::hash< ::halco::hicann::v2::HICANNOnWafer> >
-		passive_vrepeater_map;
-
 	tbb::concurrent_unordered_map<
 		::halco::hicann::v2::HICANNOnWafer,
 		std::set< ::halco::hicann::v2::HRepeaterOnWafer>,

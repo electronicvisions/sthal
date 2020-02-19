@@ -274,16 +274,6 @@ bool ReadRepeaterTestdataConfigurator::analyze(
 	return good;
 }
 
-void ReadRepeaterTestdataConfigurator::add_passive_hrepeater(
-    ::halco::hicann::v2::HRepeaterOnWafer hr) {
-	passive_hrepeater_map[hr.toHICANNOnWafer()].insert(hr);
-}
-
-void ReadRepeaterTestdataConfigurator::add_passive_vrepeater(
-    ::halco::hicann::v2::VRepeaterOnWafer vr) {
-	passive_vrepeater_map[vr.toHICANNOnWafer()].insert(vr);
-}
-
 void ReadRepeaterTestdataConfigurator::add_ignore_hrepeater(::halco::hicann::v2::HRepeaterOnWafer hr) {
 	ignore_hrepeater_map[hr.toHICANNOnWafer()].insert(hr);
 }
@@ -309,23 +299,20 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t& f,
 	auto const hicann_on_wafer = h->coordinate().toHICANNOnWafer();
 	L1Repeaters repeaters = hicann->repeater;
 
-	std::vector<HRepeaterOnHICANN> active_hrepeater;
-	std::vector<VRepeaterOnHICANN> active_vrepeater;
+	std::vector<HRepeaterOnHICANN> testable_hrepeater;
+	std::vector<VRepeaterOnHICANN> testable_vrepeater;
 
 	for (auto addr : iter_all<HRepeaterOnHICANN>()) {
 		if (!addr.isSending() && repeaters[addr].getMode() == Repeater::FORWARDING) {
-			active_hrepeater.push_back(addr);
+			testable_hrepeater.push_back(addr);
 		}
 	}
 
 	for (auto addr : iter_all<VRepeaterOnHICANN>()) {
 		if (repeaters[addr].getMode() == Repeater::FORWARDING) {
-			active_vrepeater.push_back(addr);
+			testable_vrepeater.push_back(addr);
 		}
 	}
-
-	auto passive_hrepeater = passive_hrepeater_map[hicann_on_wafer];
-	auto passive_vrepeater = passive_vrepeater_map[hicann_on_wafer];
 
 	std::vector<HRepeaterOnHICANN> recorded_hrepeater;
 	std::vector<VRepeaterOnHICANN> recorded_vrepeater;
@@ -333,14 +320,6 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t& f,
 	size_t n = 0;
 
 	std::map<RepeaterBlockOnHICANN, std::vector<bool> > testport_active;
-
-	auto testable_hrepeater(active_hrepeater);
-	testable_hrepeater.insert(testable_hrepeater.begin(), passive_hrepeater.begin(),
-	                          passive_hrepeater.end());
-
-	auto testable_vrepeater(active_vrepeater);
-	testable_vrepeater.insert(testable_vrepeater.begin(), passive_vrepeater.begin(),
-	                          passive_vrepeater.end());
 
 	for (auto t_c_hr : testable_hrepeater) {
 		LOG4CXX_TRACE(getLogger(), "testable: " << t_c_hr);
@@ -393,7 +372,7 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t& f,
 
 		auto set_to_be_read = [&h, &repeaters](
 		                          auto& rb_tp_to_c_r, auto& to_be_read_repeater,
-		                          auto& original_directions, auto& passive_recorded_repeater,
+		                          auto& original_directions,
 		                          auto& recorded_repeater) {
 			for (auto c_r : to_be_read_repeater) {
 				LOG4CXX_TRACE(getLogger(), "reading " << c_r);
@@ -410,11 +389,6 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t& f,
 					r.setInput(direction);
 				}
 
-				if (r.getMode() == Repeater::IDLE) {
-					r.setInput();
-					passive_recorded_repeater.push_back(c_r);
-				}
-
 				set_repeater(*h, c_r, r);
 				recorded_repeater.push_back(c_r);
 			}
@@ -425,15 +399,12 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t& f,
 			std::map<HRepeaterOnHICANN, halco::common::SideHorizontal> directions_hr;
 			std::map<VRepeaterOnHICANN, halco::common::SideVertical> directions_vr;
 
-			std::vector<HRepeaterOnHICANN> passive_recorded_hr;
-			std::vector<VRepeaterOnHICANN> passive_recorded_vr;
-
 			set_to_be_read(
-			    rb_tp_to_c_hr, to_be_read_hrepeater, directions_hr, passive_recorded_hr,
+			    rb_tp_to_c_hr, to_be_read_hrepeater, directions_hr,
 			    recorded_hrepeater);
 
 			set_to_be_read(
-			    rb_tp_to_c_vr, to_be_read_vrepeater, directions_vr, passive_recorded_vr,
+			    rb_tp_to_c_vr, to_be_read_vrepeater, directions_vr,
 			    recorded_vrepeater);
 
 			std::set<RepeaterBlockOnHICANN> c_rbs;
@@ -521,18 +492,6 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t& f,
 				set_repeater_block(*h, c_rb, rb);
 
 				sync_command_buffers(f, hicann_handles_t{h});
-			}
-
-			for (auto c_hr : passive_recorded_hr) {
-				auto& r = repeaters[c_hr];
-				r.setIdle();
-				set_repeater(*h, c_hr, r);
-			}
-
-			for (auto c_vr : passive_recorded_vr) {
-				auto& r = repeaters[c_vr];
-				r.setIdle();
-				set_repeater(*h, c_vr, r);
 			}
 
 			for (auto kv : directions_hr) {

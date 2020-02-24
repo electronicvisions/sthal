@@ -189,9 +189,10 @@ void ParallelHICANNv4SmartConfigurator::config_synapse_array(
 			for (size_t ii = 0; ii != n_all_changed_hicanns; ++ii) {
 				const hicann_coord coord = all_changed_handles[ii]->coordinate();
 				const hicann_data_t old_hicann = mWrittenHICANNData.at(coord);
-				if (old_hicann == nullptr ||
-				    old_hicann->synapses.getDecoderDoubleRow(syndrv) !=
-				        all_changed_hicanns[ii]->synapses.getDecoderDoubleRow(syndrv)) {
+				if (!(synapse_config_mode == ConfigMode::Skip) &&
+				    (old_hicann == nullptr ||
+				     old_hicann->synapses.getDecoderDoubleRow(syndrv) !=
+				         all_changed_hicanns[ii]->synapses.getDecoderDoubleRow(syndrv))) {
 					decoder_data.push_back(
 					    all_changed_hicanns[ii]->synapses.getDecoderDoubleRow(syndrv));
 					drv_changed_handles.push_back(all_changed_handles[ii]);

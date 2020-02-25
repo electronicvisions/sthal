@@ -440,7 +440,7 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t& f,
 				sync_command_buffers(f, hicann_handles_t{h});
 
 				// readout received events
-				rb = get_repeater_block(*h, c_rb);
+				auto const rb_read = get_repeater_block(*h, c_rb);
 
 				for (auto testport : {0, 1}) {
 					if (!testport_active[c_rb][testport]) {
@@ -451,8 +451,8 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t& f,
 					                                                 << testport);
 
 
-					auto received_test_data = rb.tdi_data[testport];
-					auto full_flag = rb.full_flag[testport];
+					auto received_test_data = rb_read.tdi_data[testport];
+					auto full_flag = rb_read.full_flag[testport];
 
 					if (rb_tp_to_c_hr.find(std::make_pair(c_rb, testport)) !=
 					    rb_tp_to_c_hr.end()) {
@@ -478,19 +478,14 @@ void ReadRepeaterTestdataConfigurator::config(const fpga_handle_t& f,
 					}
 				}
 
-				// reset the full flag again
+				// reset the full flag and stop test data input to avoid
+				// misinterpretation of previous tests in future reads
 				for (auto testport : {0, 1}) {
 					rb.full_flag[testport] = false;
+					rb.start_tdi[testport] = false;
 				}
-				// FIXME: The variable rb is read back from hardware since dllresetb is not readable,
-				//        the default value in the constructor is used. This may lead to a
-				//        reset of the dll locking and therefore to locking errors.
-				//        Setting dllresetb manually to 1 is a quick fix until the RepeaterBlock
-				//        container is reprogrammed to probably implement read-/wite-only values.
-				//        JJK.
-				rb.dllresetb = !false;
-				set_repeater_block(*h, c_rb, rb);
 
+				set_repeater_block(*h, c_rb, rb);
 				sync_command_buffers(f, hicann_handles_t{h});
 			}
 

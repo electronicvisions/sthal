@@ -8,10 +8,9 @@ import numpy as np
 import pysthal
 import pyhalbe
 import pylogging
-from pyhalco_common import Enum
-import pyhalco_hicann_v2
+from pyhalco_common import iter_all, Enum, top, bottom, left, right
+import pyhalco_hicann_v2 as C
 
-C = Coord = Coordinate
 FPGA_FREQ=250e6
 MAX_TIMESTAMP = (2**15)/FPGA_FREQ  # counter size / FPGA frequency
 
@@ -47,7 +46,7 @@ class FastConfiguratorWithFPGABG(pysthal.HICANNConfigurator):
     def config_fpga(self, handle, fpga):
         super(FastConfiguratorWithFPGABG, self).config_fpga(handle, fpga)
 
-        for dnc_c in C.iter_all(C.DNCOnFPGA):
+        for dnc_c in iter_all(C.DNCOnFPGA):
             if handle.dnc_active(dnc_c):
                 pyhalbe.FPGA.set_fpga_background_generator(handle, dnc_c, self.fpga_bg)
 
@@ -103,8 +102,8 @@ class TestSingleHICANN(PysthalTest):
         if None in (self.WAFER, self.HICANN):
             return
 
-        self.wafer_c = Coord.Wafer(self.WAFER)
-        self.hicann_c = Coord.HICANNOnWafer(self.HICANN)
+        self.wafer_c = C.Wafer(self.WAFER)
+        self.hicann_c = C.HICANNOnWafer(self.HICANN)
 
         self.w = pysthal.Wafer(self.wafer_c)
         self.h = self.w[self.hicann_c]
@@ -165,17 +164,17 @@ class TestSingleHICANN(PysthalTest):
 
         driver = self.h.synapses[driver_c]
         driver.set_l1()
-        driver[Coord.top].set_decoder(Coord.top, decoder)
-        driver[Coord.top].set_decoder(Coord.bottom, decoder)
+        driver[top].set_decoder(top, decoder)
+        driver[top].set_decoder(bottom, decoder)
         # Set gmax divisor to 1
-        driver[Coord.top].set_gmax_div(Coord.left, 1)
-        driver[Coord.top].set_gmax_div(Coord.right, 1)
+        driver[top].set_gmax_div(left, 1)
+        driver[top].set_gmax_div(right, 1)
         # Connect to the "excitatory" synaptic input
-        driver[Coord.top].set_syn_in(Coord.left, 1)
-        driver[Coord.top].set_syn_in(Coord.right, 0)
-        driver[Coord.top].set_gmax(0)
+        driver[top].set_syn_in(left, 1)
+        driver[top].set_syn_in(right, 0)
+        driver[top].set_gmax(0)
         # Use same configuration for top part
-        driver[Coord.bottom] = driver[Coord.top]
+        driver[bottom] = driver[top]
 
     @staticmethod
     def find_spikes_in_preout(dt, data):
@@ -236,7 +235,7 @@ class TestSingleHICANN(PysthalTest):
     @hardware
     def test_analog_readout(self):
         self.w.connect(pysthal.MagicHardwareDatabase())
-        readout = self.h.analogRecorder(Coord.AnalogOnHICANN(0))
+        readout = self.h.analogRecorder(C.AnalogOnHICANN(0))
         readout.setRecordingTime(1.0e-2)
         x = readout.record()
         x = readout.record()
@@ -259,7 +258,7 @@ class TestSingleHICANN(PysthalTest):
         # arbitrarily long enough runtime to capture background events
         runtime = 1. / pysthal.FPGA.dnc_freq * bg_period * 100
 
-        for bg in Coord.iter_all(Coord.BackgroundGeneratorOnHICANN):
+        for bg in iter_all(C.BackgroundGeneratorOnHICANN):
             generator = self.h.layer1[bg]
             generator.enable(True)
             generator.random(False)
@@ -267,7 +266,7 @@ class TestSingleHICANN(PysthalTest):
             generator.address(pyhalbe.HICANN.L1Address(0))
 
         direction = pyhalbe.HICANN.GbitLink.Direction.TO_DNC
-        for channel in Coord.iter_all(Coord.GbitLinkOnHICANN):
+        for channel in iter_all(C.GbitLinkOnHICANN):
             self.h.layer1[channel] = direction
 
         self.connect()
@@ -275,12 +274,12 @@ class TestSingleHICANN(PysthalTest):
         self.w.configure(cfg)
         runner = pysthal.ExperimentRunner(runtime, True)
         self.w.start(runner)
-        received = self.h.receivedSpikes(Coord.GbitLinkOnHICANN(0))
+        received = self.h.receivedSpikes(C.GbitLinkOnHICANN(0))
         self.assertEqual(received.size, 0)
 
         runner.drop_background_events(False)
         self.w.start(runner)
-        received = self.h.receivedSpikes(Coord.GbitLinkOnHICANN(0))
+        received = self.h.receivedSpikes(C.GbitLinkOnHICANN(0))
 
         self.assertTrue(received.size > 0)
 
@@ -294,13 +293,13 @@ class TestSingleHICANN(PysthalTest):
         pll_freq = self.w.commonFPGASettings().getPLL()
         bg_freq = pll_freq/(bg_period + 1)
 
-        for merger in Coord.iter_all(Coord.DNCMergerOnHICANN):
+        for merger in iter_all(C.DNCMergerOnHICANN):
             m = self.h.layer1[merger]
             m.config = m.RIGHT_ONLY
             m.slow = False
             m.loopback = False
 
-        for bg in Coord.iter_all(Coord.BackgroundGeneratorOnHICANN):
+        for bg in iter_all(C.BackgroundGeneratorOnHICANN):
             generator = self.h.layer1[bg]
             generator.enable(True)
             generator.random(False)
@@ -310,8 +309,8 @@ class TestSingleHICANN(PysthalTest):
         for driver in self.PREOUT_DRIVERS:
             self.config_driver(driver)
             self.route(self.PREOUT_OUTPUT, driver)
-        self.h.analog.set_preout(Coord.AnalogOnHICANN(0))
-        self.h.analog.set_preout(Coord.AnalogOnHICANN(1))
+        self.h.analog.set_preout(C.AnalogOnHICANN(0))
+        self.h.analog.set_preout(C.AnalogOnHICANN(1))
 
         self.run_experiment(0.0)
 
@@ -341,8 +340,8 @@ class TestSingleHICANN(PysthalTest):
                 err += "%s: The preout pulses of the " + sd_str + " are not regularly distributed (qual = %f)\n" % (ac, qual)
             return freq, err
 
-        freq0, err0 = check(Coord.AnalogOnHICANN(0))
-        freq1, err1 = check(Coord.AnalogOnHICANN(1))
+        freq0, err0 = check(C.AnalogOnHICANN(0))
+        freq1, err1 = check(C.AnalogOnHICANN(1))
         err = err0 + err1
 
         if not self.almostEqual(freq0, freq1, 1e-5):
@@ -372,21 +371,21 @@ class TestSingleHICANN(PysthalTest):
         from random import Random
         rng = Random()
         # Configure mergers and DNC to output spikes to the dnc
-        for merger in Coord.iter_all(Coord.DNCMergerOnHICANN):
+        for merger in iter_all(C.DNCMergerOnHICANN):
             m = self.h.layer1[merger]
             m.config = m.RIGHT_ONLY
             m.slow = False
             m.loopback = False
 
         direction = pyhalbe.HICANN.GbitLink.Direction.TO_DNC
-        for channel in Coord.iter_all(Coord.GbitLinkOnHICANN):
+        for channel in iter_all(C.GbitLinkOnHICANN):
             self.h.layer1[channel] = direction
 
         addrs     = [pyhalbe.HICANN.L1Address(a) for a in rng.sample(xrange(64), 8)]
         seeds     = [rng.randrange(2**16) for ii in range(8)]
         periods   = [rng.randrange(500, 3000) for ii in range(8)]
 
-        for ii, bg in enumerate(Coord.iter_all(Coord.BackgroundGeneratorOnHICANN)):
+        for ii, bg in enumerate(iter_all(C.BackgroundGeneratorOnHICANN)):
             generator = self.h.layer1[bg]
             generator.enable(True)
             generator.random(False)
@@ -394,7 +393,7 @@ class TestSingleHICANN(PysthalTest):
             generator.period(periods[ii])
             generator.address(addrs[ii])
 
-        #self.h.layer1[Coord.BackgroundGeneratorOnHICANN(fast)].enable(True)
+        #self.h.layer1[C.BackgroundGeneratorOnHICANN(fast)].enable(True)
 
         exp_duration = 0.01
         self.run_experiment(exp_duration)
@@ -402,7 +401,7 @@ class TestSingleHICANN(PysthalTest):
         # Collect data
         no_spikes = []
         spiketimes = []
-        for ii, channel in enumerate(Coord.iter_all(Coord.GbitLinkOnHICANN)):
+        for ii, channel in enumerate(iter_all(C.GbitLinkOnHICANN)):
             received = self.h.receivedSpikes(channel)
             times, _ = received.T
             no_spikes.append(len(received))
@@ -468,21 +467,21 @@ class TestSingleHICANN(PysthalTest):
         rng = Random()
 
         # Configure mergers and DNC to output spikes to the dnc
-        for merger in Coord.iter_all(Coord.DNCMergerOnHICANN):
+        for merger in iter_all(C.DNCMergerOnHICANN):
             m = self.h.layer1[merger]
             m.config = m.RIGHT_ONLY
             m.slow = False
             m.loopback = False
 
         direction = pyhalbe.HICANN.GbitLink.Direction.TO_DNC
-        for channel in Coord.iter_all(Coord.GbitLinkOnHICANN):
+        for channel in iter_all(C.GbitLinkOnHICANN):
             self.h.layer1[channel] = direction
 
         addrs     = rng.sample(xrange(1,64), 8)
         seeds     = [rng.randrange(2**16) for ii in range(8)]
         periods   = [rng.randrange(500, 3000) for ii in range(8)]
 
-        for ii, bg in enumerate(Coord.iter_all(Coord.BackgroundGeneratorOnHICANN)):
+        for ii, bg in enumerate(iter_all(C.BackgroundGeneratorOnHICANN)):
             generator = self.h.layer1[bg]
             generator.enable(True)
             generator.random(bool(ii % 2))
@@ -495,7 +494,7 @@ class TestSingleHICANN(PysthalTest):
         # Collect data
         no_spikes = []
         received_addresses = []
-        for ii, channel in enumerate(Coord.iter_all(Coord.GbitLinkOnHICANN)):
+        for ii, channel in enumerate(iter_all(C.GbitLinkOnHICANN)):
             received = self.h.receivedSpikes(channel)
             _, tmp = received.T
             no_spikes.append(len(tmp))
@@ -529,14 +528,14 @@ class TestSingleHICANN(PysthalTest):
         begin = 5e-6
 
         # Configure mergers and DNC to output spikes to the dnc
-        for merger in Coord.iter_all(Coord.DNCMergerOnHICANN):
+        for merger in iter_all(C.DNCMergerOnHICANN):
             odd = bool(merger.value() % 2)
             m = self.h.layer1[merger]
             m.config = m.MERGE
             m.slow = False
             m.loopback = not odd
 
-        for channel in Coord.iter_all(Coord.GbitLinkOnHICANN):
+        for channel in iter_all(C.GbitLinkOnHICANN):
             if (channel.value()%2): # 1, 3, 5, 7
                 self.h.layer1[channel] = pyhalbe.HICANN.GbitLink.Direction.TO_DNC
             else:
@@ -547,7 +546,7 @@ class TestSingleHICANN(PysthalTest):
 
         addr = pyhalbe.HICANN.L1Address(63)
         for ii in range(4):
-            link = Coord.GbitLinkOnHICANN(ii*2)
+            link = C.GbitLinkOnHICANN(ii*2)
             spikes = pysthal.Vector_Spike()
             for t in spike_times[ii::4]:
                 spikes.append(pysthal.Spike(addr, t))
@@ -566,8 +565,8 @@ class TestSingleHICANN(PysthalTest):
             result = []
             first_spikes = []
             for ii in [1,3,5,7]:
-                link = Coord.GbitLinkOnHICANN(ii)
-                received = self.h.receivedSpikes(Coord.GbitLinkOnHICANN(ii))
+                link = C.GbitLinkOnHICANN(ii)
+                received = self.h.receivedSpikes(C.GbitLinkOnHICANN(ii))
                 times, addrs = received.T
                 size = len(received)
                 addrs = set(pyhalbe.HICANN.L1Address(int(addr)) for addr in addrs)
@@ -596,13 +595,13 @@ class TestSingleHICANN(PysthalTest):
         for run in range(no_empty_runs):
             self.w.clearSpikes(received=True, send=True)
             self.start_runner(runtime)
-            received = sum(len(self.h.receivedSpikes(Coord.GbitLinkOnHICANN(ii)))
+            received = sum(len(self.h.receivedSpikes(C.GbitLinkOnHICANN(ii)))
                            for ii in [1,3,5,7])
             if received > 0:
                 err += ("Unexpectedly received {} spike(s) on the test run {}/{}, "
                         "that doesn't send spikes\n".format(received, run+1, no_empty_runs))
                 for ii in [1,3,5,7]:
-                    link = Coord.GbitLinkOnHICANN(ii)
+                    link = C.GbitLinkOnHICANN(ii)
                     spikes = self.h.receivedSpikes(link)
                     if len(spikes):
                         spike_list = ", ".join("(t={}, addr={})".format(s[0], s[1])
@@ -694,16 +693,16 @@ class TestSingleHICANN(PysthalTest):
         max_lock_time = 0.30e-3
 
         # Configure mergers and DNC to output spikes to the dnc
-        for merger in Coord.iter_all(Coord.DNCMergerOnHICANN):
+        for merger in iter_all(C.DNCMergerOnHICANN):
             m = self.h.layer1[merger]
             m.config = m.MERGE
             m.slow = True
             m.loopback = False
 
-        for channel in Coord.iter_all(Coord.GbitLinkOnHICANN):
+        for channel in iter_all(C.GbitLinkOnHICANN):
             self.h.layer1[channel] = pyhalbe.HICANN.GbitLink.Direction.TO_HICANN
 
-        for fg_block in Coord.iter_all(C.FGBlockOnHICANN):
+        for fg_block in iter_all(C.FGBlockOnHICANN):
             self.h.floating_gates.setShared(fg_block, pyhalbe.HICANN.V_dllres, 800)
 
         addr = pyhalbe.HICANN.L1Address(0)
@@ -724,7 +723,7 @@ class TestSingleHICANN(PysthalTest):
 
         err = ""
         self.connect()
-        for analog in Coord.iter_all(Coord.AnalogOnHICANN):
+        for analog in iter_all(C.AnalogOnHICANN):
             self.h.analog.set_preout(analog)
             #self.h.analog.set_dll_voltage(analog)
 
@@ -758,18 +757,18 @@ class TestSingleHICANN(PysthalTest):
         DriverDecoder = pyhalbe.HICANN.DriverDecoder
 
         # Initialize array with random data
-        for row in Coord.iter_all(Coord.SynapseRowOnHICANN):
+        for row in iter_all(C.SynapseRowOnHICANN):
             weights = np.random.random_integers(0, SynapseWeight.max, 256)
             decoders = np.random.random_integers(0, SynapseDecoder.max, 256)
             self.h.synapses[row].weights[:] = [SynapseWeight(int(w)) for w in weights]
             self.h.synapses[row].decoders[:] = [SynapseDecoder(int(d)) for d in decoders]
 
-        for driver in Coord.iter_all(Coord.SynapseDriverOnHICANN):
-            self.h.synapses[driver][Coord.top].set_decoder(Coord.top, DriverDecoder(int(np.random.randint(0, DriverDecoder.max))))
-            self.h.synapses[driver][Coord.top].set_decoder(Coord.bottom, DriverDecoder(int(np.random.randint(0, DriverDecoder.max))))
+        for driver in iter_all(C.SynapseDriverOnHICANN):
+            self.h.synapses[driver][top].set_decoder(top, DriverDecoder(int(np.random.randint(0, DriverDecoder.max))))
+            self.h.synapses[driver][top].set_decoder(bottom, DriverDecoder(int(np.random.randint(0, DriverDecoder.max))))
 
-            self.h.synapses[driver][Coord.bottom].set_decoder(Coord.top, DriverDecoder(int(np.random.randint(0, DriverDecoder.max))))
-            self.h.synapses[driver][Coord.bottom].set_decoder(Coord.bottom, DriverDecoder(int(np.random.randint(0, DriverDecoder.max))))
+            self.h.synapses[driver][bottom].set_decoder(top, DriverDecoder(int(np.random.randint(0, DriverDecoder.max))))
+            self.h.synapses[driver][bottom].set_decoder(bottom, DriverDecoder(int(np.random.randint(0, DriverDecoder.max))))
 
         self.run_experiment(0.0)
 
@@ -781,23 +780,23 @@ class TestSingleHICANN(PysthalTest):
                 self.d_err = {}
                 self.dd_err = {}
                 self.w_err = {}
-                for row in Coord.iter_all(Coord.SynapseRowOnHICANN):
+                for row in iter_all(C.SynapseRowOnHICANN):
                     if row in PysthalTest.COORDINATE_BLACKLIST:
                         continue
                     weights = pyhalbe.HICANN.get_weights_row(handle, row)
                     if data.synapses[row].weights != weights:
                         self.w_err[row] = weights
-                for driver in Coord.iter_all(Coord.SynapseDriverOnHICANN):
+                for driver in iter_all(C.SynapseDriverOnHICANN):
                     if driver in PysthalTest.COORDINATE_BLACKLIST:
                         continue
                     d_top, d_bot = pyhalbe.HICANN.get_decoder_double_row(handle, driver)
-                    row_top = Coord.SynapseRowOnHICANN(driver, Coord.top)
-                    row_bot = Coord.SynapseRowOnHICANN(driver, Coord.bottom)
+                    row_top = C.SynapseRowOnHICANN(driver, top)
+                    row_bot = C.SynapseRowOnHICANN(driver, bottom)
                     if data.synapses[row_top].decoders != d_top:
                         self.d_err[row_top] = d_top
                     if data.synapses[row_bot].decoders != d_bot:
                         self.d_err[row_bot] = d_bot
-                for driver in Coord.iter_all(Coord.SynapseDriverOnHICANN):
+                for driver in iter_all(C.SynapseDriverOnHICANN):
                     if driver in PysthalTest.COORDINATE_BLACKLIST:
                         continue
                     d = pyhalbe.HICANN.get_synapse_driver(handle, driver)
@@ -844,7 +843,7 @@ class TestSingleHICANN(PysthalTest):
 
         no_spikes = 20000
 
-        for bg in Coord.iter_all(Coord.BackgroundGeneratorOnHICANN):
+        for bg in iter_all(C.BackgroundGeneratorOnHICANN):
             generator = self.h.layer1[bg]
             generator.enable(True)
             generator.random(False)
@@ -852,13 +851,13 @@ class TestSingleHICANN(PysthalTest):
             generator.address(pyhalbe.HICANN.L1Address(0))
 
         # Configure mergers and DNC to output spikes to the dnc
-        for merger in Coord.iter_all(Coord.DNCMergerOnHICANN):
+        for merger in iter_all(C.DNCMergerOnHICANN):
             m = self.h.layer1[merger]
             m.config = m.MERGE
             m.slow = True
             m.loopback = False
 
-        for channel in Coord.iter_all(Coord.GbitLinkOnHICANN):
+        for channel in iter_all(C.GbitLinkOnHICANN):
             self.h.layer1[channel] = pyhalbe.HICANN.GbitLink.Direction.TO_HICANN
 
         # Send spikes with address 63 every 2us, starting at 20us
@@ -874,11 +873,11 @@ class TestSingleHICANN(PysthalTest):
         for driver in self.PREOUT_DRIVERS:
             self.config_driver(driver, addr.getDriverDecoderMask())
             self.route(self.PREOUT_OUTPUT, driver)
-        self.h.analog.set_preout(Coord.AnalogOnHICANN(0))
-        self.h.analog.set_preout(Coord.AnalogOnHICANN(1))
+        self.h.analog.set_preout(C.AnalogOnHICANN(0))
+        self.h.analog.set_preout(C.AnalogOnHICANN(1))
 
         self.connect()
-        recorder = self.h.analogRecorder(Coord.AnalogOnHICANN(0))
+        recorder = self.h.analogRecorder(C.AnalogOnHICANN(0))
         recorder.activateTrigger(duration)
 
         self.run_experiment(duration)
@@ -914,7 +913,7 @@ class TestSingleHICANN(PysthalTest):
 
         self.increase_switch_limit(columns=2)
 
-        for bg in Coord.iter_all(Coord.BackgroundGeneratorOnHICANN):
+        for bg in iter_all(C.BackgroundGeneratorOnHICANN):
             generator = self.h.layer1[bg]
             generator.enable(True)
             generator.random(False)
@@ -922,13 +921,13 @@ class TestSingleHICANN(PysthalTest):
             generator.address(pyhalbe.HICANN.L1Address(0))
 
         # Configure mergers and DNC to output spikes to the dnc
-        for merger in Coord.iter_all(Coord.DNCMergerOnHICANN):
+        for merger in iter_all(C.DNCMergerOnHICANN):
             m = self.h.layer1[merger]
             m.config = m.MERGE
             m.slow = True
             m.loopback = False
 
-        for channel in Coord.iter_all(Coord.GbitLinkOnHICANN):
+        for channel in iter_all(C.GbitLinkOnHICANN):
             self.h.layer1[channel] = pyhalbe.HICANN.GbitLink.Direction.TO_HICANN
 
         spikes_in = np.array([ii * 2.0e-6 for ii in range(10, 10 + no_spikes)])
@@ -944,11 +943,11 @@ class TestSingleHICANN(PysthalTest):
         for driver in self.PREOUT_DRIVERS:
             self.config_driver(driver, addr.getDriverDecoderMask())
             self.route(self.PREOUT_OUTPUT, driver)
-        self.h.analog.set_preout(Coord.AnalogOnHICANN(0))
-        self.h.analog.set_preout(Coord.AnalogOnHICANN(1))
+        self.h.analog.set_preout(C.AnalogOnHICANN(0))
+        self.h.analog.set_preout(C.AnalogOnHICANN(1))
 
         self.connect()
-        recorder = self.h.analogRecorder(Coord.AnalogOnHICANN(0))
+        recorder = self.h.analogRecorder(C.AnalogOnHICANN(0))
 
         self.run_experiment(0.0)
 
@@ -1011,11 +1010,11 @@ class TestSingleHICANN(PysthalTest):
 
     @hardware
     def test_adc_trigger_analog_0(self):
-        self._test_adc_trigger_impl(Coord.AnalogOnHICANN(0))
+        self._test_adc_trigger_impl(C.AnalogOnHICANN(0))
 
     @hardware
     def test_adc_trigger_analog_1(self):
-        self._test_adc_trigger_impl(Coord.AnalogOnHICANN(1))
+        self._test_adc_trigger_impl(C.AnalogOnHICANN(1))
 
     def _test_adc_trigger_impl(self, analog):
         """Checks the ADC trigger protocol is working."""
@@ -1063,39 +1062,39 @@ class TestSingleHICANN(PysthalTest):
         neuron_p = pyhalbe.HICANN.neuron_parameter
 
         fg = self.h.floating_gates
-        for neuron in Coord.iter_all(Coord.NeuronOnHICANN):
+        for neuron in iter_all(C.NeuronOnHICANN):
             fg.setNeuron(neuron, neuron_p.E_l,    550)
             fg.setNeuron(neuron, neuron_p.E_syni, 300)
             fg.setNeuron(neuron, neuron_p.E_synx, 300)
             fg.setNeuron(neuron, neuron_p.I_gl,   120)
             fg.setNeuron(neuron, neuron_p.V_t,    500)
 
-        for block in Coord.iter_all(Coord.FGBlockOnHICANN):
+        for block in iter_all(C.FGBlockOnHICANN):
             fg.setShared(block, shared_p.V_reset, 100)
 
 
-        for neuron in Coord.iter_all(Coord.NeuronOnHICANN):
+        for neuron in iter_all(C.NeuronOnHICANN):
             n = self.h.neurons[neuron]
             n.activate_firing(True)
             n.enable_spl1_output(neuron.y().value() == 0)
             addr = neuron.x().value() % 32 + neuron.y().value() * 32
             n.address(pyhalbe.HICANN.L1Address(addr))
 
-        for merger in Coord.iter_all(Coord.DNCMergerOnHICANN):
+        for merger in iter_all(C.DNCMergerOnHICANN):
             m = self.h.layer1[merger]
             m.config = m.RIGHT_ONLY
             m.slow = False
             m.loopback = False
 
         direction = pyhalbe.HICANN.GbitLink.Direction.TO_DNC
-        for channel in Coord.iter_all(Coord.GbitLinkOnHICANN):
+        for channel in iter_all(C.GbitLinkOnHICANN):
             self.h.layer1[channel] = direction
 
         self.run_experiment(0.0)
 
         traces = {}
         for x in range(256):
-            a, b = [(Coord.NeuronOnHICANN(Coord.X(x), Coord.Y(ii)), Coord.AnalogOnHICANN(ii)) for ii in range(2)]
+            a, b = [(C.NeuronOnHICANN(C.X(x), C.Y(ii)), C.AnalogOnHICANN(ii)) for ii in range(2)]
             self.h.enable_aout(*a)
             self.h.enable_aout(*b)
             self.switch_aout()
@@ -1111,8 +1110,8 @@ class TestSingleHICANN(PysthalTest):
         self.run_experiment(0.1, NoopConfigurator)
 
         # Collect data
-        neuronspikes = dict((n, []) for n in Coord.iter_all(Coord.NeuronOnHICANN))
-        for channel in Coord.iter_all(Coord.GbitLinkOnHICANN):
+        neuronspikes = dict((n, []) for n in iter_all(C.NeuronOnHICANN))
+        for channel in iter_all(C.GbitLinkOnHICANN):
             received = self.h.receivedSpikes(channel)
             c = channel.value()
             for addr, time in received:
@@ -1120,7 +1119,7 @@ class TestSingleHICANN(PysthalTest):
                     n = c * 32 + addr
                 else:
                     n = 256 + c * 32 + addr - 32
-                neuron = Coord.NeuronOnHICANN(Enum(n))
+                neuron = C.NeuronOnHICANN(Enum(n))
                 self.assertEqual(neuron.x().value() % 32 + neuron.y().value() * 32, addr)
                 neuronspikes[neuron].append(time)
 
@@ -1134,19 +1133,19 @@ class TestSingleHICANN(PysthalTest):
         and make sure there are no big jumps."""
 
         # Configure mergers and DNC to output spikes to the DNC
-        for merger in Coord.iter_all(Coord.DNCMergerOnHICANN):
+        for merger in iter_all(C.DNCMergerOnHICANN):
             m = self.h.layer1[merger]
             m.config = m.MERGE # CK: m.RIGHT_ONLY
             m.slow = True # CK: False
             m.loopback = False
 
         direction = pyhalbe.HICANN.GbitLink.Direction.TO_DNC
-        for channel in Coord.iter_all(Coord.GbitLinkOnHICANN):
+        for channel in iter_all(C.GbitLinkOnHICANN):
             self.h.layer1[channel] = direction
 
         addr = pyhalbe.HICANN.L1Address(1)
 
-        for ii, bg in enumerate(Coord.iter_all(Coord.BackgroundGeneratorOnHICANN)):
+        for ii, bg in enumerate(iter_all(C.BackgroundGeneratorOnHICANN)):
             generator = self.h.layer1[bg]
             generator.enable(True)
             generator.random(False)
@@ -1160,7 +1159,7 @@ class TestSingleHICANN(PysthalTest):
         # Collect data
         no_spikes = []
         spiketimes = []
-        for ii, channel in enumerate(Coord.iter_all(Coord.GbitLinkOnHICANN)):
+        for ii, channel in enumerate(iter_all(C.GbitLinkOnHICANN)):
             received = self.h.receivedSpikes(channel)
             _, times = received.T
             no_spikes.append(len(received))
@@ -1190,19 +1189,19 @@ class TestSingleHICANN(PysthalTest):
         rel_tol = 10.0/bg_period
 
         # Configure mergers and DNC to output spikes to the DNC
-        for merger in Coord.iter_all(Coord.DNCMergerOnHICANN):
+        for merger in iter_all(C.DNCMergerOnHICANN):
             m = self.h.layer1[merger]
             m.config = m.MERGE # CK: m.RIGHT_ONLY
             m.slow = True # CK: False
             m.loopback = False
 
         direction = pyhalbe.HICANN.GbitLink.Direction.TO_DNC
-        for channel in Coord.iter_all(Coord.GbitLinkOnHICANN):
+        for channel in iter_all(C.GbitLinkOnHICANN):
             self.h.layer1[channel] = direction
 
         addr = pyhalbe.HICANN.L1Address(1)
 
-        for ii, bg in enumerate(Coord.iter_all(Coord.BackgroundGeneratorOnHICANN)):
+        for ii, bg in enumerate(iter_all(C.BackgroundGeneratorOnHICANN)):
             generator = self.h.layer1[bg]
             generator.enable(True)
             generator.random(False)
@@ -1216,7 +1215,7 @@ class TestSingleHICANN(PysthalTest):
         # Collect data
         no_spikes = []
         spiketimes = []
-        for ii, channel in enumerate(Coord.iter_all(Coord.GbitLinkOnHICANN)):
+        for ii, channel in enumerate(iter_all(C.GbitLinkOnHICANN)):
             received = self.h.receivedSpikes(channel)
             times, _ = received.T
             no_spikes.append(len(received))
@@ -1252,13 +1251,13 @@ class TestSingleHICANN(PysthalTest):
     @hardware
     def test_readout(self):
         # Configure mergers and DNC to output spikes to the DNC
-        for merger in Coord.iter_all(Coord.DNCMergerOnHICANN):
+        for merger in iter_all(C.DNCMergerOnHICANN):
             m = self.h.layer1[merger]
             m.config = m.MERGE # CK: m.RIGHT_ONLY
             m.slow = True # CK: False
             m.loopback = False
 
-        for ii, bg in enumerate(Coord.iter_all(Coord.BackgroundGeneratorOnHICANN)):
+        for ii, bg in enumerate(iter_all(C.BackgroundGeneratorOnHICANN)):
             generator = self.h.layer1[bg]
             generator.enable(True)
             generator.random(False)
@@ -1301,14 +1300,14 @@ class TestSingleHICANN(PysthalTest):
 
         def set_decoders_and_weights(rnd, synapses):
             "set synapse decoders and weights with random values"
-            no_synapses = Coord.SynapseOnHICANN.enum_type.size
+            no_synapses = C.SynapseOnHICANN.enum_type.size
             weights = rnd.random_integers(0, 15, size=no_synapses)
             decoders = rnd.random_integers(0, 15, size=no_synapses)
 
             SynapseWeight = pyhalbe.HICANN.SynapseWeight
             SynapseDecoder = pyhalbe.HICANN.SynapseDecoder
             synapses = self.h.synapses
-            for synapse in Coord.iter_all(Coord.SynapseOnHICANN):
+            for synapse in iter_all(C.SynapseOnHICANN):
                 s = synapses[synapse]
                 s.weight = SynapseWeight(int(weights[int(synapse.toEnum())]))
                 s.decoder = SynapseDecoder(int(decoders[int(synapse.toEnum())]))
@@ -1316,29 +1315,29 @@ class TestSingleHICANN(PysthalTest):
             # Check that the values are set correctly
             assert_array_equal(weights, numpy.array(
                 [synapses[synapse].weight
-                 for synapse in Coord.iter_all(Coord.SynapseOnHICANN)],
+                 for synapse in iter_all(C.SynapseOnHICANN)],
                 dtype=numpy.uint8))
             assert_array_equal(decoders, numpy.array(
                 [synapses[synapse].decoder
-                 for synapse in Coord.iter_all(Coord.SynapseOnHICANN)],
+                 for synapse in iter_all(C.SynapseOnHICANN)],
                 dtype=numpy.uint8))
             return decoders, weights
 
         def set_crossbar(rnd, cs):
             "set crossbar switches with random values"
-            size = (2, Coord.HLineOnHICANN.size, 4)
+            size = (2, C.HLineOnHICANN.size, 4)
             values = rnd.choice([True, False], size=size)
             cs = self.h.crossbar_switches
-            for hline in Coord.iter_all(Coord.HLineOnHICANN):
-                cs.set_row(hline, Coord.left, values[0][int(hline)])
-                cs.set_row(hline, Coord.right, values[1][int(hline)])
+            for hline in iter_all(C.HLineOnHICANN):
+                cs.set_row(hline, left, values[0][int(hline)])
+                cs.set_row(hline, right, values[1][int(hline)])
             return values
 
         def set_synapse_switches(rnd, synapse_switches):
             "set synapse switches with random values"
-            size = (Coord.SynapseSwitchRowOnHICANN.enum_type.size, 16)
+            size = (C.SynapseSwitchRowOnHICANN.enum_type.size, 16)
             values = rnd.choice([True, False], size=size)
-            for row in Coord.iter_all(Coord.SynapseSwitchRowOnHICANN):
+            for row in iter_all(C.SynapseSwitchRowOnHICANN):
                 synapse_switches.set_row(row, values[int(row.toEnum())])
             return values
 

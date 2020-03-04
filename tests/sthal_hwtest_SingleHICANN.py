@@ -128,6 +128,8 @@ class TestSingleHICANN(PysthalTest):
 
         self.FPGA_HICANN_DELAY = self.w.commonFPGASettings().getFPGAHICANNDelay()
 
+        self.w.commonFPGASettings().setSynapseArrayReset(True)
+
         self.addCleanup(self.w.disconnect)
 
     def connect(self):

@@ -159,7 +159,7 @@ class TestRecticleAout(unittest.TestCase):
 
     # Fairly random choosen ;)
     ROW = Coordinate.FGRowOnFGBlock(4)
-    CELL = Coordinate.FGCellOnFGBlock(Coordinate.X(30), ROW)
+    CELL = Coordinate.FGCellOnFGBlock(Coordinate.common.X(30), ROW)
     RECORDING_TIME = 1e-5
 
     def toHICANNOnWafer(self, hicann_on_dnc):

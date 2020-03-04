@@ -105,7 +105,10 @@ public:
 
 	/// Get settings shared between all FPGAs
 	boost::shared_ptr<FPGAShared> commonFPGASettings();
+
+#ifndef PYPLUSPLUS
 	boost::shared_ptr<const FPGAShared> commonFPGASettings() const;
+#endif
 
 	/// SpiNNakerIF-specific things
 	void setSpinnakerEnable(bool const);

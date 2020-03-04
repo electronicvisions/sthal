@@ -10,7 +10,8 @@ static const uint16_t fpga_hicann_delay_default = 25;
 
 FPGAShared::FPGAShared():
 	pll_freq(100e6),
-	fpga_hicann_delay(fpga_hicann_delay_default)
+	fpga_hicann_delay(fpga_hicann_delay_default),
+	reset_synapse_array(false)
 {
 }
 
@@ -44,10 +45,21 @@ uint16_t FPGAShared::getFPGAHICANNDelay() const
 	return fpga_hicann_delay;
 }
 
+void FPGAShared::setSynapseArrayReset(bool reset)
+{
+	reset_synapse_array = reset;
+}
+
+bool FPGAShared::getSynapseArrayReset() const
+{
+	return reset_synapse_array;
+}
+
 bool operator==(const FPGAShared & a, const FPGAShared & b)
 {
 	return (a.pll_freq          == b.pll_freq)
 		&& (a.fpga_hicann_delay == b.fpga_hicann_delay)
+		&& (a.reset_synapse_array == b.reset_synapse_array)
 	;
 }
 

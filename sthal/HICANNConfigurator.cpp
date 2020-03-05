@@ -46,7 +46,7 @@ void HICANNConfigurator::config_fpga(fpga_handle_t const& f, fpga_t const& fpga)
 	::HMF::FPGA::Reset r;
 	r.PLL_frequency = static_cast<uint8_t>(fpga->commonFPGASettings()->getPLL() / 1.0e6);
 	::HMF::FPGA::reset(*f, r);
-	// initialize all HICANNs without zeroing the synapse array
+	// initialize all HICANNs and zeroing synapse array if SynapseArrayReset option is set
 	::HMF::FPGA::init(*f, fpga->commonFPGASettings()->getSynapseArrayReset());
 
 	if (fpga->getSpinnakerEnable())

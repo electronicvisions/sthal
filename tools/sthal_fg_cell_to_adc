@@ -12,14 +12,15 @@ pylogging.set_loglevel(pylogging.get("Default"), pylogging.LogLevel.INFO)
 
 import pysthal
 import pyhalbe
-import Coordinate as C
+import pyhalco_hicann_v2 as C
+from pyhalco_common import Enum
 
 from pysthal.command_line_util import add_default_coordinate_options
 from pysthal.command_line_util import add_logger_options
 from pysthal.command_line_util import init_logger
 
-fg_blocks_left = [C.FGBlockOnHICANN(C.Enum(0)), C.FGBlockOnHICANN(C.Enum(2))]
-fg_blocks_right = [C.FGBlockOnHICANN(C.Enum(1)), C.FGBlockOnHICANN(C.Enum(3))]
+fg_blocks_left = [C.FGBlockOnHICANN(Enum(0)), C.FGBlockOnHICANN(Enum(2))]
+fg_blocks_right = [C.FGBlockOnHICANN(Enum(1)), C.FGBlockOnHICANN(Enum(3))]
 fg_blocks = fg_blocks_left + fg_blocks_right
 
 param = pyhalbe.HICANN.shared_parameter.V_fac

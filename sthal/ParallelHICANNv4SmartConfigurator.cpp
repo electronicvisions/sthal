@@ -507,7 +507,6 @@ bool ParallelHICANNv4SmartConfigurator::check_l1_bus_changes(hicann_coord coord,
 		// check if dllreset or drvreset were not disabled in old configuration
 		change_in_l1 |= !old_hicann->repeater.is_drvreset_disabled();
 		change_in_l1 |= !old_hicann->repeater.is_dllreset_disabled();
-		change_in_l1 |= !old_hicann->synapse_controllers.is_dllreset_disabled();
 	}
 
 	return change_in_l1;
@@ -530,6 +529,8 @@ bool ParallelHICANNv4SmartConfigurator::syn_drv_locking_needed(hicann_coord coor
 		for (auto const ii : iter_all<::halco::hicann::v2::SynapseDriverOnHICANN>()) {
 			driver_changes |= (old_hicann->synapses[ii] != hicann->synapses[ii]);
 		}
+		// Check if dll-reset was not disabled in old configuration
+		driver_changes |= !old_hicann->synapse_controllers.is_dllreset_disabled();
 	}
 
 	return driver_changes;

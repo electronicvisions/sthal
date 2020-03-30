@@ -15,17 +15,16 @@ namespace sthal {
 /// Parallel HICANN Configurator for HICANNv4 chips
 ///
 /// This configurator implements an improved floating gate programming required
-/// for HICANN v4. To programm the reversal potentials of the chip correct, it
-/// seems neccessary to turn of the synaptic inputs completly. This is done by
+/// for HICANN v4. To program the reversal potentials of the chip correctly, it
+/// seems necessary to turn off the synaptic inputs completely. This is done by
 /// implementing the following floating gates writing scheme.
 ///  - Write all cells to zero
-///  - Write all Voltage cells normal
-///  - Write current cells that have theire minimum value below 800 normal
-///  - Write the other current cells fast upwards
+///  - Write all voltage cells normal
+///  - Write current cells that have their minimum value below mFastUpwardsLimit
+///        (default 800) normal
+///  - Write the other current cells fast upwards (All current cells within a
+///        row having at least one value over mFastUpwardsLimit)
 ///
-///
-/// Warning: this configurator now ignores the first the of the floating gate
-/// configuration passes
 class ParallelHICANNv4Configurator : public HICANNConfigurator
 {
 public:
@@ -55,10 +54,10 @@ public:
 	/// Writes all floating gate fast to zero
 	void zero_fg(hicann_handles_t const& handles, hicann_datas_t const& hicanns);
 
-	/// Updates the rows to an high value with special fg settings, for fast
-	/// update at the cost of some precision. This should be only used for
+	/// Updates the rows to a high value with special fg settings, for fast
+	/// updating at the cost of some precision. This should be only used for
 	/// bias currents or floating gates that are near the maximum value.
-	/// The intention in using this scheme to reduce cross-talk to other cells
+	/// This scheme aims to reduce cross-talk to other cells
 	//TODO names fast normal?
 	void program_high(
 		hicann_handles_t const& handles, hicann_datas_t const& hicanns, row_lists_t const& rows);

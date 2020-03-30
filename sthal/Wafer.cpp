@@ -507,6 +507,8 @@ void Wafer::configure(HICANNConfigurator & configurator)
 
 	/// Then configure HICANNs
 	for (auto stage : call_stages) {
+		/// Comment the following #pragma line while debugging, in order to get
+		/// meaningful error messages.
 		#pragma omp parallel for schedule(dynamic)
 		for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
 			FPGAOnWafer const fpga_c{Enum(fpga_enum)};
@@ -532,11 +534,14 @@ void Wafer::configure(HICANNConfigurator & configurator)
 				                              stage);
 			} else if (is_v4_cfg) {
 				// The HICANNv4Configurator is a wrapper of the ParallelHICANNv4Configurator
-				// which offers the same functionality as its base class but is supposed to
-				// perform HICANN configuration sequentially, i.e configure one HICANN at the time
-				// (c.f. header of HICANNv4Configurator).
+				// which offers the same functionality as its base class but performs
+				// HICANN configuration sequentially, i.e. configure one HICANN at a time
+				// (c.f. header of HICANNv4Configurator): That different behavior is achieved
+				// here, since the configuration calls will be either parallel or sequential
+				// depending on the configurator provided to this Wafer::configure function.
 				// We don't use ParallelHICANNConfigurator::config(fpga_handle_t f,
-				// hicann_handle_t h, hicann_data_t hd) since this function doesn't implement sleeps.
+				// hicann_handle_t h, hicann_data_t hd) since that function doesn't sleep
+				// after every configuration stage.
 				assert(hicann_handles.size() == hicann_datas.size());
 				for (auto item : pythonic::zip(hicann_handles, hicann_datas)) {
 					v4_configurator->config(
@@ -546,6 +551,7 @@ void Wafer::configure(HICANNConfigurator & configurator)
 						stage);
 				}
 			} else {
+				// Any other configurator that does not inherit from ParallelHICANNv4Configurator
 				assert(hicann_handles.size() == hicann_datas.size());
 				for (auto item : pythonic::zip(hicann_handles, hicann_datas)) {
 					configurator.config(fpga_handle, std::get<0>(item),

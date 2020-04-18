@@ -518,7 +518,7 @@ void HICANNConfigurator::sync_command_buffers(fpga_handle_t const& fpga_handle,
 	auto const t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 	// Make sure no commands are pending
 	LOG4CXX_DEBUG(getLogger(), short_format(fpga_handle->coordinate())
-	                           << ": sync command buffers (Host-FPGA and FPGA-HICANN");
+	                           << ": sync command buffers (Host-FPGA and FPGA-HICANN)");
 
 	::HMF::FPGA::flush(*fpga_handle);
 

@@ -108,11 +108,14 @@ class RerunConfigurator(pysthal.HICANNConfigurator):
 
 class TestSingleHICANN(PysthalTest):
 
+    logger = pylogging.get("sthal.TestSingleHICANN")
+
     def setUp(self):
         super(TestSingleHICANN, self).setUp()
 
         pylogging.set_loglevel(pylogging.get("Default"), pylogging.LogLevel.ERROR)
         pylogging.set_loglevel(pylogging.get("sthal"), pylogging.LogLevel.INFO)
+        pylogging.set_loglevel(pylogging.get("sthal.TestSingleHICANN"), pylogging.LogLevel.INFO)
 
         if None in (self.WAFER, self.HICANN):
             return
@@ -249,6 +252,7 @@ class TestSingleHICANN(PysthalTest):
 
     @hardware
     def test_analog_readout(self):
+        self.logger.INFO("Starting test_analog_readout")
         self.w.connect(pysthal.MagicHardwareDatabase())
         readout = self.h.analogRecorder(C.AnalogOnHICANN(0))
         readout.setRecordingTime(1.0e-2)
@@ -269,6 +273,7 @@ class TestSingleHICANN(PysthalTest):
         """Test filtering of background events. Activate bg generators and readout trace.
         Should be empty with active event filter and non empty without filter"""
 
+        self.logger.INFO("Starting test_bg_event_filter")
         bg_period = 500
         # arbitrarily long enough runtime to capture background events
         runtime = 1. / pysthal.FPGA.dnc_freq * bg_period * 100
@@ -304,6 +309,7 @@ class TestSingleHICANN(PysthalTest):
         112 and then checks the pro_out signal of the synapse driver to see
         if they match the frequency of the background generator"""
 
+        self.logger.INFO("Starting test_background_frequences_against_ADC_samplerate")
         # The bg send a spike every period + 1 clk cycles
         pll_freq = self.w.commonFPGASettings().getPLL()
         bg_freq = pll_freq/(bg_period + 1)
@@ -383,6 +389,7 @@ class TestSingleHICANN(PysthalTest):
         frequency. Then checks if the spike times read back via DNC match
         the set frequencies"""
 
+        self.logger.INFO("Starting test_Background_frequences_against_L2_spiketimes")
         from random import Random
         rng = Random()
         # Configure mergers and DNC to output spikes to the dnc
@@ -478,6 +485,7 @@ class TestSingleHICANN(PysthalTest):
         generator in random mode is always 0.
         """
 
+        self.logger.INFO("Starting test_Background_addresses")
         from random import Random
         rng = Random()
 
@@ -629,6 +637,7 @@ class TestSingleHICANN(PysthalTest):
         """
         Send 200 times 2000 spikes to the HICANN and read them via hicann loopback.
         """
+        self.logger.INFO("Starting test_hicann_loopback")
         self.hicann_loopback_impl(2000, 200)
 
     @hardware
@@ -636,6 +645,7 @@ class TestSingleHICANN(PysthalTest):
         """
         Send 200 times 1 spike to the HICANN and read them via hicann loopback.
         """
+        self.logger.INFO("Starting test_hicann_loopback_min")
         self.hicann_loopback_impl(1, 200)
 
     @hardware
@@ -643,6 +653,7 @@ class TestSingleHICANN(PysthalTest):
         """
         Send 10 times 100000 spikes to the HICANN and read them via hicann loopback.
         """
+        self.logger.INFO("Starting test_hicann_loopback_medium")
         self.hicann_loopback_impl(100000, 10)
 
     @hardware
@@ -653,6 +664,7 @@ class TestSingleHICANN(PysthalTest):
         This are 512MB of spikes.
         Run with reduced ISI to avoid extreme long experiment durations.
         """
+        self.logger.INFO("Starting test_hicann_loopback_extreme")
         no_spikes = 512 * 1024**2 / 16  # 512MiB, 16 bytes per event
         self.hicann_loopback_impl(no_spikes, 1, 1, 3e-7)
 
@@ -662,6 +674,7 @@ class TestSingleHICANN(PysthalTest):
         Send 200 times 2000 spikes to the HICANN and read them via hicann loopback but
         don't check for spikes in "empty" experiments.
         """
+        self.logger.INFO("Starting test_hicann_loopback_without_empty_check")
         self.hicann_loopback_impl(2000, 200, 0)
 
     @hardware
@@ -670,6 +683,7 @@ class TestSingleHICANN(PysthalTest):
         Send 200 times 1 spike to the HICANN and read them via hicann loopback but
         don't check for spikes in "empty" experiments.
         """
+        self.logger.INFO("Starting test_hicann_loopback_without_empty_check_min")
         self.hicann_loopback_impl(1, 200, 0)
 
     @hardware
@@ -678,6 +692,7 @@ class TestSingleHICANN(PysthalTest):
         Send 10 times 100000 spikes to the HICANN and read them via hicann loopback but
         don't check for spikes in "empty" experiments.
         """
+        self.logger.INFO("Starting test_hicann_loopback_without_empty_check_medium")
         self.hicann_loopback_impl(100000, 10, 0)
 
     @hardware
@@ -689,6 +704,7 @@ class TestSingleHICANN(PysthalTest):
         This are 512MB of spikes.
         Run with reduced ISI to avoid extreme long experiment durations.
         """
+        self.logger.INFO("Starting test_hicann_loopback_without_empty_check_extreme")
         no_spikes = 512 * 1024**2 / 16  # 512MiB, 16 bytes per event
         self.hicann_loopback_impl(no_spikes, 1, 0, 3e-7)
 
@@ -701,6 +717,7 @@ class TestSingleHICANN(PysthalTest):
         distance will lock a synapse driver.
         """
 
+        self.logger.INFO("Starting test_driver_locking")
         self.increase_switch_limit(columns=2)
 
         no_spikes = 10000
@@ -765,6 +782,7 @@ class TestSingleHICANN(PysthalTest):
 
     @hardware
     def test_reset_on_synapse_array(self):
+        self.logger.INFO("Starting test_reset_on_synapse_array")
         resets = 2
 
         SynapseWeight = pyhalbe.HICANN.SynapseWeight
@@ -857,6 +875,7 @@ class TestSingleHICANN(PysthalTest):
         preout to verify that the spikes are sent correctly.
         Synapse driver locking is archived via HICANN background generators."""
 
+        self.logger.INFO("Starting test_layer2_input")
         self.increase_switch_limit(columns=2)
 
         no_spikes = 20000
@@ -926,6 +945,7 @@ class TestSingleHICANN(PysthalTest):
 
     @hardware
     def test_trigger_start_time(self):
+        self.logger.INFO("Starting test_trigger_start_time")
         tries = 5
         no_spikes = 500
 
@@ -1020,6 +1040,7 @@ class TestSingleHICANN(PysthalTest):
         """test if we recive a proper status from the wafer
         this could be improved.
         """
+        self.logger.INFO("Starting test_wafer_status")
         self.connect()
         st = self.w.status()
         self.assertTrue(np.any(np.array(st.fpga_rev) != 0))
@@ -1028,15 +1049,18 @@ class TestSingleHICANN(PysthalTest):
 
     @hardware
     def test_adc_trigger_analog_0(self):
+        self.logger.INFO("Starting test_adc_trigger_analog_0")
         self._test_adc_trigger_impl(C.AnalogOnHICANN(0))
 
     @hardware
     def test_adc_trigger_analog_1(self):
+        self.logger.INFO("Starting test_adc_trigger_analog_1")
         self._test_adc_trigger_impl(C.AnalogOnHICANN(1))
 
     def _test_adc_trigger_impl(self, analog):
         """Checks the ADC trigger protocol is working."""
 
+        self.logger.INFO("Starting _test_adc_trigger_impl")
         duration = 500e-6
 
         self.connect()
@@ -1076,6 +1100,7 @@ class TestSingleHICANN(PysthalTest):
     def test_self_induced_neuron_spiking(self):
         """ TODO """
 
+        self.logger.INFO("Starting test_self_induced_neuron_spiking")
         shared_p = pyhalbe.HICANN.shared_parameter
         neuron_p = pyhalbe.HICANN.neuron_parameter
 
@@ -1150,6 +1175,7 @@ class TestSingleHICANN(PysthalTest):
         """Record periodic spikes. Calculate interval between timestamps
         and make sure there are no big jumps."""
 
+        self.logger.INFO("Starting test_spike_interval")
         # Configure mergers and DNC to output spikes to the DNC
         for merger in iter_all(C.DNCMergerOnHICANN):
             m = self.h.layer1[merger]
@@ -1201,6 +1227,7 @@ class TestSingleHICANN(PysthalTest):
         HICANN-DNC-interface. This causes bitflips in the spike times.
         """
 
+        self.logger.INFO("Starting test_no_gaps")
         bg_period = 500
         pll_freq = self.w.commonFPGASettings().getPLL()
         bg_freq = pll_freq/(bg_period + 1)
@@ -1264,11 +1291,13 @@ class TestSingleHICANN(PysthalTest):
     @hardware
     def test_compare_adc(self):
         """Record L2 timestamps of spiking neuron. Compare with detected spikes from ADC trace."""
+        self.logger.INFO("Starting test_compare_adc")
         self.assertTrue(False, "not implemented")
 
     @hardware
     def test_readout(self):
         # Configure mergers and DNC to output spikes to the DNC
+        self.logger.INFO("Starting test_readout")
         for merger in iter_all(C.DNCMergerOnHICANN):
             m = self.h.layer1[merger]
             m.config = m.MERGE # CK: m.RIGHT_ONLY
@@ -1314,6 +1343,7 @@ class TestSingleHICANN(PysthalTest):
         """
         from numpy.testing import assert_array_equal
 
+        self.logger.INFO("Starting test_verification_readout")
         self.increase_switch_limit(columns=255, rows=255)
 
         def set_decoders_and_weights(rnd, synapses):

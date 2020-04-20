@@ -69,21 +69,36 @@ class NoopConfigurator(pysthal.HICANNConfigurator):
 
 class RerunConfigurator(pysthal.HICANNConfigurator):
     def config(self, fpga, handle, data):
+
+        hicann_handle = pysthal.vector_less__boost_scope_shared_ptr_less_HMF_scope_Handle_scope_HICANN_greater___greater_()
+        hicann_handle.append(handle)
+
         pyhalbe.HICANN.init(handle, False)
+        self.config_fg_stimulus(handle, data)
+        self.config_synapse_array(handle, data)
         self.config_neuron_quads(handle, data)
         self.config_phase(handle, data)
         self.config_gbitlink(handle, data)
 
-        self.config_synapse_drivers(handle, data)
         self.config_synapse_switch(handle, data)
+        self.config_stdp(handle, data)
         self.config_crossbar_switches(handle, data)
         self.config_repeater(handle, data)
+        self.sync_command_buffers(fpga, hicann_handle)
+
+        data.repeater.disable_dllreset()
+        self.config_repeater_blocks(handle, data)
+        self.sync_command_buffers(fpga, hicann_handle)
+
         self.config_merger_tree(handle, data)
         self.config_dncmerger(handle, data)
         self.config_background_generators(handle, data)
         self.flush_hicann(handle)
-        self.lock_repeater(handle, data)
-        self.flush_hicann(handle)
+        self.config_synapse_drivers(handle, data)
+
+        data.synapse_controllers.disable_dllreset()
+        self.config_synapse_controllers(handle, data)
+        self.sync_command_buffers(fpga, hicann_handle)
 
         self.config_neuron_config(handle, data)
         self.config_neuron_quads(handle, data)

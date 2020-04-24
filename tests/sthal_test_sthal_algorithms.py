@@ -336,5 +336,34 @@ class TestSthalAlgorithms(PyhalbeTest):
         f[dnc_on_fpga_c][hicann_on_dnc_c].layer1[gbitlink_c] = pyhalbe.HICANN.GbitLink.Direction.TO_DNC
         self.assertTrue(f.hasOutboundMergers())
 
+    def test_get_address(self):
+        """
+        Tests getting the full 6-bit L1 address a synapse decodes
+        """
+
+        import pyhalbe
+        import pysthal
+        from pyhalco_common import Enum, top, bottom
+        import pyhalco_hicann_v2 as C
+
+        h = pysthal.HICANN()
+
+        for syn_c in C.iter_all(C.SynapseOnHICANN):
+
+            drv_c = syn_c.toSynapseDriverOnHICANN()
+            row_config_c = syn_c.toSynapseRowOnHICANN().toRowOnSynapseDriver()
+
+            syn = h.synapses[syn_c]
+            drv = h.synapses[drv_c]
+            row_config = drv[row_config_c]
+
+            for addr in C.iter_all(pyhalbe.HICANN.L1Address):
+                syn.decoder = addr.getSynapseDecoderMask()
+
+                row_config.set_decoder(top if syn_c.toSynapseColumnOnHICANN().toEnum().value() % 2 == 0 else bottom,
+                                       addr.getDriverDecoderMask())
+
+                self.assertEqual(addr, h.synapses.get_address(syn_c))
+
 if __name__ == '__main__':
     TestSthalAlgorithms.main()

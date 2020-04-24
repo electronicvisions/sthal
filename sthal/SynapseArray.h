@@ -116,6 +116,9 @@ struct SynapseArray
 	void clear_synapses();
 	void set_all(::HMF::HICANN::SynapseDecoder decoder, ::HMF::HICANN::SynapseWeight weight);
 
+	/// returns full address based on decoder settings from driver and synapse
+	::HMF::HICANN::L1Address get_address(halco::hicann::v2::SynapseOnHICANN const& s) const;
+
 	friend bool operator==(const SynapseArray & a, const SynapseArray & b);
 	friend bool operator!=(const SynapseArray & a, const SynapseArray & b);
 	friend std::ostream& operator<<(std::ostream& os, SynapseArray const& a);

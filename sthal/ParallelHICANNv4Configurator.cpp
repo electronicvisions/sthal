@@ -173,6 +173,7 @@ void ParallelHICANNv4Configurator::config(fpga_handle_t const& f,
 	}
 
 	switch (stage) {
+		case ConfigurationStage::INIT: break;
 		case ConfigurationStage::TIMING_UNCRITICAL: {
 			// interleaved
 			config_floating_gates(handles, hicanns);

@@ -28,11 +28,13 @@ Settings::SynapseSwitches::SynapseSwitches(size_t max_per_row, size_t max_per_co
 {}
 
 Settings::CfgStages::CfgStages() :
-	sleeps({{ConfigurationStage::TIMING_UNCRITICAL, ms(0)},
+	sleeps({{ConfigurationStage::INIT, ms(0)},
+	        {ConfigurationStage::TIMING_UNCRITICAL, ms(0)},
 	        {ConfigurationStage::LOCKING_REPEATER_BLOCKS, ms(0)},
 	        {ConfigurationStage::LOCKING_SYNAPSE_DRIVERS, ms(0)},
 	        {ConfigurationStage::NEURONS, ms(0)}}),
-	order({ConfigurationStage::TIMING_UNCRITICAL,
+	order({ConfigurationStage::INIT,
+	       ConfigurationStage::TIMING_UNCRITICAL,
 	       ConfigurationStage::LOCKING_REPEATER_BLOCKS,
 	       ConfigurationStage::LOCKING_SYNAPSE_DRIVERS,
 	       ConfigurationStage::NEURONS})

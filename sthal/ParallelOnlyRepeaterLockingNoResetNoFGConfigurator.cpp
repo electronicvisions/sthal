@@ -43,6 +43,7 @@ void ParallelOnlyRepeaterLockingNoResetNoFGConfigurator::config(fpga_handle_t co
 	              	<< static_cast<size_t>(stage));
 
 	switch (stage) {
+		case ConfigurationStage::INIT: break;
 		case ConfigurationStage::TIMING_UNCRITICAL: {
 			auto it_data = hicanns.begin();
 

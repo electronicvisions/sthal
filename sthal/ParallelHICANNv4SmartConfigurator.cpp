@@ -48,6 +48,19 @@ void ParallelHICANNv4SmartConfigurator::config(
 {
 	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 
+	if (stage == ConfigurationStage::INIT) {
+		// Inserting/Deleting elements from std::map during concurrent operation may lead to
+		// undefined behaviour. Therefore, we pre-populate mWrittenHICANNData with nullptr.
+		omp_set_lock(&mLock); // Asserts single thread execution
+		for (auto& handle : hicann_handle) {
+			if (mWrittenHICANNData.find(handle->coordinate()) == mWrittenHICANNData.end()) {
+				mWrittenHICANNData[handle->coordinate()] = nullptr;
+			}
+		}
+		omp_unset_lock(&mLock);
+		return;
+	}
+
 	// locking unrelated stages will always be called. The execution of different configuration
 	// procedures is then handeled by the member functions of this configurator.
 	bool const locking_stage = (stage == ConfigurationStage::LOCKING_REPEATER_BLOCKS)
@@ -58,17 +71,6 @@ void ParallelHICANNv4SmartConfigurator::config(
 	// whether stage LOCKING_SYNAPSE_DRIVERS is to be executed
 	bool const syn_drv_locking = ((stage == ConfigurationStage::LOCKING_SYNAPSE_DRIVERS)
 	                               && syn_drv_locking_wanted_any(hicann_handle, hicann_data));
-
-	auto const& first_stage = Settings::get().configuration_stages.order.front();
-	if (stage == first_stage) {
-		omp_set_lock(&mLock);
-		for (auto& handle : hicann_handle) {
-			if (mWrittenHICANNData.find(handle->coordinate()) == mWrittenHICANNData.end()) {
-				mWrittenHICANNData[handle->coordinate()] = nullptr;
-			}
-		}
-		omp_unset_lock(&mLock);
-	}
 
 	if (!locking_stage || repeater_locking || syn_drv_locking) {
 		ParallelHICANNv4Configurator::config(fpga_handle, hicann_handle, hicann_data, stage);

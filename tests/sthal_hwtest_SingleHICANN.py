@@ -568,11 +568,13 @@ class TestSingleHICANN(PysthalTest):
         runtime = spike_times[-1] + begin
 
         addr = pyhalbe.HICANN.L1Address(63)
+        expected_spike_count = {}
         for ii in range(4):
             link = C.GbitLinkOnHICANN(ii*2)
             spikes = pysthal.Vector_Spike()
             for t in spike_times[ii::4]:
                 spikes.append(pysthal.Spike(addr, t))
+            expected_spike_count[C.GbitLinkOnHICANN((ii*2)+1)] = len(spikes)
             self.h.sendSpikes(link, spikes)
 
         # connect and configure
@@ -601,8 +603,8 @@ class TestSingleHICANN(PysthalTest):
 
             for link, size, addrs in result:
                 err_pre = "On %s, in run %i/%i: " % (link, run+1, no_spike_runs)
-                if size != no_spikes/4:
-                    err += "%s received %i spike(s) instead of %i\n" % (err_pre, size, no_spikes/4)
+                if size != expected_spike_count[link]:
+                    err += "%s received %i spike(s) instead of %i\n" % (err_pre, size, expected_spike_count)
                 if addrs and addrs != set([addr]):
                     tmp = ", ".join([str(a) for a in (addrs - set([addr]))])
                     err += "%s received invalid addresses: %s\n" % (err_pre, tmp)

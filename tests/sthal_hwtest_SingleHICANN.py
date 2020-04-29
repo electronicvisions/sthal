@@ -1316,7 +1316,9 @@ class TestSingleHICANN(PysthalTest):
 
         self.run_experiment(0.0)
         readout_wafer = pysthal.Wafer(self.WAFER)
-        readout_cfg = pysthal.HICANNReadoutConfigurator(readout_wafer)
+        hicann_vector = C.Vector_HICANNOnWafer()
+        hicann_vector.append(self.HICANN)
+        readout_cfg = pysthal.HICANNReadoutConfigurator(readout_wafer, hicann_vector)
         self.w.configure(readout_cfg)
 
         print readout_wafer

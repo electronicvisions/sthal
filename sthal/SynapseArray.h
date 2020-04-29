@@ -115,6 +115,8 @@ struct SynapseArray
 	void clear_drivers();
 	void clear_synapses();
 	void set_all(::HMF::HICANN::SynapseDecoder decoder, ::HMF::HICANN::SynapseWeight weight);
+	void set_all_weights(::HMF::HICANN::SynapseWeight weight);
+	void set_all_decoders(::HMF::HICANN::SynapseDecoder decoder);
 
 	/// returns full address based on decoder settings from driver and synapse
 	::HMF::HICANN::L1Address get_address(halco::hicann::v2::SynapseOnHICANN const& s) const;

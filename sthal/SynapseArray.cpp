@@ -45,17 +45,26 @@ void SynapseArray::clear_synapses()
 
 void SynapseArray::set_all(::HMF::HICANN::SynapseDecoder decoder, ::HMF::HICANN::SynapseWeight weight)
 {
-	for (auto & row : weights)
-	{
-		std::fill(row.begin(), row.end(), weight);
-	}
+	set_all_weights(weight);
+	set_all_decoders(decoder);
+}
 
+void SynapseArray::set_all_decoders(::HMF::HICANN::SynapseDecoder decoder)
+{
 	for (auto & doublerow : decoders)
 	{
 		for (auto & row : doublerow)
 		{
 			std::fill(row.begin(), row.end(), decoder);
 		}
+	}
+}
+
+void SynapseArray::set_all_weights(::HMF::HICANN::SynapseWeight weight)
+{
+	for (auto & row : weights)
+	{
+		std::fill(row.begin(), row.end(), weight);
 	}
 }
 

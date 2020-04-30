@@ -2,10 +2,10 @@
 
 #include <boost/serialization/export.hpp>
 
-#include "sthal/macros.h"
-#include "halco/hicann/v2/synapse.h"
-#include "hal/HICANNContainer.h"
 #include "halco/common/typed_array.h"
+#include "halco/hicann/v2/synapse.h"
+#include "sthal/SynapseControllerData.h"
+#include "sthal/macros.h"
 
 namespace sthal {
 /*
@@ -14,21 +14,35 @@ namespace sthal {
 class SynapseControllers
 {
 public:
-	typedef ::HMF::HICANN::SynapseController syn_controller_t;
 	typedef ::halco::hicann::v2::SynapseArrayOnHICANN syn_array_coord_t;
 
-	STHAL_ARRAY_OPERATOR(syn_controller_t, syn_array_coord_t, return m_synapse_controller[ii];)
+	STHAL_ARRAY_OPERATOR(SynapseControllerData, syn_array_coord_t, return m_synapse_controller[ii];)
 
+	/*
+	 * Enables dllreset for all synapse drivers
+	 */
 	void enable_dllreset();
+
+	/*
+	 * Disables dllreset for all synapse drivers
+	 */
 	void disable_dllreset();
+
+	/*
+	 * Returns true if dllreset is disabled for all synapse drivers
+	 */
 	bool is_dllreset_disabled() const;
+
+	/*
+	 * Returns true if dllreset is enabled for all synapse drivers
+	 */
+	bool is_dllreset_enabled() const;
 
 	bool operator==(const SynapseControllers& other) const;
 	bool operator!=(const SynapseControllers& other) const;
 
 private:
-	// represents current hardware state
-	halco::common::typed_array<syn_controller_t, syn_array_coord_t> m_synapse_controller;
+	halco::common::typed_array<SynapseControllerData, syn_array_coord_t> m_synapse_controller;
 
 	friend class boost::serialization::access;
 	template <typename Archiver>

@@ -295,8 +295,9 @@ void HICANNReadoutConfigurator::read_synapse_array(hicann_handle_t const& h, HIC
 	LOG4CXX_DEBUG(getLogger(), "read back synapses");
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>() )
 	{
-		HMF::HICANN::SynapseController const& synapse_controller =
-			hicann.synapse_controllers[syndrv.toSynapseArrayOnHICANN()];
+		HMF::HICANN::SynapseController const synapse_controller =
+		    static_cast<HMF::HICANN::SynapseController>(
+		        hicann.synapse_controllers[syndrv.toSynapseArrayOnHICANN()]);
 		hicann.synapses.setDecoderDoubleRow(
 			syndrv, ::HMF::HICANN::get_decoder_double_row(*h, synapse_controller, syndrv));
 

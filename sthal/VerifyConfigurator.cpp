@@ -19,6 +19,7 @@
 #include "sthal/AnalogRecorder.h"
 #include "sthal/FPGA.h"
 #include "sthal/HICANN.h"
+#include "sthal/SynapseControllerData.h"
 #include "sthal/Timer.h"
 #include "sthal/Wafer.h"
 
@@ -369,7 +370,8 @@ void VerifyConfigurator::read_synapse_weights(
 		::HMF::HICANN::SynapseDriver configured_synapse_driver = ::HMF::HICANN::get_synapse_driver(*h, syndrv);
 
 		::HMF::HICANN::SynapseController const& synapse_controller =
-			expected.synapse_controllers[syndrv.toSynapseArrayOnHICANN()];
+		    static_cast<HMF::HICANN::SynapseController>(
+		        expected.synapse_controllers[syndrv.toSynapseArrayOnHICANN()]);
 
 		if(m_verify_only_enabled &&
 		   !expected_synapse_driver.is_enabled() &&
@@ -415,9 +417,9 @@ void VerifyConfigurator::read_synapse_decoders(
 	std::vector<std::string> errors;
 	SynapseArray values;
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
-
 		::HMF::HICANN::SynapseController const& synapse_controller =
-			expected.synapse_controllers[syndrv.toSynapseArrayOnHICANN()];
+		    static_cast<HMF::HICANN::SynapseController>(
+		        expected.synapse_controllers[syndrv.toSynapseArrayOnHICANN()]);
 
 		LOG4CXX_TRACE(getLogger(), "read back: " << syndrv);
 		values.setDecoderDoubleRow(
@@ -470,7 +472,8 @@ void VerifyConfigurator::read_synapse_controllers
 
 	std::vector<std::string> errors;
 	for (auto addr : iter_all<SynapseArrayOnHICANN>()) {
-		read_controllers[addr] = ::HMF::HICANN::get_synapse_controller(*h, addr);
+		read_controllers[addr] =  SynapseControllerData(
+		    ::HMF::HICANN::get_synapse_controller(*h, addr));
 		errors.push_back(check(addr, expected_controllers[addr], read_controllers[addr]));
 	}
 

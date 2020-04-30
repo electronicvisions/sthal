@@ -196,8 +196,11 @@ void ParallelHICANNv4SmartConfigurator::config_synapse_array(
 					decoder_data.push_back(
 					    all_changed_hicanns[ii]->synapses.getDecoderDoubleRow(syndrv));
 					drv_changed_handles.push_back(all_changed_handles[ii]);
-					synapse_controllers_dec.push_back(
-						all_changed_hicanns[ii]->synapse_controllers[syndrv.toSynapseArrayOnHICANN()]);
+					HMF::HICANN::SynapseController const synapse_controller =
+					    static_cast<HMF::HICANN::SynapseController>(
+					        all_changed_hicanns[ii]->synapse_controllers[
+					           syndrv.toSynapseArrayOnHICANN()]);
+					synapse_controllers_dec.push_back(synapse_controller);
 				}
 			}
 
@@ -225,8 +228,11 @@ void ParallelHICANNv4SmartConfigurator::config_synapse_array(
 					         all_changed_hicanns[ii]->synapses[synrow].weights)) {
 						weight_data.push_back(all_changed_hicanns[ii]->synapses[synrow].weights);
 						row_changed_handles.push_back(all_changed_handles[ii]);
-					synapse_controllers_weight.push_back(
-						all_changed_hicanns[ii]->synapse_controllers[syndrv.toSynapseArrayOnHICANN()]);
+					    HMF::HICANN::SynapseController const synapse_controller =
+						    static_cast<HMF::HICANN::SynapseController>(
+						        all_changed_hicanns[ii]->synapse_controllers[
+						            syndrv.toSynapseArrayOnHICANN()]);
+						synapse_controllers_weight.push_back(synapse_controller);
 					}
 				}
 
@@ -360,50 +366,40 @@ void ParallelHICANNv4SmartConfigurator::ensure_correct_l1_init_settings(
 	}
 
 	// check synapse controllers
-	for (auto addr : iter_all<SynapseArrayOnHICANN>()) {
-		HMF::HICANN::SynapseController& synapse_controller = hicann->synapse_controllers[addr];
-		HMF::HICANN::SynapseControlRegister& ctrl_reg = synapse_controller.ctrl_reg;
-		HMF::HICANN::SynapseConfigurationRegister& cnfg_reg = synapse_controller.cnfg_reg;
-
-		if (ctrl_reg.cmd != ::HMF::HICANN::SynapseControllerCmd::IDLE) {
-			throw std::runtime_error("Synase controller needs to have the IDLE comand to perform "
-			                         "initialization correctly");
+	if (syn_drv_locking_wanted(h->coordinate(), hicann)) {
+		// setup regular locking
+		LOG4CXX_DEBUG(
+		    getLogger(), short_format(h->coordinate())
+		                     << ": Setup regular locking of synapse drivers");
+		// check if DLL reset is enabled for all synapse drivers
+		if (!hicann->synapse_controllers.is_dllreset_enabled()) {
+			hicann->synapse_controllers.enable_dllreset();
+			LOG4CXX_WARN(
+			    getLogger(), ": Overwriting dllreset of synapse controllers "
+			                 "to active in order to perform locking of "
+			                 "synapse drivers during initialization.");
+		}
+	} else {
+		// setup skipping of locking
+		if (syn_drv_locking_needed(h->coordinate(), hicann)) {
+			LOG4CXX_WARN(
+			    getLogger(), short_format(h->coordinate())
+			                     << ": Setup skipping of synapse driver locking even though "
+			                        "changes in L1 were detected.");
+		} else {
+			LOG4CXX_INFO(
+			    getLogger(), short_format(h->coordinate())
+			                     << ": Setup skipping of synapse driver locking.");
 		}
 
-		if (syn_drv_locking_wanted(h->coordinate(), hicann)) {
-			// setup regular locking
-			LOG4CXX_DEBUG(getLogger(),
-				short_format(h->coordinate()) << ' ' << addr
-					<< ": Setup regular locking of synapse drivers");
-			// check if DLL reset is enabled for all synapse drivers
-			if (cnfg_reg.dllresetb != ::HMF::HICANN::SynapseDllresetb::min) {
-				cnfg_reg.dllresetb =
-					::HMF::HICANN::SynapseDllresetb(::HMF::HICANN::SynapseDllresetb::min);
-				LOG4CXX_WARN(getLogger(), ": Overwriting dllreset of synapse controller "
-				                          "to active in order to perform locking of "
-				                          "synapse drivers during initialization.");
-			}
-		} else {
-			// setup skipping of locking
-			if (syn_drv_locking_needed(h->coordinate(), hicann)) {
-				LOG4CXX_WARN(getLogger(),
-					short_format(h->coordinate()) << ' ' << addr
-						<< ": Setup skipping of synapse driver locking even though "
-						   "changes in L1 were detected.");
-			} else {
-				LOG4CXX_INFO(getLogger(),
-					short_format(h->coordinate()) << ' ' << addr
-						<< ": Setup skipping of synapse driver locking.");
-			}
-
-			// check if DLL reset is disabled for all synapse drivers
-			if (cnfg_reg.dllresetb != ::HMF::HICANN::SynapseDllresetb::max) {
-				cnfg_reg.dllresetb =
-					::HMF::HICANN::SynapseDllresetb(::HMF::HICANN::SynapseDllresetb::max);
-				LOG4CXX_WARN(getLogger(), ": Overwriting dllreset of synapse controller to "
-				                          "zero in order to skip locking of synapse drivers "
-				                          "during initialization.");
-			}
+		// check if DLL reset is disabled for all synapse drivers
+		if (!hicann->synapse_controllers.is_dllreset_disabled()) {
+			hicann->synapse_controllers.disable_dllreset();
+			LOG4CXX_WARN(
+			    getLogger(), short_format(h->coordinate())
+			                     << ": Overwriting dllreset of synapse controller to "
+			                        "zero in order to skip locking of synapse drivers "
+			                        "during initialization.");
 		}
 	}
 }

@@ -365,7 +365,8 @@ void ParallelHICANNv4Configurator::config_synapse_array(
 		synapse_controllers.reserve(n_hicanns);
 		for (auto data : hicanns) {
 			decoder_data.push_back(data->synapses.getDecoderDoubleRow(syndrv));
-			synapse_controllers.push_back(data->synapse_controllers[syndrv.toSynapseArrayOnHICANN()]);
+			synapse_controllers.push_back(static_cast<HMF::HICANN::SynapseController>(
+				data->synapse_controllers[syndrv.toSynapseArrayOnHICANN()]));
 		}
 
 		set_decoder_double_row(handles, synapse_controllers, syndrv, decoder_data);

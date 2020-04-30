@@ -75,25 +75,11 @@ void HICANNConfigurator::ensure_correct_l1_init_settings(
 		}
 	}
 
-	// check synapse controllers
-	for (auto addr : iter_all<SynapseArrayOnHICANN>()) {
-		HMF::HICANN::SynapseController& synapse_controller = hicann->synapse_controllers[addr];
-		HMF::HICANN::SynapseControlRegister& ctrl_reg = synapse_controller.ctrl_reg;
-		HMF::HICANN::SynapseConfigurationRegister& cnfg_reg = synapse_controller.cnfg_reg;
-
-		if (ctrl_reg.cmd != ::HMF::HICANN::SynapseControllerCmd::IDLE) {
-			throw std::runtime_error("Command in synapse controller has to be IDLE in order to "
-			                         "perform initialization correctly");
-		}
-
-		// DLL reset enabled for all drivers on synapse array
-		if (cnfg_reg.dllresetb != ::HMF::HICANN::SynapseDllresetb::min) {
-			cnfg_reg.dllresetb =
-				::HMF::HICANN::SynapseDllresetb(::HMF::HICANN::SynapseDllresetb::min);
-			LOG4CXX_WARN(getLogger(),
-			    addr << ": Overwriting dllreset of the synapse controller to active"
-				        " during initialization.");
-		}
+	// enforce that dllreset is enabled for all synapse drivers on the HICANN
+	if (!hicann->synapse_controllers.is_dllreset_enabled()) {
+		hicann->synapse_controllers.enable_dllreset();
+		LOG4CXX_WARN(getLogger(), ": Overwriting dllreset of all synapse controllers to active"
+		                          " during initialization.");
 	}
 }
 
@@ -404,7 +390,8 @@ void HICANNConfigurator::config_synapse_controllers(
 	LOG4CXX_DEBUG(getLogger(), short_format(h->coordinate()) << ": configure synapse controllers");
 
 	for (auto addr : iter_all<SynapseArrayOnHICANN>()) {
-		::HMF::HICANN::set_synapse_controller(*h, addr, hicann->synapse_controllers[addr]);
+		::HMF::HICANN::set_synapse_controller(*h, addr,
+		    static_cast<HMF::HICANN::SynapseController>(hicann->synapse_controllers[addr]));
 	}
 
 	LOG4CXX_DEBUG(
@@ -417,8 +404,9 @@ void HICANNConfigurator::config_synapse_array(hicann_handle_t const& h,
 	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 	LOG4CXX_DEBUG(getLogger(), short_format(h->coordinate()) << ": configure synapses");
 	for (auto syndrv : iter_all<SynapseDriverOnHICANN>()) {
-		::HMF::HICANN::SynapseController const& synapse_controller =
-			hicann->synapse_controllers[syndrv.toSynapseArrayOnHICANN()];
+		::HMF::HICANN::SynapseController const synapse_controller =
+		    static_cast<HMF::HICANN::SynapseController>(
+		        hicann->synapse_controllers[syndrv.toSynapseArrayOnHICANN()]);
 		::HMF::HICANN::set_decoder_double_row(
 		    *h, synapse_controller, syndrv, hicann->synapses.getDecoderDoubleRow(syndrv));
 

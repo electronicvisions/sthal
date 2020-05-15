@@ -8,8 +8,6 @@ from pysthal.command_line_util import add_default_coordinate_options
 from pysthal.command_line_util import add_logger_options
 from pysthal.command_line_util import init_logger
 
-import Coordinate as C
-
 if __name__ == "__main__":
 
     init_logger(pylogging.LogLevel.INFO)

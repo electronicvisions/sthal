@@ -1,5 +1,7 @@
 #include "sthal/FGConfig.h"
 
+#include <ostream>
+
 #include "halco/hicann/v2/fwd.h"
 
 using namespace ::halco::hicann::v2;

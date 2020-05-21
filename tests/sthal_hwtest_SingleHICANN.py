@@ -1078,14 +1078,7 @@ class TestSingleHICANN(PysthalTest):
         with self.assertRaises(RuntimeError):
             recorder.trace()
 
-        addr = pyhalbe.HICANN.L1Address(0)
-        spikes = pysthal.Vector_Spike()
-        spikes.append(pysthal.Spike(addr, 5.0e-6))
-
         duration  = 0.04
-
-        self.h.sendSpikes(self.PREOUT_LINK, spikes)
-
 
         cfg = NoneConfigurator()
         self.w.configure(cfg)

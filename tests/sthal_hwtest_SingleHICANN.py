@@ -1043,7 +1043,7 @@ class TestSingleHICANN(PysthalTest):
             err += "The time of the first spike scatters to much: {} > {}\n".format(std_times, std_tolerance)
         for t in times:
             # We expect the first spike at 2us
-            if not self.almostEqual(t, expected_t, 0.0001):
+            if not self.almostEqual(t, expected_t, 0.01):
                 err += "The time of the first spike is not at the expected timepoint: {} (expected: {})\n".format(t, expected_t)
         self.assertFalse(err, '\n' + err)
 

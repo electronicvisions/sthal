@@ -117,13 +117,11 @@ public:
 	/// Vector of all allocated HICANN coordinates
 	std::vector<hicann_coord> getAllocatedHicannCoordinates();
 
-#ifndef PYPLUSPLUS
 	/// Access FPGA handle (only required for low-level access, e.g., closed-loop experiments)
 	fpga_handle_t get_fpga_handle(fpga_coord const& fpga);
 
 	/// Access HICANN handle (only required for low-level access, e.g., closed-loop experiments)
 	hicann_handle_t get_hicann_handle(hicann_coord const& hicann);
-#endif
 
 	void populate_adc_config(hicann_coord const& hicann, analog_coord const& analog);
 

@@ -820,14 +820,16 @@ class TestSingleHICANN(PysthalTest):
                 for row in iter_all(C.SynapseRowOnHICANN):
                     if row in PysthalTest.COORDINATE_BLACKLIST:
                         continue
-                    synapse_controller = data.synapse_controllers[row.toSynapseArrayOnHICANN()]
+                    synapse_controller = pyhalbe.HICANN.SynapseController(
+                            data.synapse_controllers[row.toSynapseArrayOnHICANN()])
                     weights = pyhalbe.HICANN.get_weights_row(handle, synapse_controller, row)
                     if data.synapses[row].weights != weights:
                         self.w_err[row] = weights
                 for driver in iter_all(C.SynapseDriverOnHICANN):
                     if driver in PysthalTest.COORDINATE_BLACKLIST:
                         continue
-                    synapse_controller = data.synapse_controllers[driver.toSynapseArrayOnHICANN()]
+                    synapse_controller = pyhalbe.HICANN.SynapseController(
+                            data.synapse_controllers[driver.toSynapseArrayOnHICANN()])
                     d_top, d_bot = pyhalbe.HICANN.get_decoder_double_row(handle,
                             synapse_controller, driver)
                     row_top = C.SynapseRowOnHICANN(driver, top)

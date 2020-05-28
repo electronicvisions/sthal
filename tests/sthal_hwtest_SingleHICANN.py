@@ -309,6 +309,8 @@ class TestSingleHICANN(PysthalTest):
         112 and then checks the pro_out signal of the synapse driver to see
         if they match the frequency of the background generator"""
 
+        self.increase_switch_limit(columns=2)
+
         self.logger.INFO("Starting test_background_frequences_against_ADC_samplerate")
         # The bg send a spike every period + 1 clk cycles
         pll_freq = self.w.commonFPGASettings().getPLL()

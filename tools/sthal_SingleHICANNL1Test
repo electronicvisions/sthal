@@ -56,9 +56,6 @@ def eval_testdata(full_flag, test):
 
 
 class L1HICANNConfigurator(pysthal.HICANNConfigurator):
-    def hicann_init(self, hicann):
-        pyhalbe.HICANN.init(hicann, False)
-
     def config_synapse_array(self, *args):
         pass
 
@@ -68,11 +65,7 @@ class L1HICANNConfigurator(pysthal.HICANNConfigurator):
     def config_floating_gates(self, *args):
         pass
 
-class HICANNConfigurator(pysthal.HICANNConfigurator):
-    """
-    """
-    def hicann_init(self, hicann):
-        pyhalbe.HICANN.init(hicann, False)
+HICANNConfigurator = pysthal.HICANNConfigurator
 
 class HICANNReadConfigurator(pysthal.HICANNConfigurator):
     def __init__(self, block, registertype):

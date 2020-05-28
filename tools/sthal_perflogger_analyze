@@ -283,7 +283,7 @@ for plotn in range(0, number_of_profiles*2, 2):
     for func_stat in function_sum:
         if func_stat[3] >= args.min_runtime_perc:
             functions_to_plot.append(func_stat[0])
-    functions_to_plot = ["config_fpga", "hicann_init", "config_floating_gates", "config_synapse_array", "config_synapse_drivers",
+    functions_to_plot = ["config_fpga", "config_floating_gates", "config_synapse_array", "config_synapse_drivers",
                          "config_neuron_config", "config_neuron_quads", "config_fg_stimulus", "flush_fpga", "record", "trace", "status"]
 
     print "Function analyze done"

@@ -36,7 +36,7 @@ class TestMultiHICANN(PysthalTest):
         if self.RUN:
             self.connect()
             if cfg is None:
-                cfg = FastConfigurator()
+                cfg = pysthal.HICANNConfigurator()
             self.w.configure(cfg)
             if time > 0.0:
                 runner = pysthal.ExperimentRunner(time)

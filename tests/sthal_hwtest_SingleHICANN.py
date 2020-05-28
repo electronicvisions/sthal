@@ -28,14 +28,6 @@ class NoResetConfigurator(pysthal.HICANNConfigurator):
     def config_fpga(self, handle, fpga):
         pass
 
-    def hicann_init(self, h):
-        pass
-
-
-class FastConfigurator(pysthal.HICANNConfigurator):
-    def hicann_init(self, h):
-        pyhalbe.HICANN.init(h, False)
-
 
 class FastConfiguratorWithFPGABG(pysthal.HICANNConfigurator):
     """Workaround because the FPGA BG is currently not supported"""
@@ -50,13 +42,10 @@ class FastConfiguratorWithFPGABG(pysthal.HICANNConfigurator):
             if handle.dnc_active(dnc_c):
                 pyhalbe.FPGA.set_fpga_background_generator(handle, dnc_c, self.fpga_bg)
 
-    def hicann_init(self, h):
-        pyhalbe.HICANN.init(h, False)
-
 
 class NoneConfigurator(pysthal.HICANNConfigurator):
     def config(self, fpga, hicann, h):
-        pyhalbe.HICANN.init(hicann, False)
+        pass
 
 
 class NoopConfigurator(pysthal.HICANNConfigurator):
@@ -138,7 +127,7 @@ class TestSingleHICANN(PysthalTest):
         if self.RUN:
             self.connect()
             if cfg is None:
-                cfg = FastConfigurator()
+                cfg = pysthal.HICANNConfigurator()
             self.w.configure(cfg)
             if time > 0.0:
                 runner = pysthal.ExperimentRunner(time)
@@ -290,7 +279,7 @@ class TestSingleHICANN(PysthalTest):
             self.h.layer1[channel] = direction
 
         self.connect()
-        cfg = FastConfigurator()
+        cfg = pysthal.HICANNConfigurator()
         self.w.configure(cfg)
         runner = pysthal.ExperimentRunner(runtime, True)
         self.w.start(runner)
@@ -765,7 +754,7 @@ class TestSingleHICANN(PysthalTest):
 
             recorder = self.h.analogRecorder(analog)
             recorder.activateTrigger(duration)
-            self.run_experiment(duration, FastConfigurator())
+            self.run_experiment(duration, pysthal.HICANNConfigurator())
 
             dt, trace = recorder.getTimestamp(), recorder.trace()
             recorder.freeHandle()

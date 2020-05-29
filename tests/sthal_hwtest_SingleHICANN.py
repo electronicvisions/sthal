@@ -128,8 +128,6 @@ class TestSingleHICANN(PysthalTest):
 
         self.FPGA_HICANN_DELAY = self.w.commonFPGASettings().getFPGAHICANNDelay()
 
-        self.w.commonFPGASettings().setSynapseArrayReset(True)
-
         self.addCleanup(self.w.disconnect)
 
     def connect(self):
@@ -787,6 +785,8 @@ class TestSingleHICANN(PysthalTest):
     @hardware
     def test_reset_on_synapse_array(self):
         self.logger.INFO("Starting test_reset_on_synapse_array")
+        self.w.commonFPGASettings().setSynapseArrayReset(True)
+
         resets = 2
 
         SynapseWeight = pyhalbe.HICANN.SynapseWeight
@@ -1348,6 +1348,7 @@ class TestSingleHICANN(PysthalTest):
 
         self.logger.INFO("Starting test_verification_readout")
         self.increase_switch_limit(columns=255, rows=255)
+        self.w.commonFPGASettings().setSynapseArrayReset(True)
 
         def set_decoders_and_weights(rnd, synapses):
             "set synapse decoders and weights with random values"

@@ -333,6 +333,7 @@ void Wafer::connect(const HardwareDatabase & db)
 		auto & h = mHICANN[hicann.toHICANNOnWafer()];
 		h->set_version(db.get_hicann_version(hicann));
 	}
+	mConnected = true;
 	LOG4CXX_INFO(plogger, "Connected to hardware");
 }
 
@@ -603,15 +604,22 @@ void Wafer::disconnect()
             h->resetADCConfig();
 		}
 	}
+	mConnected = false;
 	LOG4CXX_INFO(plogger, "Disconnected from hardware");
 }
 
 
 HICANN & Wafer::operator[](const hicann_coord & hicann)
 {
+
 	auto& ret = mHICANN.at(hicann);
 	if (!ret)
 	{
+		if (mConnected) {
+			throw std::runtime_error(
+			    "Allocation of new HICANN " + to_string(hicann) +
+			    " not allowed when already connected");
+		}
 		allocate(hicann);
 	}
 	return *ret;
@@ -633,6 +641,10 @@ Wafer::operator[](const fpga_coord & fc)
 	auto & fpga = mFPGA[fc];
 	if (!fpga)
 	{
+		if (mConnected) {
+			throw std::runtime_error(
+			    "Allocation of new FPGA " + to_string(fc) + " not allowed when already connected");
+		}
 		fpga.reset(new FPGA(::halco::hicann::v2::FPGAGlobal(fc, index()) , mSharedSettings));
 	}
 	return *fpga;

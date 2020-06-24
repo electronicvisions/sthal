@@ -166,6 +166,8 @@ private:
 	static log4cxx::LoggerPtr getTimeLogger();
 
 	defects_t mDefects;
+
+	PYPP_INIT(bool mConnected, false);
 };
 
 } // end namespace sthal

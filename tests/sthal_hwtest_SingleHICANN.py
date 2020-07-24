@@ -59,7 +59,7 @@ class NoopConfigurator(pysthal.HICANNConfigurator):
 class RerunConfigurator(pysthal.HICANNConfigurator):
     def config(self, fpga, handle, data):
 
-        hicann_handle = pysthal.vector_less__boost_scope_shared_ptr_less_HMF_scope_Handle_scope_HICANN_greater___greater_()
+        hicann_handle = pysthal.VectorHICANNHandle()
         hicann_handle.append(handle)
 
         pyhalbe.HICANN.init(handle, False)

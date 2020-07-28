@@ -18,7 +18,8 @@ if __name__ == "__main__":
     add_logger_options(parser)
 
     args, argv = parser.parse_known_args()
-
+    assert args.wafer is not None, "Please provide --wafer parameter"
+    assert args.hicann is not None, "Please provide --hicann parameter"
     w = pysthal.Wafer(args.wafer)
     h = w[args.hicann]
 

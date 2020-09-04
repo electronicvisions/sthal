@@ -36,7 +36,7 @@ typedef ::testing::Types<
 	sthal::FPGAShared,
 	sthal::HICANN
 > ContainerTypes;
-TYPED_TEST_CASE(HMFContainerTest, ContainerTypes);
+TYPED_TEST_SUITE(HMFContainerTest, ContainerTypes);
 
 TYPED_TEST(HMFContainerTest, HasSerialization) {
 	TypeParam obj, obj2;

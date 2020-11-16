@@ -22,6 +22,7 @@ public:
 	typedef ::HMF::HICANN::DNCMerger             dncmerger_type;
 	typedef ::HMF::HICANN::GbitLink::Direction   gbitlink_type;
 
+	typedef ::halco::hicann::v2::NeuronBlockOnHICANN nb_coordinate;
 	typedef ::halco::hicann::v2::BackgroundGeneratorOnHICANN bg_coordinate;
 	typedef ::halco::hicann::v2::Merger0OnHICANN merger0_coordinate;
 	typedef ::halco::hicann::v2::Merger1OnHICANN merger1_coordinate;
@@ -97,6 +98,21 @@ public:
 	::HMF::HICANN::BackgroundGeneratorArray mBackgroundGenerators;
 	::HMF::HICANN::DNCMergerLine mDNCMergers;
 	::HMF::HICANN::GbitLink mGbitLink;
+
+	/// Possible payload percolating through the merger tree and then injected at L1
+	typedef boost::variant<bg_coordinate, nb_coordinate, gbitlink_coordinate> merger_payload_t;
+	typedef std::vector<merger_payload_t> merger_payload_vec_t;
+
+	typedef halco::common::typed_array<merger_payload_vec_t, dncmerger_coordinate>
+	    dnc_merger_output_t;
+	/// Returns the expected kind of output of a DNCMerger
+	/// BackgroundGenerators that are not enabled are only taken into account if respect_enable_bkg
+	/// is false.
+	/// GbitLinks with a direction other than TO_HICANN are only taken into account if
+	/// respect_gbitlink_direction is false.
+	dnc_merger_output_t getDNCMergerOutput(
+	    bool respect_bkg_enable = true, bool respect_gbitlink_direction = true) const;
+	PYPP_INSTANTIATE(dnc_merger_output_t);
 
 private:
 	friend class boost::serialization::access;

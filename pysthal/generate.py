@@ -131,6 +131,8 @@ c = mb.class_('::std::vector<boost::shared_ptr<sthal::HICANNData>, std::allocato
 c.alias = 'VectorHICANNData'
 c.include()
 
+classes.add_variant_converters_for(mb, mb.typedef('::sthal::Layer1::merger_payload_t').target_decl)
+mb.typedef('::sthal::Layer1::dnc_merger_output_t').target_decl.include()
 
 # expose only public interfaces
 namespaces.exclude_by_access_type(mb, ['variables', 'calldefs', 'classes', 'typedefs'], 'private')

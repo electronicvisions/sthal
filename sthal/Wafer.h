@@ -112,10 +112,10 @@ public:
 	boost::shared_ptr<FPGAShared> commonFPGASettings();
 
 	/// Vector of all allocated FPGA coordinates
-	std::vector<fpga_coord> getAllocatedFpgaCoordinates();
+	std::vector<fpga_coord> getAllocatedFpgaCoordinates() const;
 
 	/// Vector of all allocated HICANN coordinates
-	std::vector<hicann_coord> getAllocatedHicannCoordinates();
+	std::vector<hicann_coord> getAllocatedHicannCoordinates() const;
 
 	/// Access FPGA handle (only required for low-level access, e.g., closed-loop experiments)
 	fpga_handle_t get_fpga_handle(fpga_coord const& fpga);

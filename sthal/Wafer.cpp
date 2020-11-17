@@ -111,7 +111,7 @@ Wafer::wafer_coord const& Wafer::index() const
 	return mWafer;
 }
 
-std::vector<Wafer::fpga_coord> Wafer::getAllocatedFpgaCoordinates()
+std::vector<Wafer::fpga_coord> Wafer::getAllocatedFpgaCoordinates() const
 {
 	std::vector<Wafer::fpga_coord> ret;
 	std::copy_if(iter_all<FPGAOnWafer>().begin(), iter_all<FPGAOnWafer>().end(),
@@ -119,7 +119,7 @@ std::vector<Wafer::fpga_coord> Wafer::getAllocatedFpgaCoordinates()
 	return ret;
 }
 
-std::vector<Wafer::hicann_coord> Wafer::getAllocatedHicannCoordinates()
+std::vector<Wafer::hicann_coord> Wafer::getAllocatedHicannCoordinates() const
 {
 	std::vector<Wafer::hicann_coord> ret;
 	std::copy_if(iter_all<HICANNOnWafer>().begin(), iter_all<HICANNOnWafer>().end(),

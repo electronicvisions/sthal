@@ -178,29 +178,12 @@ void Wafer::allocate(const hicann_coord& c)
 	{
 		::halco::hicann::v2::HICANNGlobal hicann_global(c, mWafer);
 	    ::halco::hicann::v2::FPGAGlobal f = hicann_global.toFPGAGlobal();
+		(*this)[f.toFPGAOnWafer()]; // allocates FPGA
 		auto & fpga = mFPGA[f];
 		auto & hicann = mHICANN[c];
-		if (!fpga)
-		{
-			fpga.reset(new FPGA(f, mSharedSettings));
-		}
 		hicann.reset(new HICANN(hicann_global, fpga, this));
 		fpga->add_hicann(hicann_global, hicann);
 		LOG4CXX_INFO(logger, "allocate HICANN: " << hicann_global);
-
-		const size_t num_fpgas = std::count_if(
-		    mFPGA.begin(), mFPGA.end(),
-		    [](const boost::shared_ptr<FPGA>& f) { return f != nullptr; });
-		// allocate master fpga if more than one fpga is used
-		if (!mForceListenLocal && (num_fpgas > 1)) {
-			::halco::hicann::v2::FPGAGlobal f{::halco::hicann::v2::FPGAOnWafer::Master,
-			                                mWafer};
-			auto& fpga = mFPGA[f];
-			if (fpga == nullptr) {
-				fpga.reset(new FPGA(f, mSharedSettings));
-				LOG4CXX_INFO(logger, "allocate master FPGA: " << f);
-			}
-		}
 		++mNumHICANNs;
 	}
 	else
@@ -652,6 +635,20 @@ Wafer::operator[](const fpga_coord & fc)
 			    "Allocation of new FPGA " + to_string(fc) + " not allowed when already connected");
 		}
 		fpga.reset(new FPGA(::halco::hicann::v2::FPGAGlobal(fc, index()) , mSharedSettings));
+
+		const size_t num_fpgas = std::count_if(
+		    mFPGA.begin(), mFPGA.end(),
+		    [](const boost::shared_ptr<FPGA>& f) { return f != nullptr; });
+		// allocate master fpga if more than one fpga is used
+		if (!mForceListenLocal && (num_fpgas > 1)) {
+			::halco::hicann::v2::FPGAGlobal f{::halco::hicann::v2::FPGAOnWafer::Master,
+			                                mWafer};
+			auto& fpga = mFPGA[f];
+			if (fpga == nullptr) {
+				fpga.reset(new FPGA(f, mSharedSettings));
+				LOG4CXX_INFO(logger, "allocate master FPGA: " << f);
+			}
+		}
 	}
 	return *fpga;
 }

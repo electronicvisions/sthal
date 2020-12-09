@@ -364,7 +364,7 @@ void Wafer::configure(HICANNConfigurator & configurator)
 		configurator.config_fpga(fpga_handle, fpga);
 	}
 
-    #pragma omp parallel for schedule(dynamic)
+	#pragma omp parallel for schedule(dynamic)
 	for (size_t fpga_enum = 0; fpga_enum < FPGAOnWafer::end; ++fpga_enum) {
 		FPGAOnWafer const fpga_c{Enum(fpga_enum)};
 		fpga_t fpga = mFPGA.at(fpga_c);
@@ -428,6 +428,10 @@ void Wafer::configure(HICANNConfigurator & configurator)
 		check_fpga_handle(fpga_handle, fpga);
 		configurator.disable_global(fpga_handle);
 	}
+
+	// systime counters are started on all allocated FPGAs, which is noted for the
+	// smart configurator
+	note_systime_start(configurator);
 
 	std::map<ConfigurationStage, size_t> const serial_stage_sleep = {
 	    {ConfigurationStage::TIMING_UNCRITICAL, 0}};
@@ -824,6 +828,20 @@ void Wafer::configure_l1_bus_locking(HICANNConfigurator& configurator)
 	}
 
 	smart_configurator->m_global_l1_bus_changes = locking_needed;
+}
+
+void Wafer::note_systime_start(HICANNConfigurator& configurator)
+{
+	// only relevant if configurator is smart
+	auto* const smart_configurator =
+		dynamic_cast<ParallelHICANNv4SmartConfigurator*>(&configurator);
+	bool const is_smart_cfg = (smart_configurator != nullptr);
+
+	if (!is_smart_cfg)
+	{
+		return;
+	}
+	smart_configurator->note_systime_start();
 }
 
 std::ostream& operator<<(std::ostream& out, Wafer const& obj)

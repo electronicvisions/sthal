@@ -24,7 +24,8 @@ ParallelHICANNv4SmartConfigurator::ParallelHICANNv4SmartConfigurator() :
     repeater_config_mode(ParallelHICANNv4SmartConfigurator::ConfigMode::Smart),
     repeater_locking_config_mode(ParallelHICANNv4SmartConfigurator::ConfigMode::Smart),
     syn_drv_locking_config_mode(ParallelHICANNv4SmartConfigurator::ConfigMode::Smart),
-    m_global_l1_bus_changes(true)
+    m_global_l1_bus_changes(true),
+    m_started_systime(false)
 {
 	omp_init_lock(&mLock);
 }
@@ -83,7 +84,6 @@ void ParallelHICANNv4SmartConfigurator::config(
 		LOG4CXX_DEBUG(getLogger(), "Saving old configuration");
 		omp_set_lock(&mLock);
 		set_hicanns(hicann_data, hicann_handle);
-		mDidFPGAReset.insert(fpga_handle->coordinate());
 		omp_unset_lock(&mLock);
 	}
 	LOG4CXX_INFO(getTimeLogger(), "Smart configuration took " << t.get_ms() << "ms");
@@ -308,9 +308,15 @@ void ParallelHICANNv4SmartConfigurator::config_fpga(fpga_handle_t const& f, fpga
 {
 	if (!(reset_config_mode == ConfigMode::Skip) &&
 	    (reset_config_mode == ConfigMode::Force ||
-	     mDidFPGAReset.find(f->coordinate()) == mDidFPGAReset.end())) {
+	     mDidFPGAConfig.find(f->coordinate()) == mDidFPGAConfig.end())) {
 		LOG4CXX_DEBUG(getLogger(), "Doing regular FPGA config");
-		return ParallelHICANNv4Configurator::config_fpga(f, fpga);
+		ParallelHICANNv4Configurator::config_fpga(f, fpga);
+		omp_set_lock(&mLock);
+		note_fpga_config(f->coordinate());
+		// After configuring the FPGA, we have to restart the systime for all FPGAs
+		m_started_systime = false;
+		omp_unset_lock(&mLock);
+		return;
 	}
 	auto t = Timer::from_literal_string(__PRETTY_FUNCTION__);
 	LOG4CXX_INFO(
@@ -412,7 +418,7 @@ void ParallelHICANNv4SmartConfigurator::prime_systime_counter(fpga_handle_t cons
 {
 	if (!(reset_config_mode == ConfigMode::Skip) &&
 	    (reset_config_mode == ConfigMode::Force ||
-	     mDidFPGAReset.find(f->coordinate()) == mDidFPGAReset.end())) {
+	     !m_started_systime)) {
 		return ParallelHICANNv4Configurator::prime_systime_counter(f);
 	}
 	LOG4CXX_INFO(
@@ -424,7 +430,7 @@ void ParallelHICANNv4SmartConfigurator::start_systime_counter(fpga_handle_t cons
 {
 	if (!(reset_config_mode == ConfigMode::Skip) &&
 	    (reset_config_mode == ConfigMode::Force ||
-	     mDidFPGAReset.find(f->coordinate()) == mDidFPGAReset.end())) {
+	     !m_started_systime)) {
 		return ParallelHICANNv4Configurator::start_systime_counter(f);
 	}
 	LOG4CXX_INFO(
@@ -436,7 +442,7 @@ void ParallelHICANNv4SmartConfigurator::disable_global(fpga_handle_t const& f)
 {
 	if (!(reset_config_mode == ConfigMode::Skip) &&
 	    (reset_config_mode == ConfigMode::Force ||
-	     mDidFPGAReset.find(f->coordinate()) == mDidFPGAReset.end())) {
+	     !m_started_systime)) {
 		return ParallelHICANNv4Configurator::disable_global(f);
 	}
 	LOG4CXX_INFO(
@@ -579,4 +585,20 @@ bool ParallelHICANNv4SmartConfigurator::syn_drv_locking_wanted_any(
 	return locking_needed;
 }
 
+void ParallelHICANNv4SmartConfigurator::note_fpga_config(
+    fpga_coord const& fpga_c)
+{
+	mDidFPGAConfig.insert(fpga_c);
+	LOG4CXX_DEBUG(
+	    getLogger(),
+	    "Noted configuration of " << fpga_c << "in SmartConfigurator.");
+}
+
+void ParallelHICANNv4SmartConfigurator::note_systime_start()
+{
+	m_started_systime = true;
+	LOG4CXX_DEBUG(
+	    getLogger(),
+	    "Noted systime start of all allocated FPGAs in SmartConfigurator.");
+}
 } // end namespace sthal

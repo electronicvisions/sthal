@@ -140,6 +140,12 @@ private:
 	 */
 	void configure_l1_bus_locking(HICANNConfigurator& configurator);
 
+	/*
+	 * Only relevant if the configurator is smart. Tells the smart configurator that systime
+	 * has been started on all allocated FPGAs. Not thread-safe!
+	 */
+	void note_systime_start(HICANNConfigurator& configurator);
+
 	wafer_coord mWafer;
 	halco::common::typed_array<fpga_t,          fpga_coord>   mFPGA;
 	halco::common::typed_array<fpga_handle_t,   fpga_coord>   mFPGAHandle;

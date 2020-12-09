@@ -59,6 +59,10 @@ public:
 
 	// smart functions
 	void set_hicanns(hicann_datas_t hicanns, hicann_handles_t handles);
+	// insert fpga to the set of already configured FPGAs. Not thread-safe!
+	void note_fpga_config(fpga_coord const& fpga);
+	// note systime start of all currently allocated FPGAs. Not thread-safe!
+	void note_systime_start();
 
 	void set_smart();
 	void set_skip();
@@ -76,23 +80,33 @@ private:
 	friend class Wafer;
 	friend class boost::serialization::access;
 	template <typename Archive>
-	void serialize(Archive& ar, unsigned int const /* version */)
+	void serialize(Archive& ar, unsigned int const version)
 	{
 		using namespace boost::serialization;
 		ar& make_nvp("mWrittenHICANNData", mWrittenHICANNData);
-		ar& make_nvp("mDidFPGAReset", mDidFPGAReset);
+		if (version == 0) {
+			ar& make_nvp("mDidFPGAReset", mDidFPGAConfig);
+		}
+		if (version > 0) {
+			ar& make_nvp("mDidFPGAConfig", mDidFPGAConfig);
+			ar& make_nvp("m_started_systime", m_started_systime);
+		}
 		// m_global_l1_bus_changes is not serialized since it is determined during
 		// each configuration
 	}
 	// pointer to the Wafers HICANN data that was written previously
 	std::map<hicann_coord, hicann_data_t> mWrittenHICANNData;
-	std::set<fpga_coord> mDidFPGAReset;
+	std::set<fpga_coord> mDidFPGAConfig;
+
+	// variable to check if systime is started for all allocated FPGAs. Has to be repeated
+	// if at least one FPGA is configured.
+	bool m_started_systime;
 
 	// global variable to check if relocking is needed. A change on a single HICANN may requires
 	// to do the locking for all HICANNs.
 	bool m_global_l1_bus_changes;
 
-	// need lock since access to mWrittenHICANNData and mDidFPGAReset can be
+	// need lock since access to mWrittenHICANNData and mDidFPGAConfig can be
 	// multithreaded
 	omp_lock_t mLock;
 
@@ -117,3 +131,5 @@ private:
 };
 
 } // end namespace sthal
+
+BOOST_CLASS_VERSION(sthal::ParallelHICANNv4SmartConfigurator, 1)

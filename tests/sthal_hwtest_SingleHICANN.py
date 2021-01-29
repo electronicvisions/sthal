@@ -529,7 +529,7 @@ class TestSingleHICANN(PysthalTest):
         self.assertFalse(err, "\n" + "\t\n".join(err))
 
 
-    def hicann_loopback_impl(self, no_spikes, no_spike_runs, no_empty_runs=10, dt=3e-6):
+    def hicann_loopback_impl(self, no_spikes, no_spike_runs, no_empty_runs=10, dt=3e-6, drops_expected=False):
         """
         Send spikes to the HICANN and read them back via hicann loopback.
 
@@ -579,6 +579,7 @@ class TestSingleHICANN(PysthalTest):
             self.w.clearSpikes(received=True, send=False)
             self.start_runner(runtime)
             result = []
+            local_drop_count = 0
             first_spikes = []
             for ii in [1,3,5,7]:
                 link = C.GbitLinkOnHICANN(ii)
@@ -594,11 +595,30 @@ class TestSingleHICANN(PysthalTest):
 
             for link, size, addrs in result:
                 err_pre = "On %s, in run %i/%i: " % (link, run+1, no_spike_runs)
-                if size != expected_spike_count[link]:
-                    err += "%s received %i spike(s) instead of %i\n" % (err_pre, size, expected_spike_count)
+
+                if not drops_expected:
+                    if size != expected_spike_count[link]:
+                        err += "%s received %i spike(s) instead of %i\n" % \
+                               (err_pre, size, expected_spike_count[link])
+                else:
+                    local_drop_count += expected_spike_count[link] - size
+
                 if addrs and addrs != set([addr]):
                     tmp = ", ".join([str(a) for a in (addrs - set([addr]))])
                     err += "%s received invalid addresses: %s\n" % (err_pre, tmp)
+
+            # For pulse drop count test, we compare the lost pulses counted by the test
+            #  with the pulse drop count registered by the FPGA TX FIFO
+            if drops_expected:
+                err_pre = "On run %i/%i: " % (run+1, no_spike_runs)
+                st = self.w.status()
+                fpga_drop_counter = st.get_dropped_pulses_from_fpga(self.hicann_c.toFPGAOnWafer(),
+                                                                    self.hicann_c.toHICANNOnDNC())
+                if local_drop_count != fpga_drop_counter:
+                    err += "%s Mismatch of observed pulse drops (%i) with drops counted by the FPGA (%i)\n" % \
+                           (err_pre, local_drop_count, fpga_drop_counter)
+                else:
+                    print("Local pulse drop count of %i matches FPGA TX FIFO drop count" % (local_drop_count))
 
         if np.ptp([x[0] for x in first_spike_times]) > 4.0/FPGA_FREQ:
             tmp = [x[0] for x in first_spike_times]
@@ -660,6 +680,17 @@ class TestSingleHICANN(PysthalTest):
         self.logger.INFO("Starting test_hicann_loopback_extreme")
         no_spikes = 512 * 1024**2 / 16  # 512MiB, 16 bytes per event
         self.hicann_loopback_impl(no_spikes, 1, 1, 3e-7)
+
+    @hardware
+    def test_hicann_loopback_with_pulse_drops(self):
+        """
+        Send 512 pulses to the HICANN and read them via hicann loopback.
+        Run with reduced ISI that will cause the FPGA to drop pulses.
+        The pulse drops counted from the sthal test should match the FPGA's drop counter.
+        """
+        self.logger.INFO("Starting test_hicann_loopback_drop_counters_at_fpga_tx")
+        no_spikes = 512
+        self.hicann_loopback_impl(no_spikes, 1, 1, 3e-8, drops_expected=True)
 
     @hardware
     def test_hicann_loopback_without_empty_check(self):

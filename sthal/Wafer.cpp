@@ -719,10 +719,12 @@ Status Wafer::status() const
 			auto fpga_st = ::HMF::FPGA::get_fpga_status(*handle);
 			st.fpga_id[ii]  = fpga_st.getHardwareId();
 			st.fpga_rev[ii] = fpga_st.get_git_hash();
+			st.fpga_drops[ii] = fpga_st.get_hicann_dropped_pulses_at_fpga_tx_fifo();
 		}
 		else
 		{
 			st.fpga_id[ii] = st.fpga_rev[ii] = 0;
+			st.fpga_drops[ii] = {};
 		}
 	}
 	return st;

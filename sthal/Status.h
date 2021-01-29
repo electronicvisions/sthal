@@ -28,6 +28,7 @@ private:
 struct Status
 {
 	typedef ::halco::hicann::v2::FPGAOnWafer fpga_coord;
+	typedef ::halco::hicann::v2::HICANNOnDNC hicann_on_dnc_coord;
 
 	::halco::hicann::v2::Wafer wafer;
 	std::vector< ::halco::hicann::v2::HICANNOnWafer > hicanns;
@@ -38,11 +39,16 @@ struct Status
 
 	std::array<uint64_t, fpga_coord::size> fpga_id;
 	std::array<uint32_t, fpga_coord::size> fpga_rev;
+	typedef halco::common::typed_array< uint16_t, ::halco::hicann::v2::HICANNOnDNC > hicann_drops_t;
+	typedef halco::common::typed_array< hicann_drops_t, fpga_coord > fpga_drops_t;
+	fpga_drops_t fpga_drops;
 
 	// adc_channels[dnc_id][analog]
 	typedef halco::common::typed_array<ADCChannel, ::halco::hicann::v2::AnalogOnHICANN> dual_channel_t;
 	typedef halco::common::typed_array<dual_channel_t, ::halco::hicann::v2::DNCOnWafer> adc_channels_t;
 	adc_channels_t adc_channels;
+
+	uint16_t get_dropped_pulses_from_fpga(fpga_coord fpga, ::halco::hicann::v2::HICANNOnDNC hicann);
 
 private:
 	friend class boost::serialization::access;
@@ -63,12 +69,15 @@ private:
 			std::array<uint64_t, 12> tmp_id;
 			std::array<uint32_t, 12> tmp_rev;
 			ar & make_nvp("fpga_id", tmp_id)
-		     & make_nvp("fpga_rev", tmp_rev);
+			   & make_nvp("fpga_rev", tmp_rev);
 			std::copy(tmp_id.begin(), tmp_id.end(), fpga_id.begin());
 			std::copy(tmp_rev.begin(), tmp_rev.end(), fpga_rev.begin());
 		} else {
 			ar & make_nvp("fpga_id", fpga_id)
 			   & make_nvp("fpga_rev", fpga_rev);
+		}
+		if (version >= 2) {
+			ar  & make_nvp("fpga_drops", fpga_drops);
 		}
 		ar & make_nvp("adc_channels", adc_channels);
 	}
@@ -79,4 +88,4 @@ std::ostream& operator<<(std::ostream& out, ADCChannel const& obj);
 
 } // end namespace sthal
 
-BOOST_CLASS_VERSION(sthal::Status, (::halco::hicann::v2::FPGAOnWafer::size == 12 ? 0 : 1))
+BOOST_CLASS_VERSION(sthal::Status, (::halco::hicann::v2::FPGAOnWafer::size == 12 ? 0 : 2))

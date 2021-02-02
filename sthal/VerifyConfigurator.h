@@ -8,6 +8,8 @@
 
 #include "sthal/HICANNConfigurator.h"
 
+namespace C = ::halco::hicann::v2;
+
 namespace sthal {
 
 class HICANN;
@@ -34,10 +36,25 @@ struct VerificationResult
 class VerifyConfigurator : public HICANNConfigurator
 {
 public:
-	/// "verify only enabled" only compares the settings of enabled components but also
-	/// checks if disabled component are wrongfully configured to be enabled
-	VerifyConfigurator(bool verify_only_enabled = false);
+	enum SynapsePolicy
+	{
+		All,
+		None,
+		Mask
+	};
 
+	/// "verify only enabled" only compares the settings of enabled components but also
+	/// checks if disabled component are wrongfully configured to be enabled.
+	/// synapse_policy specifies which synapses are verified in the synapse weight test
+	/// If the policy "Mask" is specified, only synapses listed in m_synapse_mask are verified.
+	VerifyConfigurator(bool verify_only_enabled = false, SynapsePolicy synapse_policy = All);
+
+	void set_synapse_policy(SynapsePolicy const sp);
+	SynapsePolicy get_synapse_policy() const;
+	/// set synapses to be verified
+	void set_synapse_mask(std::vector<C::SynapseOnWafer> const& syn_mask);
+	/// get synapses to be verified
+	std::vector<C::SynapseOnWafer> get_synapse_mask() const;
 	/// Clear stored results
 	void clear();
 	/// Access stored results
@@ -92,6 +109,18 @@ private:
 	tbb::concurrent_vector<VerificationResult> mErrors;
 #endif
 	bool const m_verify_only_enabled;
+
+	/**
+	 * @brief: Specifies which synapses are verified during the test
+	 * one of [All, None, Mask]
+	 * All: Verify all synapses
+	 * None: Skip verification for all synapses
+	 * Mask: Only verify synapses specified in m_synapse_mask
+	 * default: All
+	 */
+	SynapsePolicy m_synapse_policy;
+	// Mask of synapses to be verified
+	std::vector<C::SynapseOnWafer> m_synapse_mask;
 };
 
 } // end namespace sthal

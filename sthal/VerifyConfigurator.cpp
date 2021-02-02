@@ -60,6 +60,26 @@ std::string check(const Prefix pre, const T& expected, const T& read)
 	}
 }
 
+template <typename Prefix, typename T>
+std::string check(
+    const Prefix pre,
+    const T& expected,
+    const T& read,
+    const std::vector<SynapseOnWafer>& synapse_mask,
+    SynapseOnWafer synapse)
+{
+	if (!(expected == read)) {
+		if (std::find(synapse_mask.begin(), synapse_mask.end(), synapse) != synapse_mask.end()) {
+			std::stringstream msg;
+			msg << INDENT << pre << ":\n";
+			msg << INDENT << INDENT << "configured: " << read << "\n";
+			msg << INDENT << INDENT << "expected:   " << expected << "\n";
+			return msg.str();
+		}
+	}
+	return std::string();
+}
+
 template <typename XType, typename YType>
 struct XYHelper
 {
@@ -167,7 +187,8 @@ log4cxx::LoggerPtr VerifyConfigurator::getTimeLogger()
 	return _logger;
 }
 
-VerifyConfigurator::VerifyConfigurator(bool voe) : m_verify_only_enabled(voe)
+VerifyConfigurator::VerifyConfigurator(bool voe, VerifyConfigurator::SynapsePolicy sp) :
+    m_verify_only_enabled(voe), m_synapse_policy(sp)
 {
 }
 
@@ -398,10 +419,25 @@ void VerifyConfigurator::read_synapse_weights(
 					       << synapse.toSynapseRowOnHICANN() << ", "
 					       << synapse.toSynapseColumnOnHICANN() << ", "
 					       << synapse.toNeuronOnHICANN() << ")";
-
-					errors.push_back(check(prefix.str(),
-					                       expected.synapses[synapse].weight,
-					                       weights[column]));
+					switch (m_synapse_policy) {
+						case SynapsePolicy::All:
+							errors.push_back(check(
+							    prefix.str(), expected.synapses[synapse].weight, weights[column]));
+							break;
+						case SynapsePolicy::Mask:
+							errors.push_back(check(
+							    prefix.str(), expected.synapses[synapse].weight, weights[column],
+							    m_synapse_mask, SynapseOnWafer(synapse, h->coordinate())));
+							break;
+						case SynapsePolicy::None:
+							errors.push_back(std::string());
+							break;
+						default:
+							LOG4CXX_ERROR(
+							    getLogger(),
+							    "Unknown synapse policy. Choose one of All, Mask or None.");
+							throw std::runtime_error("Unknown synapse policy.");
+					}
 				} else {
 					errors.push_back(std::string());
 				}
@@ -608,6 +644,26 @@ std::ostream& operator<<(std::ostream& out, const VerifyConfigurator& cfg)
 		out << "\n    " << result;
 	}
 	return out;
+}
+
+void VerifyConfigurator::set_synapse_policy(VerifyConfigurator::SynapsePolicy const sp)
+{
+	m_synapse_policy = sp;
+}
+
+VerifyConfigurator::SynapsePolicy VerifyConfigurator::get_synapse_policy() const
+{
+	return m_synapse_policy;
+}
+
+void VerifyConfigurator::set_synapse_mask(std::vector<SynapseOnWafer> const& sw)
+{
+	m_synapse_mask = sw;
+}
+
+std::vector<SynapseOnWafer> VerifyConfigurator::get_synapse_mask() const
+{
+	return m_synapse_mask;
 }
 
 } // end namespace sthal

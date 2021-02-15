@@ -31,6 +31,8 @@ if __name__ == "__main__":
                         help="HICANNOnWafer enum be initialized")
     parser.add_argument('--jtag', action="store_true",
                         help="Use jtag (highspeed is default)")
+    parser.add_argument('--pll', type=int, default=125,
+                        help="Used Pll frequency (in MHz)")
     parser.add_argument(
         '-z', '--zero-floating-gate', action='store_true', dest='zero_fg',
         help="set floating gate values to zero")
@@ -45,6 +47,8 @@ if __name__ == "__main__":
     wafer.drop_defects()
 
     fpga = wafer[fpga_c]
+    pll_frequency = args.pll * 1e6
+    fpga.commonFPGASettings().setPLL(pll_frequency)
     hicann = wafer[hicann_c]
 
     if args.zero_fg:

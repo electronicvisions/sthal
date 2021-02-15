@@ -14,6 +14,7 @@ parser.add_argument("--wafer", type=int, help="Wafer enum", required=True)
 parser.add_argument("--hicann", type=int, help="HICANNOnWafer enum", required=True)
 parser.add_argument("--backend_path", type=str, help="redman backend path", required=True)
 parser.add_argument("--skip_empty_backend_path_check", action="store_true")
+parser.add_argument("--pll", type=int, default=125, help="Used Pll frequency (in MHz)")
 args = parser.parse_args()
 
 if not args.skip_empty_backend_path_check and glob.glob(os.path.join(args.backend_path, "*.xml")):
@@ -26,17 +27,16 @@ fpga_global_c = C.FPGAGlobal(fpga_c, wafer_c)
 
 redman_wafer_backend = load.WaferWithBackend(args.backend_path, wafer_c)
 redman_fpga_backend = load.FpgaWithBackend(args.backend_path, fpga_global_c)
-
 hs_exit = 0
 jtag_exit = 0
 
 # reset fpga before each HICANN test
 fpga_reset_cmd = ["fpga_remote_init.py", "-r", "1", "-w", str(args.wafer), "-f", str(fpga_c.value()), "--alloc", "existing"]
 subprocess.call(fpga_reset_cmd)
-hs_exit = subprocess.call(["sthal_single_chip_init.py", "--wafer", str(args.wafer), "--hicann", str(args.hicann)])
+hs_exit = subprocess.call(["sthal_single_chip_init.py", "--wafer", str(args.wafer), "--hicann", str(args.hicann), "--pll", str(args.pll)])
 if hs_exit != 0:
     subprocess.call(fpga_reset_cmd)
-    jtag_exit = subprocess.call(["sthal_single_chip_init.py", "--wafer", str(args.wafer), "--hicann", str(args.hicann), "--jtag"])
+    jtag_exit = subprocess.call(["sthal_single_chip_init.py", "--wafer", str(args.wafer), "--hicann", str(args.hicann), "--pll", str(args.pll), "--jtag"])
 
 # highspeed failed, but jtag worked -> blacklist only highspeed
 if hs_exit != 0 and jtag_exit == 0:

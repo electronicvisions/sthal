@@ -34,6 +34,9 @@ if __name__ == "__main__":
     parser.add_argument('--pll', type=int, default=125,
                         help="Used Pll frequency (in MHz)")
     parser.add_argument(
+        '-zs', '--zero-synapses', action='store_true', dest='zero_syn',
+        help="set synapse values to zero")
+    parser.add_argument(
         '-z', '--zero-floating-gate', action='store_true', dest='zero_fg',
         help="set floating gate values to zero")
 
@@ -49,6 +52,7 @@ if __name__ == "__main__":
     fpga = wafer[fpga_c]
     pll_frequency = args.pll * 1e6
     fpga.commonFPGASettings().setPLL(pll_frequency)
+    fpga.commonFPGASettings().setSynapseArrayReset(args.zero_syn)
     hicann = wafer[hicann_c]
 
     if args.zero_fg:

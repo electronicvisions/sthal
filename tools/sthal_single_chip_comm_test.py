@@ -15,6 +15,9 @@ parser.add_argument("--hicann", type=int, help="HICANNOnWafer enum", required=Tr
 parser.add_argument("--backend_path", type=str, help="redman backend path", required=True)
 parser.add_argument("--skip_empty_backend_path_check", action="store_true")
 parser.add_argument("--pll", type=int, default=125, help="Used Pll frequency (in MHz)")
+parser.add_argument(
+    '-zs', '--zero-synapses', action='store_true', dest='zero_syn',
+    help="try to set synapse values to zero in highspeed test")
 args = parser.parse_args()
 
 if not args.skip_empty_backend_path_check and glob.glob(os.path.join(args.backend_path, "*.xml")):
@@ -33,7 +36,10 @@ jtag_exit = 0
 # reset fpga before each HICANN test
 fpga_reset_cmd = ["fpga_remote_init.py", "-r", "1", "-w", str(args.wafer), "-f", str(fpga_c.value()), "--alloc", "existing"]
 subprocess.call(fpga_reset_cmd)
-hs_exit = subprocess.call(["sthal_single_chip_init.py", "--wafer", str(args.wafer), "--hicann", str(args.hicann), "--pll", str(args.pll)])
+highspeed_test_cmd = ["sthal_single_chip_init.py", "--wafer", str(args.wafer), "--hicann", str(args.hicann), "--pll", str(args.pll)]
+if args.zero_syn:
+    highspeed_test_cmd.append("-zs")
+hs_exit = subprocess.call(highspeed_test_cmd)
 if hs_exit != 0:
     subprocess.call(fpga_reset_cmd)
     jtag_exit = subprocess.call(["sthal_single_chip_init.py", "--wafer", str(args.wafer), "--hicann", str(args.hicann), "--pll", str(args.pll), "--jtag"])

@@ -90,7 +90,7 @@ for name in class_names:
         container.disable_methods_group("reorder")
 
 for td in ns_sthal.typedefs():
-    decl = getattr(td.type, "declaration", None)
+    decl = getattr(td.decl_type, "declaration", None)
     if decl is not None and decl.ignore:
         td.exclude()
 

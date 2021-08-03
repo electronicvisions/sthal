@@ -38,7 +38,7 @@ class TestYAMLHardwareDatabase(PyhalbeTest):
         Test setting and getting speedup.
         """
         db = pysthal.YAMLHardwareDatabase()
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode = "w+") as f:
             db.store(f.name)
             db.load(f.name)
             self.assertEqual(len(f.read()), 0)
@@ -71,7 +71,7 @@ fpgas:
     ip: "192.168.1.23"
 """
         db = pysthal.YAMLHardwareDatabase()
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode = "w+") as f:
             f.write(yaml)
             f.flush()
             db.load(f.name)
@@ -97,7 +97,7 @@ macu: 0.0.0.0
 macuversion: 1
 """
         db = pysthal.YAMLHardwareDatabase()
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode = "w+") as f:
             f.write(yaml)
             f.flush()
             db.load(f.name)
@@ -121,7 +121,7 @@ hicanns:
   version: 2
 """
         db = pysthal.YAMLHardwareDatabase()
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode = "w+") as f:
             f.write(yaml)
             f.flush()
             db.load(f.name)
@@ -153,7 +153,7 @@ wafer: 2
 setuptype: cubesetup
 """
         db = pysthal.YAMLHardwareDatabase()
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode = "w+") as f:
             f.write(yaml)
             f.flush()
             self.assertRaises(RuntimeError, db.load, f.name)
@@ -168,7 +168,7 @@ wafer: 2
 setuptype: cubesetup
 """
         db = pysthal.YAMLHardwareDatabase()
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode = "w+") as f:
             f.write(yaml)
             f.flush()
             db.load(f.name)
@@ -199,7 +199,7 @@ fpgas:
 
 
         db = pysthal.YAMLHardwareDatabase()
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode = "w+") as f:
             f.write(yaml)
             f.flush()
             settings.yaml_hardware_database_path = f.name
@@ -363,7 +363,7 @@ fpgas:
             self.assertEqual(db.get_macu(Wafer(7)), IPv4.from_string("192.168.6.5"))
 
         check(self, db)
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode = "w+") as f:
             db.store(f.name)
             f.flush()
             test_db = pysthal.YAMLHardwareDatabase(f.name)
@@ -480,7 +480,7 @@ adcs:
     trigger: 1
 """
         db = pysthal.YAMLHardwareDatabase()
-        with tempfile.NamedTemporaryFile() as f:
+        with tempfile.NamedTemporaryFile(mode = "w+") as f:
             f.write(yaml)
             f.flush()
             db.load(f.name)

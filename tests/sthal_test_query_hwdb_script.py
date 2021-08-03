@@ -46,56 +46,56 @@ class TestSthalSettings(unittest.TestCase):
 
     def test_hicann_version(self):
         stdout = self.get_command_stdout("hicann-version", ['--wafer', '1340', '--hicann', '88'])
-        self.assertEqual(stdout, '2\n')
+        self.assertEqual(stdout.decode(), '2\n')
 
         stdout = self.get_command_stdout("hicann-version", ['--wafer', '1340', '--hicann', '89'])
-        self.assertEqual(stdout, '4\n')
+        self.assertEqual(stdout.decode(), '4\n')
 
         stdout = self.get_command_stdout("hicann-version", ['--wafer', '1339', '--hicann', '89'])
-        self.assertEqual(stdout, '2\n')
+        self.assertEqual(stdout.decode(), '2\n')
 
     def test_hicann_label(self):
         stdout = self.get_command_stdout("hicann-label", ['--wafer', '1340', '--hicann', '88'])
-        self.assertEqual(stdout, '\n')
+        self.assertEqual(stdout.decode(), '\n')
 
         stdout = self.get_command_stdout("hicann-label", ['--wafer', '1340', '--hicann', '89'])
-        self.assertEqual(stdout, 'v4-5\n')
+        self.assertEqual(stdout.decode(), 'v4-5\n')
 
         stdout = self.get_command_stdout("hicann-label", ['--wafer', '1340', '--hicann', '29,4'])
-        self.assertEqual(stdout, 'v4-5\n')
+        self.assertEqual(stdout.decode(), 'v4-5\n')
 
         stdout = self.get_command_stdout("hicann-label", ['--wafer', '1340', '--hicann', '90'])
-        self.assertEqual(stdout, 'somehicannv2label\n')
+        self.assertEqual(stdout.decode(), 'somehicannv2label\n')
 
     def test_ipc(self):
         stdout = self.get_command_stdout("ipc-filename", ['--wafer', '1340', '--hicann', '90'])
-        self.assertEqual(stdout, '/dev/shm/192.168.4.4\n')
+        self.assertEqual(stdout.decode(), '/dev/shm/192.168.4.4\n')
 
         stdout = self.get_command_stdout("ipc-filename", ['--wafer', '1340', '--hicann', '88'])
-        self.assertEqual(stdout, '/dev/shm/192.168.4.4\n')
+        self.assertEqual(stdout.decode(), '/dev/shm/192.168.4.4\n')
 
         stdout = self.get_command_stdout("ipc-filename", ['--wafer', '1340', '--hicann', '144'])
-        self.assertEqual(stdout, '/dev/shm/192.168.4.1\n')
+        self.assertEqual(stdout.decode(), '/dev/shm/192.168.4.1\n')
 
         stdout = self.get_command_stdout("ipc-filename", ['--wafer', '1340', '--hicann', '180'])
-        self.assertEqual(stdout, '/dev/shm/192.168.4.1\n')
+        self.assertEqual(stdout.decode(), '/dev/shm/192.168.4.1\n')
 
         stdout = self.get_command_stdout("ipc-filename", ['--wafer', '1339', '--hicann', '257'])
-        self.assertEqual(stdout, '/dev/shm/192.168.21.106\n')
+        self.assertEqual(stdout.decode(), '/dev/shm/192.168.21.106\n')
 
 
     def test_devtype(self):
         stdout = self.get_command_stdout("device-type", ['--wafer', '1337'])
-        self.assertEqual(stdout, 'FACETSWafer\n')
+        self.assertEqual(stdout.decode(), 'FACETSWafer\n')
 
         stdout = self.get_command_stdout("device-type", ['--wafer', '1338'])
-        self.assertEqual(stdout, 'CubeSetup\n')
+        self.assertEqual(stdout.decode(), 'CubeSetup\n')
 
         stdout = self.get_command_stdout("device-type", ['--wafer', '1339'])
-        self.assertEqual(stdout, 'BSSWafer\n')
+        self.assertEqual(stdout.decode(), 'BSSWafer\n')
 
         stdout = self.get_command_stdout("device-type", ['--wafer', '1340'])
-        self.assertEqual(stdout, 'CubeSetup\n')
+        self.assertEqual(stdout.decode(), 'CubeSetup\n')
 
     def test_inexistent(self):
         retcode = self.get_return_code("device-type", ['--wafer', '21259'])
@@ -118,10 +118,10 @@ class TestSthalSettings(unittest.TestCase):
 
     def test_macu(self):
         stdout = self.get_command_stdout("macu", ['--wafer', '1337'])
-        self.assertEqual(stdout, '0.0.0.0\n')
+        self.assertEqual(stdout.decode(), '0.0.0.0\n')
 
         stdout = self.get_command_stdout("macu", ['--wafer', '1340'])
-        self.assertEqual(stdout, '1.2.3.4\n')
+        self.assertEqual(stdout.decode(), '1.2.3.4\n')
 
 if __name__ == '__main__':
     unittest.main()

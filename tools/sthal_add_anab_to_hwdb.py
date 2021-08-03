@@ -124,7 +124,7 @@ def main():
             adcs.append((str(arg[0]), convert(arg[1]), connector))
 
     data = generate_data(ip, adcs, anab)
-    print output_yaml(data)
+    print(output_yaml(data))
 
 if __name__ == '__main__':
     main()

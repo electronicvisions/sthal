@@ -123,7 +123,7 @@ def add_logger_options(parser, default_level=pylogging.LogLevel.INFO):
             channel, level_string = arg.split(":")
             return channel, to_level(level_string)
         except Exception as err:
-            print err
+            print(err)
             raise argparse.ArgumentTypeError(
                 "Please provide --logchannel <name>:<level>")
 

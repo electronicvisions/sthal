@@ -30,7 +30,7 @@ def main():
 
     recorder = pysthal.AnalogRecorder.getAnalogRecorder(Coordinate.ADC(args.adc))
     recorder.record(args.samples/96e6)
-    print recorder.getCalibration()
+    print(recorder.getCalibration())
 
     setup="from __main__ import recorder"
     raw_transfers = timeit.repeat(
@@ -43,10 +43,10 @@ def main():
         setup=setup,
         repeat=args.repeat,
         number=1)
-    print "RAW:   fastest: {:>7.2}s  mean: {:>7.2}s".format(
-            numpy.min(raw_transfers), numpy.mean(raw_transfers))
-    print "CALIB: fastest: {:>7.2}s  mean: {:>7.2}s".format(
-            numpy.min(calibrated_transfers), numpy.mean(calibrated_transfers))
+    print("RAW:   fastest: {:>7.2}s  mean: {:>7.2}s".format(
+            numpy.min(raw_transfers), numpy.mean(raw_transfers)))
+    print("CALIB: fastest: {:>7.2}s  mean: {:>7.2}s".format(
+            numpy.min(calibrated_transfers), numpy.mean(calibrated_transfers)))
 
 
 if __name__ == '__main__':

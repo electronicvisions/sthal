@@ -61,7 +61,7 @@ class TestMultiHICANN(PysthalTest):
         st = self.w.status()
         self.assertTrue(np.any(np.array(st.fpga_rev) != 0))
         self.assertEqual(2, len(st.hicanns))
-        print st
+        print(st)
 
 if __name__ == '__main__':
     PysthalTest.main()

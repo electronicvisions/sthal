@@ -38,7 +38,7 @@ def generate_plot(filename, traces, data, result):
     plt_rows = {h: axes[:, ii] for ii, h in
                 enumerate(sorted(set(x[2] for x in adcs)))}
 
-    print result
+    print(result)
     for wafer, dnc, hicann, analog, adc, channel, errors in adcs:
         axis = plt_rows[hicann][analog]
         status = []
@@ -91,7 +91,7 @@ def load_and_generate_plot(folder, wafer, dnc):
     """
     trace_file = os.path.join(folder, FILE_TRACES)
     if not os.path.exists(trace_file):
-        print "No traces found at '{}'".format(trace_file)
+        print("No traces found at '{}'".format(trace_file))
         return
     traces = pandas.read_hdf(trace_file, key='traces')
     result = pandas.read_hdf(trace_file, key='result')
@@ -296,11 +296,11 @@ class TestRecticleAout(unittest.TestCase):
 
         traces = pandas.DataFrame(
             {k: v
-             for k, v in data.iteritems()
+             for k, v in data.items()
              if not isinstance(v, Exception)})
         adc_errors = pandas.Series(
             {k: "ADC Error DAC[{}]: {}".format(k[-1], str(v))
-             for k, v in data.iteritems()
+             for k, v in data.items()
              if isinstance(v, Exception)})
 
         result = pandas.concat(axis=1, objs={
@@ -415,8 +415,8 @@ class TestRecticleAout(unittest.TestCase):
                 for err in (row.adc_error, row.fg_error, row.noise_error):
                     if err:
                         errors.append("   - " + err)
-            print msg.format(
-                row.hicann, row.analog, row.DAC, row.mean, row.std)
+            print(msg.format(
+                row.hicann, row.analog, row.DAC, row.mean, row.std))
         if cfg.error_count() > 0:
             errors.append(str(cfg))
         if errors:
@@ -457,7 +457,7 @@ class TestRecticleAout(unittest.TestCase):
         if args.hwdb:
             settings = pysthal.Settings.get()
             settings.yaml_hardware_database_path = args.hwdb
-            print "using non-default hardware database {}".format(args.hwdb)
+            print("using non-default hardware database {}".format(args.hwdb))
 
         if args.data_output_dir:
             output_dir = os.path.join(

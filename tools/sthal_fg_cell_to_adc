@@ -69,12 +69,12 @@ if __name__ == "__main__":
         settings.jtag_freq = C.JTAGFrequency(args.jtag_freq)
     if args.hwdb:
         settings.yaml_hardware_database_path = args.hwdb
-        print "using non-default hardware database {}".format(args.hwdb)
+        print("using non-default hardware database {}".format(args.hwdb))
 
-    print "using wafer {} and hicann {}".format(WAFER, HICANN)
+    print("using wafer {} and hicann {}".format(WAFER, HICANN))
 
     if HICANN == None or WAFER == None:
-        print "error: wafer and hicann have to be specified, e.g. --wafer 0 --hicann 276"
+        print("error: wafer and hicann have to be specified, e.g. --wafer 0 --hicann 276")
         exit(1)
 
     w = pysthal.Wafer(C.Wafer(WAFER))
@@ -107,10 +107,10 @@ if __name__ == "__main__":
                 adc.record()
                 v = adc.trace()
                 adc.freeHandle()
-                print "FG [DAC]: {}, Analog({}): mean={}, std={}".format(value, ANALOG, np.mean(v), np.std(v))
+                print("FG [DAC]: {}, Analog({}): mean={}, std={}".format(value, ANALOG, np.mean(v), np.std(v)))
 
                 if args.dump:
                     t = adc.getTimestamps()
                     np.savetxt("analog_{}_value_{}.dat".format(ANALOG, value), np.c_[t,v])
             except Exception as e:
-                print e
+                print(e)

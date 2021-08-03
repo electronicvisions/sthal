@@ -40,7 +40,7 @@ class TestConfigurator(pysthal.HICANNConfigurator):
         fgc = hicann.floating_gates
 
         num_passes = fgc.getNoProgrammingPasses()
-        for step in xrange(num_passes):
+        for step in range(num_passes):
             fgconfig = fgc.getFGConfig(Enum(step))
 
             logger = pylogging.get("test_fg_writing_precision")
@@ -55,7 +55,7 @@ class TestConfigurator(pysthal.HICANNConfigurator):
                 data = [deepcopy(fgc[blk].getFGRow(row[int(blk.toEnum())]))
                         for blk in C.iter_all(C.FGBlockOnHICANN)]
 
-                for i in xrange(len(data)):
+                for i in range(len(data)):
                     for nrn_c in C.iter_all(C.NeuronOnFGBlock):
                         data[i].setNeuron(nrn_c, 0)
 
@@ -66,7 +66,7 @@ class TestConfigurator(pysthal.HICANNConfigurator):
                 logger.info("write result for step {} row {}".format(step, row_idx))
 
                 res_picklable = dict()
-                for key in res.keys():
+                for key in list(res.keys()):
                     value = res[key]
                     value_pick = [i.get_cell() for i in value]
                     res_picklable[key] = value_pick
@@ -85,7 +85,7 @@ class TestConfigurator(pysthal.HICANNConfigurator):
         fgc = hicann.floating_gates
 
         num_passes = fgc.getNoProgrammingPasses()
-        for step in xrange(num_passes):
+        for step in range(num_passes):
             fgconfig = fgc.getFGConfig(Enum(step))
 
             logger = pylogging.get("test_fg_writing_precision")
@@ -107,7 +107,7 @@ class TestConfigurator(pysthal.HICANNConfigurator):
                 logger.info("write result for step {} row {}".format(step, row_idx))
 
                 res_picklable = dict()
-                for key in res.keys():
+                for key in list(res.keys()):
                     value = res[key]
                     value_pick = [i.get_slave_answer_data() for i in value]
                     res_picklable[key] = value_pick

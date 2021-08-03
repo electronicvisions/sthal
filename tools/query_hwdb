@@ -16,14 +16,14 @@ def func_hicann_version(args):
     db = get_db(args)
     hc = C.HICANNGlobal(args.hicann, args.wafer)
 
-    print db.get_hicann_version(hc)
+    print(db.get_hicann_version(hc))
 
 
 def func_hicann_label(args):
     db = get_db(args)
     hc = C.HICANNGlobal(args.hicann, args.wafer)
 
-    print db.get_hicann_label(hc)
+    print(db.get_hicann_label(hc))
 
 
 def func_ipc(args):
@@ -32,17 +32,17 @@ def func_ipc(args):
 
     ip = db.get_fpga_ip(hc.toFPGAGlobal())
 
-    print "/dev/shm/{}".format(ip.to_string())
+    print("/dev/shm/{}".format(ip.to_string()))
 
 def func_devtype(args):
     db = get_db(args)
 
-    print db.get_setup_type(args.wafer)
+    print(db.get_setup_type(args.wafer))
 
 def func_macu(args):
     db = get_db(args)
 
-    print db.get_macu(args.wafer).to_string()
+    print(db.get_macu(args.wafer).to_string())
 
 def func_adc(args):
     db = get_db(args)
@@ -51,10 +51,10 @@ def func_adc(args):
 
     for analog in iter_all(C.AnalogOnHICANN):
         try:
-            print "{}: {}".format(analog,
-                                  db.get_adc_of_hicann(hicann_global, analog))
+            print("{}: {}".format(analog,
+                                  db.get_adc_of_hicann(hicann_global, analog)))
         except Exception as e:
-            print e
+            print(e)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Lookup script for HICANN and device properties')

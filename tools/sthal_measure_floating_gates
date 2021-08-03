@@ -4,7 +4,7 @@
 
 import os
 import numpy
-import cPickle
+import pickle
 
 import Coordinate
 import pysthal
@@ -37,7 +37,7 @@ def plot(results, folder):
     from Coordinate import FGCellOnFGBlock, X, Y
 
     fgs = results.pop('floating_gates')
-    for (block, row), result in results.iteritems():
+    for (block, row), result in results.items():
         try:
             shared_parameter = pyhalbe.HICANN.getSharedParameter(block, row)
             shared_name = shared_parameter.name
@@ -148,14 +148,14 @@ def main():
     args, _ = parser.parse_known_args()
 
     if args.load:
-        result = cPickle.load(args.load)
+        result = pickle.load(args.load)
     else:
         if not args.rows:
-            print "No rows given to measure"
+            print("No rows given to measure")
             parser.print_help()
             exit(1)
         if args.sthal:
-            sthal = cPickle.load(args.sthal)
+            sthal = pickle.load(args.sthal)
             wafer = sthal.wafer
             hicann = sthal.hicann
         else:
@@ -163,7 +163,7 @@ def main():
             hicann = wafer[args.hicann]
         result = run(wafer, hicann, args.block, args.rows)
     if args.save:
-        cPickle.dump(result, args.save, cPickle.HIGHEST_PROTOCOL)
+        pickle.dump(result, args.save, pickle.HIGHEST_PROTOCOL)
 
     if args.plot:
         plot(result, args.plot)

@@ -34,7 +34,7 @@ class FGRowAction(argparse.Action):
             for value in rows.split(','):
                 if '-' in value:
                     begin, end = value.split('-')
-                    vrange = range(int(begin), int(end)+1)
+                    vrange = list(range(int(begin), int(end)+1))
                     args.extend(FGRowOnFGBlock(x) for x in vrange)
                 else:
                     coord = value

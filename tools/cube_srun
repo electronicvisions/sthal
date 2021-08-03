@@ -218,7 +218,7 @@ def main():
         slurm_cmd += ['--']
         slurm_cmd += sys.argv
         if not args.quiet:
-            print "Executing slurm call: '{}'".format(' '.join(slurm_cmd))
+            print("Executing slurm call: '{}'".format(' '.join(slurm_cmd)))
         execvp(slurm_cmd)
     else:
         if not args.discard:
@@ -227,16 +227,16 @@ def main():
 
     my_slurm_gres = os.environ.get('MY_SLURM_GRES', '').split(',')
     if iboard_res not in my_slurm_gres:
-        print "You don't have the correct slurm resources allocated."
-        print "HICANN {} on cube {} requires the resource {}".format(
-            args.hicann, cube, iboard_res)
-        print "Your resources are:"
+        print("You don't have the correct slurm resources allocated.")
+        print("HICANN {} on cube {} requires the resource {}".format(
+            args.hicann, cube, iboard_res))
+        print("Your resources are:")
         for gres in my_slurm_gres:
-            print "  -", gres
+            print("  -", gres)
         sys.exit(os.EX_NOPERM)
 
     if not args.quiet:
-        print "Init iboard..."
+        print("Init iboard...")
 
     def _iboard_ctrl(cmd):
         iboard_ctrl(cube, iboard, args.quiet, cmd)
@@ -246,15 +246,15 @@ def main():
         _iboard_ctrl(['switch_mux', str(mux)])
         for voltage, value in args.voltage:
             if not args.quiet:
-                print "Set voltage {} to {}V".format(voltage, value)
+                print("Set voltage {} to {}V".format(voltage, value))
             _iboard_ctrl(['set_voltage', voltage, value])
     except OSError as exc:
         exit(exc.errno)
 
     if not args.quiet:
-        print
-        print "Iboard {} initialized.".format(iboard)
-        print "Will hand over to:", " ".join(cmd)
+        print()
+        print("Iboard {} initialized.".format(iboard))
+        print("Will hand over to:", " ".join(cmd))
 
     execvp(cmd)
 

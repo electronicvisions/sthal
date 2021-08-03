@@ -3,7 +3,7 @@
 import argparse
 import numpy
 import time
-import cPickle
+import pickle
 
 import Coordinate
 import pysthal
@@ -65,7 +65,7 @@ def main():
             hicann.layer1[channel] = pyhalbe.HICANN.GbitLink.Direction.TO_HICANN
 
     wafer.connect(pysthal.MagicHardwareDatabase())
-    print wafer.status()
+    print(wafer.status())
     wafer.configure(FastConfigurator())
 
     log = open('in_out.log', 'w')
@@ -77,7 +77,7 @@ def main():
     analog = Coordinate.AnalogOnHICANN(0)
 
     if args.load_spiketrains:
-        spiketrains = cPickle.load(args.load_spiketrains)
+        spiketrains = pickle.load(args.load_spiketrains)
     else:
         spiketrains = []
         for ii in range(50):
@@ -88,7 +88,7 @@ def main():
                 spikes.append(pysthal.Spike(addr, t))
             spiketrains.append(spikes)
         with open("spiketrains.pkl", 'w') as outfile:
-            cPickle.dump(spiketrains, outfile)
+            pickle.dump(spiketrains, outfile)
 
     for ii, spiketrain in enumerate(spiketrains):
         wafer.clearSpikes()

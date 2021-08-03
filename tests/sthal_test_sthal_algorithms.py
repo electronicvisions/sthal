@@ -152,7 +152,7 @@ class TestSthalAlgorithms(PyhalbeTest):
 
                 hicann.clear_l1_switches()
 
-        for vline, hlines in vline_to_hline.iteritems():
+        for vline, hlines in vline_to_hline.items():
             for hline1, hline2 in zip(hlines, hlines[1:]):
 
                 settings.crossbar_switches.max_switches_per_column = 1

@@ -34,7 +34,7 @@ def print_received(full_flag, test):
     pretty prints received test data
     """
 
-    print "Received from vertical repeater: "
+    print("Received from vertical repeater: ")
     if full_flag:
         logger.info("Full flag is set")
     else:
@@ -267,7 +267,7 @@ def main():
     argv.insert(0, sys.argv[0])
 
     if None in (args.hicann, args.wafer):
-        print "error: wafer and hicann have to be specified, e.g. --wafer 0 --hicann 276"
+        print("error: wafer and hicann have to be specified, e.g. --wafer 0 --hicann 276")
         exit(1)
 
     test = HICANNL1Test(args.wafer, args.hicann)

@@ -73,7 +73,7 @@ if __name__ == "__main__":
     settings.defects_host = args.defects_path
     if args.hwdb:
         settings.yaml_hardware_database_path = args.hwdb
-        print "using non-default hardware database {}".format(args.hwdb)
+        print("using non-default hardware database {}".format(args.hwdb))
 
     w = pysthal.Wafer(WAFER)
     # initialization of reticles is independent so we don't need global operation mode if we

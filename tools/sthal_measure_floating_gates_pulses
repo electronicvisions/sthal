@@ -3,7 +3,7 @@
 # pylint: disable=missing-docstring
 
 import numpy
-import cPickle
+import pickle
 import collections
 import time
 
@@ -75,9 +75,9 @@ def zero_fg(wafer, hicann):
     wafer.configure(cfg)
 
 def run(wafer, hicann, block, rows, pulselength, writetime, runs):
-    print "Run on: ", Coordinate.HICANNGlobal(hicann.index(), wafer.index())
-    print "    on: ", ",  ".join([str(r) for r in rows])
-    print "    with pulselength:", pulselength, "and writetime:", writetime
+    print("Run on: ", Coordinate.HICANNGlobal(hicann.index(), wafer.index()))
+    print("    on: ", ",  ".join([str(r) for r in rows]))
+    print("    with pulselength:", pulselength, "and writetime:", writetime)
     wafer.connect(pysthal.MagicHardwareDatabase())
     zero_fg(wafer, hicann)
 
@@ -100,7 +100,7 @@ def run(wafer, hicann, block, rows, pulselength, writetime, runs):
     for row in rows:
         cfg.meassure(block, row)
     for run in range(runs):
-        print "Meassure step", run
+        print("Meassure step", run)
         wafer.configure(cfg)
     wafer.disconnect()
 
@@ -162,7 +162,7 @@ def main():
 
     outfilename = "data_{}.pkl".format(time.time())
     with open(outfilename, 'w') as outfile:
-        cPickle.dump(x, outfile, cPickle.HIGHEST_PROTOCOL)
+        pickle.dump(x, outfile, pickle.HIGHEST_PROTOCOL)
 
 if __name__ == '__main__':
     main()

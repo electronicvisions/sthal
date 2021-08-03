@@ -17,18 +17,18 @@ w = pysthal.Wafer(C .Wafer(C.Enum(args.wafer)))
 w.load(args.file.name)
 hicann = w[C.HICANNGlobal(C.Enum(args.hicann))]
 
-print hicann
+print(hicann)
 
 sent_spikes = hicann.sentSpikes(C.GbitLinkOnHICANN(7))
 
 if len(sent_spikes):
 
-    print "{} input spikes".format(len(sent_spikes))
+    print("{} input spikes".format(len(sent_spikes)))
 
-    print "time addr:"
+    print("time addr:")
 
     for s in sorted(sent_spikes, lambda s1,s2: int(s1[0] < s2[0])):
-        print s[0], s[1]
+        print(s[0], s[1])
 
     if args.collapse_to_addr:
         sent_spikes[:,1] = [args.collapse_to_addr]*len(sent_spikes)
@@ -38,10 +38,10 @@ if len(sent_spikes):
 
 else:
 
-    print "no input spikes"
+    print("no input spikes")
 
-print hicann.crossbar_switches
-print hicann.synapse_switches
-print hicann.layer1
-print hicann.layer1.mDNCMergers
-print hicann.repeater
+print(hicann.crossbar_switches)
+print(hicann.synapse_switches)
+print(hicann.layer1)
+print(hicann.layer1.mDNCMergers)
+print(hicann.repeater)

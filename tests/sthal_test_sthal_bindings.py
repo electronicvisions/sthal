@@ -22,7 +22,7 @@ class Test_PyhalbeBindings(PyhalbeTest):
         w[0] = pyhalbe.HICANN.SynapseWeight(7)
 
         self.assertEqual(hicann.synapses[row_c].weights[0], pyhalbe.HICANN.SynapseWeight(7))
-        print hicann.synapses[row_c].weights[0]
+        print(hicann.synapses[row_c].weights[0])
 
 
     def test_synapse_access(self):

@@ -5,7 +5,7 @@
 
 import argparse
 import numpy
-import cPickle
+import pickle
 
 import Coordinate
 import pysthal
@@ -51,7 +51,7 @@ def run(wafer, hicann, block, rows, value, sigma, repetitions):
 
     wafer.connect(pysthal.MagicHardwareDatabase())
     wafer.configure(FastReset())
-    for rep in xrange(repetitions):
+    for rep in range(repetitions):
         cfg = CFG(False)
         for row in rows:
             cfg.meassure(block, row)
@@ -61,7 +61,7 @@ def run(wafer, hicann, block, rows, value, sigma, repetitions):
             results[row].append(numpy.array(row_measurements[-1].means))
     wafer.disconnect()
 
-    results = dict((int(r), numpy.array(d)) for r, d in results.iteritems())
+    results = dict((int(r), numpy.array(d)) for r, d in results.items())
     return {
         'results': results,
         'value': value,
@@ -116,7 +116,7 @@ def main():
     hicann = wafer[args.hicann]
     result = run(
         wafer, hicann, args.block, args.rows, args.value, args.sigma, args.N)
-    cPickle.dump(result, args.out)
+    pickle.dump(result, args.out)
 
 if __name__ == '__main__':
     main()

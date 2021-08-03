@@ -26,7 +26,7 @@ from fnmatch import fnmatch
 import pkg_resources
 npvers = pkg_resources.get_distribution("numpy").version.split(".")
 if (int(npvers[0]) <1 or int(npvers[1])<7):
-    print "Numpy version to old {0}. min Verison 1.7".format(".".join(npvers))
+    print("Numpy version to old {0}. min Verison 1.7".format(".".join(npvers)))
     sys.exit(1)
 
 # extract a "column" from a 2 dimensional list
@@ -90,7 +90,7 @@ function_runtimes = [[] for x in range(number_of_profiles)]
 if not args.label:
     args.label = ["Profile {0}".format(x) for x in range(number_of_profiles)]
 if len(args.label) < number_of_profiles:
-    print "Too few labels given..."
+    print("Too few labels given...")
 
 mpl.rcParams.update({'font.size': 14})
 
@@ -142,7 +142,7 @@ for plotn in range(0, number_of_profiles*2, 2):
             # usb packet
             if split_line[LOGGER_INDEX] == "host":
                 line_time = float(split_line[TIME_INDEX])
-                line_data_volume = long(split_line[DATA_INDEX])
+                line_data_volume = int(split_line[DATA_INDEX])
                 usb_log[usb_packets][0] = line_time - traffic_start_time
                 usb_log[usb_packets][1] = line_data_volume
                 usb_total_data += line_data_volume
@@ -150,7 +150,7 @@ for plotn in range(0, number_of_profiles*2, 2):
             # eth packet
             if fnmatch(split_line[LOGGER_INDEX] , "192.168.*"):
                 line_time = float(split_line[TIME_INDEX])
-                line_data_volume = long(split_line[DATA_INDEX])
+                line_data_volume = int(split_line[DATA_INDEX])
                 eth_log[eth_packets][0] = line_time - traffic_start_time
                 eth_log[eth_packets][1] = line_data_volume
                 eth_total_data += line_data_volume
@@ -165,7 +165,7 @@ for plotn in range(0, number_of_profiles*2, 2):
                 if len(split_line) < 4 :
                     continue
                 line_time = float(split_line[TIME_INDEX]) * 1e-6
-                line_data_volume = long(split_line[DATA_INDEX])
+                line_data_volume = int(split_line[DATA_INDEX])
                 eth_log[eth_packets][0] = line_time - traffic_start_time
                 eth_log[eth_packets][1] = line_data_volume
                 eth_total_data += line_data_volume
@@ -177,7 +177,7 @@ for plotn in range(0, number_of_profiles*2, 2):
                 if args.overhead:
                     DATA_INDEX = 4
                 line_time = float(split_line[TIME_INDEX]) * 1e-6
-                line_data_volume = long(split_line[DATA_INDEX])
+                line_data_volume = int(split_line[DATA_INDEX])
                 usb_log[usb_packets][0] = line_time - traffic_start_time
                 usb_log[usb_packets][1] = line_data_volume
                 usb_total_data += line_data_volume
@@ -219,7 +219,7 @@ for plotn in range(0, number_of_profiles*2, 2):
     profiler_num_lines = sum(1 for line in profiler_log_file)
     profiler_data = [[0 for x in range(3)] for x in range(profiler_num_lines)]
 
-    print "Traffic analyze done"
+    print("Traffic analyze done")
 
     # parsing profiler data
     profiler_log_file = open(file_path + "func_time_" + file_id + ".log", "r")
@@ -286,7 +286,7 @@ for plotn in range(0, number_of_profiles*2, 2):
     functions_to_plot = ["config_fpga", "config_floating_gates", "config_synapse_array", "config_synapse_drivers",
                          "config_neuron_config", "config_neuron_quads", "config_fg_stimulus", "flush_fpga", "record", "trace", "status"]
 
-    print "Function analyze done"
+    print("Function analyze done")
 
     # ploting traffic
     axis[plotn].set_ylabel('Transfer Rate [MB/s]')
@@ -337,7 +337,7 @@ for plotn in range(0, number_of_profiles*2, 2):
     function_runtimes[plotn/2].insert(0, total_runtime - sum_runtime)
 
     #set axis attributes
-    axis[plotn+1].set_yticks(range(1,len(function_label) + 2))
+    axis[plotn+1].set_yticks(list(range(1,len(function_label) + 2)))
     axis[plotn+1].set_yticklabels(function_label, name = "monospace", fontweight='bold')
     axis[plotn+1].tick_params(left = 0, right = 0)
     axis[plotn+1].set_ylim(0, len(function_label) + 1 )
@@ -355,20 +355,20 @@ for plotn in range(0, number_of_profiles*2, 2):
     acc_percent = 0
     total_function_calls = 0
     max_len = len(max(column(function_sum,0), key=len)) + 1
-    print "{0: <{max_len}}".format("function name", max_len = max_len)+"  functiontime [s]  # function calls  % of total runntime"
-    print "-----------------------------------------------------------------------------------"
+    print("{0: <{max_len}}".format("function name", max_len = max_len)+"  functiontime [s]  # function calls  % of total runntime")
+    print("-----------------------------------------------------------------------------------")
     for row in function_sum:
         acc_time += row[1]
         total_function_calls += row[2]
         acc_percent += row[3]
-        print "{0:<{max_len}}  {1:16.2f}  {2:16d}  {3:19.2f}".format(row[0], row[1], row[2], row[3], max_len = max_len)
+        print("{0:<{max_len}}  {1:16.2f}  {2:16d}  {3:19.2f}".format(row[0], row[1], row[2], row[3], max_len = max_len))
 
-    print "Total usb traffic: {0} MB Average transfer rate: {1:.4f} MB/s".format(usb_total_data/1024/1024, usb_total_data/usb_runtime/1024/1024)
-    print "Total eth traffic: {0} MB Average transfer rate: {1:.4f} MB/s".format(eth_total_data/1024/1024, eth_total_data/eth_runtime/1024/1024)
-    print "Total time: {0:.2f} s".format(total_runtime)
-    print "Total acc time in: {0:.2f} s".format(acc_time)
-    print "Total number of function calls: {0}".format(total_function_calls)
-    print "Accumulated percentage of all functions: {0:.2f} %".format(acc_percent)
+    print("Total usb traffic: {0} MB Average transfer rate: {1:.4f} MB/s".format(usb_total_data/1024/1024, usb_total_data/usb_runtime/1024/1024))
+    print("Total eth traffic: {0} MB Average transfer rate: {1:.4f} MB/s".format(eth_total_data/1024/1024, eth_total_data/eth_runtime/1024/1024))
+    print("Total time: {0:.2f} s".format(total_runtime))
+    print("Total acc time in: {0:.2f} s".format(acc_time))
+    print("Total number of function calls: {0}".format(total_function_calls))
+    print("Accumulated percentage of all functions: {0:.2f} %".format(acc_percent))
 
 # deactivate x-axis labels centered plots
 for i in range(number_of_profiles-1):

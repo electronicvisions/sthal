@@ -121,7 +121,7 @@ class TestPattern(object):
         maps a value in [0; 1] to the value of the floating gate. The value
         may be a floating point number.
         """
-        for idx in xrange(start_nrn, start_nrn + num_nrns):
+        for idx in range(start_nrn, start_nrn + num_nrns):
             nrn = C.NeuronOnHICANN(Enum(idx))
             value = int(lookup_func((idx - start_nrn) / float(num_nrns)))
 

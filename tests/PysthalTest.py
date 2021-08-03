@@ -92,7 +92,7 @@ class PysthalTest(unittest.TestCase):
         settings = pysthal.Settings.get()
         if args.hwdb:
             settings.yaml_hardware_database_path = args.hwdb
-            print "using non-default hardware database {}".format(args.hwdb)
+            print("using non-default hardware database {}".format(args.hwdb))
 
         self.HICANN = args.hicann
         self.WAFER = args.wafer

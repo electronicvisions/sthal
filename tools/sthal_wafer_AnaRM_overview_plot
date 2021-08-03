@@ -103,7 +103,7 @@ JINJA_ENV.globals.update(
     zip=zip,
 )
 
-TRACES_TEMPLATE = JINJA_ENV.from_string(u"""
+TRACES_TEMPLATE = JINJA_ENV.from_string("""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -132,7 +132,7 @@ TRACES_TEMPLATE = JINJA_ENV.from_string(u"""
 </body>
 """)
 
-OVERVIEW_TEMPLATE = JINJA_ENV.from_string(u"""
+OVERVIEW_TEMPLATE = JINJA_ENV.from_string("""
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -831,7 +831,7 @@ class WaferData(object):
             return
         data = self.results.copy()
         adc_errors = data['adc_error'].value_counts()
-        for msg, count in adc_errors.iteritems():
+        for msg, count in adc_errors.items():
             if msg:
                 adcs = numpy.unique(data[data['adc_error'] == msg]['adc'])
                 yield count, msg, numpy.unique(adcs)
@@ -848,7 +848,7 @@ class WaferData(object):
         data = self.junit_xml_errors.set_index('dnc')
         data = data[data['error'] != 'AssertionError']
         messages = data['message'].value_counts()
-        for msg, count in messages.iteritems():
+        for msg, count in messages.items():
             dncs = data[data['message'] == msg].index.values
             error = data.loc[dncs[0], 'error']
             if error:

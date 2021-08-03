@@ -340,7 +340,7 @@ class TestSingleHICANN(PysthalTest):
             dt, data = readout.getTimestamp(), readout.trace()
             readout.freeHandle()
             freq, qual = eval(dt, data)
-            print "Measured frequencies: ", freq, "on", sd_str
+            print("Measured frequencies: ", freq, "on", sd_str)
             # FOR DEBUG
             # np.save("synapse_driver_%i_%i_%i_%i.npy" % (bg_period, self.wafer_c, self.hicann_c.toEnum(), ac.value()), (readout.getTimestamps(), data) )
             err = ""
@@ -394,7 +394,7 @@ class TestSingleHICANN(PysthalTest):
         for channel in iter_all(C.GbitLinkOnHICANN):
             self.h.layer1[channel] = direction
 
-        addrs     = [pyhalbe.HICANN.L1Address(a) for a in rng.sample(xrange(64), 8)]
+        addrs     = [pyhalbe.HICANN.L1Address(a) for a in rng.sample(range(64), 8)]
         seeds     = [rng.randrange(2**16) for ii in range(8)]
         periods   = [rng.randrange(500, 3000) for ii in range(8)]
 
@@ -491,7 +491,7 @@ class TestSingleHICANN(PysthalTest):
         for channel in iter_all(C.GbitLinkOnHICANN):
             self.h.layer1[channel] = direction
 
-        addrs     = rng.sample(xrange(1,64), 8)
+        addrs     = rng.sample(range(1,64), 8)
         seeds     = [rng.randrange(2**16) for ii in range(8)]
         periods   = [rng.randrange(500, 3000) for ii in range(8)]
 
@@ -522,7 +522,7 @@ class TestSingleHICANN(PysthalTest):
                 msg = ("Background Generator %i is sending with address %s, "
                        "expecting %i" % (ii, received_addresses[ii], addrs[ii]))
                 if bool(ii % 2) and self.HICANN_VERSION <= 4:
-                    print "Expected error: ", msg
+                    print("Expected error: ", msg)
                 else:
                     err.append(msg)
 
@@ -850,19 +850,19 @@ class TestSingleHICANN(PysthalTest):
             tester = TestSynapses()
             self.w.configure(tester)
             err = ""
-            for row, v in tester.d_err.iteritems():
+            for row, v in tester.d_err.items():
                 w = self.h.synapses[row].weights
                 err += "Weight missmatch in synapse row {}:\n".format(row)
                 err += " programmed:" + to_str(w) + "\n"
                 err += " read:     :" + to_str(v) + "\n"
 
-            for row, v in tester.w_err.iteritems():
+            for row, v in tester.w_err.items():
                 w = self.h.synapses[row].decoders
                 err += "Decoder missmatch in synapse row {}:\n".format(row)
                 err += " programmed:" + to_str(w) + "\n"
                 err += " read:     :" + to_str(v) + "\n"
 
-            for driver, v in tester.dd_err.iteritems():
+            for driver, v in tester.dd_err.items():
                 d = self.h.synapses[driver]
                 err += "Driver missmatch for driver {}:\n".format(driver)
                 err += " programmed:" + d.__str__() + "\n"
@@ -1046,7 +1046,7 @@ class TestSingleHICANN(PysthalTest):
         st = self.w.status()
         self.assertTrue(np.any(np.array(st.fpga_rev) != 0))
         self.assertEqual(1, len(st.hicanns))
-        print st
+        print(st)
 
     @hardware
     def test_adc_trigger_analog_0(self):
@@ -1276,7 +1276,7 @@ class TestSingleHICANN(PysthalTest):
             for pos in positions:
                 errs.append("\tinterval {:>4}: {}".format(pos, intervals[pos]))
 
-        print errs
+        print(errs)
         if errs:
             self.fail("\n".join(errs))
 
@@ -1313,20 +1313,20 @@ class TestSingleHICANN(PysthalTest):
         readout_cfg = pysthal.HICANNReadoutConfigurator(readout_wafer, hicann_vector)
         self.w.configure(readout_cfg)
 
-        print readout_wafer
+        print(readout_wafer)
         readout_hicann = readout_wafer[self.hicann_c]
-        print self.h
-        print readout_hicann
+        print(self.h)
+        print(readout_hicann)
 
         attrs = ['floating_gates', 'analog', 'repeater', 'synapses', 'neurons',
                  'layer1', 'synapse_switches', 'crossbar_switches',
                  'current_stimuli']
         for attr in attrs:
-            print '=' * 80
-            print "{:=^80}".format(" {} ".format(attr))
-            print '=' * 80
-            print getattr(self.h, attr)
-            print getattr(readout_hicann, attr)
+            print('=' * 80)
+            print("{:=^80}".format(" {} ".format(attr)))
+            print('=' * 80)
+            print(getattr(self.h, attr))
+            print(getattr(readout_hicann, attr))
 
     @hardware
     def test_verification_readout(self):
@@ -1391,7 +1391,7 @@ class TestSingleHICANN(PysthalTest):
             values = rnd.random_integers(0, 1023, size=size)
             pulselength = rnd.random_integers(0, 15, size=4)
             # Keep one unchanged in the second thes phase
-            values[2][:] = range(321, 578, 2)
+            values[2][:] = list(range(321, 578, 2))
             pulselength[2] = 7
             for ii in range(4):
                 current_stimuli[ii][:] = values[ii]

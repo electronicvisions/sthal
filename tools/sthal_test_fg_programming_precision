@@ -199,7 +199,7 @@ def write_and_measure_fg_cells(test_pattern, values_to_measure, args):
         fgc.setBlock(blk, test_pattern.get_block(blk))
         logger.info(hicann.floating_gates.getBlock(blk))
 
-    for idx in xrange(fgc.getNoProgrammingPasses()):
+    for idx in range(fgc.getNoProgrammingPasses()):
         cfg = fgc.getFGConfig(C.Enum(idx))
 
         if args.fg_biasn is not None:
@@ -401,7 +401,7 @@ def main():
         type=str,
         default='HICANNv4Configurator',
         help='Which configurator to use. Valid names: {}'.format(
-            CONFIGURATOR_NAMES.keys()))
+            list(CONFIGURATOR_NAMES.keys())))
     parser.add_argument(
         '--repetitions',
         type=int,
@@ -524,8 +524,8 @@ def main():
 
     pre_write_pattern = TestPattern()
     results = []
-    for _ in xrange(args.repetitions):
-        for pre_write in xrange(args.pre_write_repetitions):
+    for _ in range(args.repetitions):
+        for pre_write in range(args.pre_write_repetitions):
             result = write_and_measure_fg_cells(pre_write_pattern, [], args)
 
         result = write_and_measure_fg_cells(

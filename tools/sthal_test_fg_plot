@@ -65,7 +65,7 @@ def plot_cell_success(results, outdir=None):
             continue
 
         for value in controller_results:
-            for block, cells in value["result"].items():
+            for block, cells in list(value["result"].items()):
                 bmkey = (block, value["step"])
                 if bmkey not in plots:
                     plots[bmkey] = new_plot(block, value["step"], value)
@@ -86,7 +86,7 @@ def plot_cell_success(results, outdir=None):
 
     for block in Coordinate.iter_all(Coordinate.FGBlockOnHICANN):
         yl_list = []
-        for i in xrange(block_height):
+        for i in range(block_height):
             try:
                 idx = (i,
                        str(pyhalbe.HICANN.getSharedParameter(
@@ -101,7 +101,7 @@ def plot_cell_success(results, outdir=None):
 
         ylabels[block] = yl_list
 
-    for step in xrange(n_programming_steps):
+    for step in range(n_programming_steps):
         for block_y in [0, 1]:
             for block_x in [0, 1]:
                 p.figure()
@@ -130,7 +130,7 @@ def plot_cell_success(results, outdir=None):
                 p.xlabel("FG column")
 
                 p.yticks(
-                    *zip(*ylabels[block]))
+                    *list(zip(*ylabels[block])))
 
                 colorbar = p.colorbar(last_img)
                 colorbar.ax.set_ylabel("error flag set (out of {} rep.)".format(n_repetitions))
@@ -244,7 +244,7 @@ def main():
             (row_idx,
              "N({}) - {}".format(str(res_nrn)[len("NeuronOnHICANN("):-1], str(res_param))))
 
-    for figure_idx in xrange(n_figures):
+    for figure_idx in range(n_figures):
         newfig = p.figure()
         figures.append(newfig)
         sp_first = p.subplot(1, 2, 1)
@@ -266,7 +266,7 @@ def main():
                        xerr=pres[result_idx]['std_v'].tolist()[slice_start:slice_end],
                        fmt="+", color=result_color)
 
-            for measurement_idx in xrange(slice_start, slice_end):
+            for measurement_idx in range(slice_start, slice_end):
                 if measurement_idx >= len(res_raw[0]):
                     break
 
@@ -306,7 +306,7 @@ def main():
                 alpha=.1)
 
 
-        for row_idx in xrange(slice_start, slice_end):
+        for row_idx in range(slice_start, slice_end):
             if row_idx >= len(res_raw[0]):
                 break
             row = res_raw[0][row_idx]
@@ -315,7 +315,7 @@ def main():
             p.errorbar([value], [row_idx], xerr=args.max_v_deviation, fmt='o',
                        color=color, alpha=.25)
 
-        p.yticks(*zip(*ytick_label[slice_start: slice_end]))
+        p.yticks(*list(zip(*ytick_label[slice_start: slice_end])))
 
         p.subplot(1, 2, 2, sharey=sp_first)
         p.grid()
@@ -325,7 +325,7 @@ def main():
         p.ylim(slice_start - .5, slice_end + .5)
 
 
-        for result_id in xrange(slice_start, slice_end):
+        for result_id in range(slice_start, slice_end):
             if result_id >= len(result_meanstds):
                 break
 
@@ -404,7 +404,7 @@ def main():
         #       soon as C.HICANNOnWafer produces readable output
         title = pformat(
             dict([(key, str(value))
-                  for key, value in measurement_args.items()]))
+                  for key, value in list(measurement_args.items())]))
 
         html_data = """
         <html><head></head><body><h1><pre>{}</pre></h1>{}</body></html>

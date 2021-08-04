@@ -163,7 +163,7 @@ def build(bld):
 
         bld.install_files(
                 '${PREFIX}/lib',
-                [ 'pysthal/pysthal_patch.py', 'tests/PysthalTest.py' ],
+                [ 'tests/PysthalTest.py' ],
                 relative_trick=False
         )
 

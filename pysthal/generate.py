@@ -94,9 +94,9 @@ for td in ns_sthal.typedefs():
     if decl is not None and decl.ignore:
         td.exclude()
 
-# Add python import callback
+# Add CalibrationMode property from hwdb to ADCConfig
 mb.add_registration_code(
-    'bp::import("pysthal_patch").attr("patch")(bp::scope());')
+    'bp::scope().attr("ADCConfig").attr("CalibrationMode") = bp::import("pyhwdb").attr("ADCEntry").attr("CalibrationMode");')
 
 # somehow the typedefs in sthal::Status had ignore=True,
 # force include them here as a workaround

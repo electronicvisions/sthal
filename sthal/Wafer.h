@@ -1,7 +1,18 @@
 #pragma once
 
+// GCCXML has problems with atomics -> removed before boost shared_prt is included
+#ifdef PYPLUSPLUS
+#undef __ATOMIC_RELAXED
+#undef __ATOMIC_ACQUIRE
+#undef __ATOMIC_RELEASE
+#undef __ATOMIC_ACQ_REL
+#endif // PYPLUSPLUS
 #include <boost/shared_ptr.hpp>
 
+// GCCXML has problems with atomics -> removed before log4cxx provisionnode is included
+#ifdef PYPLUSPLUS
+#undef _GLIBCXX_ATOMIC_BUILTINS
+#endif // PYPLUSPLUS
 #include "log4cxx/provisionnode.h"
 
 #include "hal/Handle/FPGA.h"

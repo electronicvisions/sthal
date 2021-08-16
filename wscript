@@ -155,28 +155,29 @@ def build(bld):
         bld(
                 target          = 'pysthal',
                 features        = 'use py',
-                use             = 'sthal',
+                use             = '_pysthal',
                 source          = bld.path.ant_glob('pysthal/pysthal/**/*.py'),
+                relative_trick  = True,
                 install_from    = 'pysthal',
                 install_path    = '${PREFIX}/lib'
         )
 
-        bld.install_files(
-                '${PREFIX}/lib',
-                [ 'tests/PysthalTest.py' ],
-                relative_trick=False
+        bld(
+                name            = "pysthal_test_dep",
+                source          = 'tests/PysthalTest.py',
+                features        = 'py',
+                install_path    = '${PREFIX}/lib',
         )
 
         bld(
             name            = "pysthal_tests",
             tests           = bld.path.ant_glob('tests/sthal_test_*.py'),
             features        = 'use pytest',
-            use             = ['pysthal', '_pysthal', 'pyhalbe', '_pyhalbe',
-                               'pylogging', 'pyhalbe_tests', 'pyredman', 'redman_xml'],
+            use             = ['pysthal', 'pysthal_test_dep', 'pyhalbe_test_dep',
+                               'pylogging', 'pyredman', 'redman_xml'],
             install_path    = '${PREFIX}/bin',
             test_timeout    = 45,
             prepend_to_path = ["tools"],
-            pythonpath      = ["pysthal", "tests"],
             test_environ    = {
                 'NMPM_DATADIR': datadirsrc.abspath(),
             },

@@ -177,7 +177,7 @@ def build(bld):
             use             = ['pysthal', 'pysthal_test_dep', 'pyhalbe_test_dep',
                                'pylogging', 'pyredman', 'redman_xml'],
             install_path    = '${PREFIX}/bin',
-            test_timeout    = 45,
+            test_timeout    = 60,
             prepend_to_path = ["tools"],
             test_environ    = {
                 'NMPM_DATADIR': datadirsrc.abspath(),

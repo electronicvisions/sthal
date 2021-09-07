@@ -166,6 +166,7 @@ def build(bld):
                 name            = "pysthal_test_dep",
                 source          = 'tests/PysthalTest.py',
                 features        = 'py',
+                install_from    = 'tests',
                 install_path    = '${PREFIX}/lib',
         )
 

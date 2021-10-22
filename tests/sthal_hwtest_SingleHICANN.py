@@ -187,8 +187,8 @@ class TestSingleHICANN(PysthalTest):
     def find_spikes_in_preout(dt, data):
         th = 0.4
         tmp = np.where((data >= th)[:-1] != (data >= th)[1:])[0]
-        tmp = tmp[:len(tmp)/2*2]
-        spike_pos = tmp.reshape((len(tmp)/2, 2))
+        tmp = tmp[:len(tmp)//2*2]
+        spike_pos = tmp.reshape((len(tmp)//2, 2))
         positions = []
         for begin, end in spike_pos:
             begin, end = begin - 1, end + 1
@@ -370,7 +370,7 @@ class TestSingleHICANN(PysthalTest):
         #
         # # checking quality of pulse detection
         # positions = find_pos(t,x)
-        # for a, b in positions.reshape(len(positions)/2, 2):
+        # for a, b in positions.reshape(len(positions)//2, 2):
         #     pylab.bar(a, 1.0, width=(b-a), color='red', alpha=0.65)
         # pylab.plot(t, x); pylab.show()
 
@@ -435,7 +435,7 @@ class TestSingleHICANN(PysthalTest):
             slots_per_s = int(10e6)
             t = spikes[-1]
             cnt = np.zeros(int(slots_per_s * t) + 2, dtype=np.int8)
-            cnt[np.array(np.around(spikes * slots_per_s), dtype=np.int)] += 1
+            cnt[np.array(np.around(spikes * slots_per_s), dtype=np.int64)] += 1
             fourier = np.fft.rfft(cnt)
             freq = np.fft.fftfreq(len(cnt), 1.0/slots_per_s)[:len(cnt)-1]
             index = np.where((freq[:-1] < bg_freq) & (freq[1:] > bg_freq))[0][0]
@@ -512,7 +512,7 @@ class TestSingleHICANN(PysthalTest):
             received = self.h.receivedSpikes(channel)
             _, tmp = received.T
             no_spikes.append(len(tmp))
-            received_addresses.append(list(set(tmp.astype(numpy.int))))
+            received_addresses.append(list(set(tmp.astype(numpy.int64))))
 
         err = []
         for ii in range(8):
@@ -786,8 +786,8 @@ class TestSingleHICANN(PysthalTest):
 
         # Initialize array with random data
         for row in iter_all(C.SynapseRowOnHICANN):
-            weights = np.random.random_integers(0, SynapseWeight.max, 256)
-            decoders = np.random.random_integers(0, SynapseDecoder.max, 256)
+            weights = np.random.randint(0, SynapseWeight.max+1, 256)
+            decoders = np.random.randint(0, SynapseDecoder.max+1, 256)
             self.h.synapses[row].weights[:] = [SynapseWeight(int(w)) for w in weights]
             self.h.synapses[row].decoders[:] = [SynapseDecoder(int(d)) for d in decoders]
 
@@ -1270,7 +1270,7 @@ class TestSingleHICANN(PysthalTest):
             wrong_intervals = np.logical_not(
                 self.almostEqual(intervals, expected_interval, rel_tol))
             positions, = np.where(wrong_intervals)
-            if positions:
+            if positions.size > 0:
                 errs.append("BG spikes are not periodic on channel {}:".format(
                     channel))
             for pos in positions:
@@ -1346,8 +1346,8 @@ class TestSingleHICANN(PysthalTest):
         def set_decoders_and_weights(rnd, synapses):
             "set synapse decoders and weights with random values"
             no_synapses = C.SynapseOnHICANN.enum_type.size
-            weights = rnd.random_integers(0, 15, size=no_synapses)
-            decoders = rnd.random_integers(0, 15, size=no_synapses)
+            weights = rnd.randint(0, 15+1, size=no_synapses)
+            decoders = rnd.randint(0, 15+1, size=no_synapses)
 
             SynapseWeight = pyhalbe.HICANN.SynapseWeight
             SynapseDecoder = pyhalbe.HICANN.SynapseDecoder
@@ -1388,14 +1388,14 @@ class TestSingleHICANN(PysthalTest):
 
         def set_current_stimulus(rnd, current_stimuli):
             size = (4, 129)
-            values = rnd.random_integers(0, 1023, size=size)
-            pulselength = rnd.random_integers(0, 15, size=4)
+            values = rnd.randint(0, 1023+1, size=size)
+            pulselength = rnd.randint(0, 15+1, size=4)
             # Keep one unchanged in the second thes phase
             values[2][:] = list(range(321, 578, 2))
             pulselength[2] = 7
             for ii in range(4):
-                current_stimuli[ii][:] = values[ii]
-                current_stimuli[ii].setPulselength(pulselength[ii])
+                current_stimuli[ii][:] = [int(val) for val in values[ii]]
+                current_stimuli[ii].setPulselength(int(pulselength[ii]))
             return values, pulselength
 
         rnd = numpy.random.RandomState(seed=2310013)

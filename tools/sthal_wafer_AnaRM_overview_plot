@@ -874,13 +874,13 @@ def main():
     for wafer in wafers:
         wafer.make_plots(args.data_output_dir)
     rendered = OVERVIEW_TEMPLATE.render(wafers=wafers)
-    with open(maindoc, 'w') as outfile:
+    with open(maindoc, 'wb') as outfile:
         outfile.write(rendered.encode('utf-8'))
 
     for wafer in wafers:
         tracefile = os.path.join(args.data_output_dir, wafer.trace_overview)
         rendered = TRACES_TEMPLATE.render(wafer=wafer)
-        with open(tracefile, 'w') as outfile:
+        with open(tracefile, 'wb') as outfile:
             outfile.write(rendered.encode('utf-8'))
 
 

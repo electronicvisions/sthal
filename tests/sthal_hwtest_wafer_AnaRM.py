@@ -132,7 +132,7 @@ class UpdateFGRowConfigurator(pysthal.HICANNConfigurator):
 
     def config(self, fpga, handle, hicann):
         fg = hicann.floating_gates
-        for fgpass in range(fg.getNoProgrammingPasses()):
+        for fgpass in range(fg.getNoProgrammingPasses().value()):
             cfg = fg.getFGConfig(Enum(fgpass))
             for block in Coordinate.iter_all(Coordinate.FGBlockOnHICANN):
                 pyhalbe.HICANN.set_fg_config(handle, block, cfg)
@@ -297,17 +297,18 @@ class TestRecticleAout(unittest.TestCase):
         traces = pandas.DataFrame(
             {k: v
              for k, v in data.items()
-             if not isinstance(v, Exception)})
+             if not isinstance(v, Exception)}, dtype='float64')
         adc_errors = pandas.Series(
             {k: "ADC Error DAC[{}]: {}".format(k[-1], str(v))
              for k, v in data.items()
-             if isinstance(v, Exception)})
+             if isinstance(v, Exception)}, dtype='object')
 
         result = pandas.concat(axis=1, objs={
             'adc_error': adc_errors,
             'mean': traces.mean(),
             'std': traces.std()
         })
+        result.index = pandas.MultiIndex.from_tuples(result.index.tolist())
         result.index.names = ['wafer', 'dnc', 'hicann', 'analog', 'DAC']
         result.reset_index(inplace=True)
         result['adc_error'].fillna("", inplace=True)

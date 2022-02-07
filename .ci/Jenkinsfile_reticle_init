@@ -1,0 +1,47 @@
+@Library("jenlib") _
+addBuildParameter(string(
+                  name: 'WAFER',
+                  defaultValue: "24,30,33,37",
+                  description: "comma-separated list of wafers"
+))
+addBuildParameter(string(
+                  name: 'BLACKLISTING_PATH',
+                  defaultValue: "",
+                  description: "Path to blacklisting data. HICANNs without jtag connection are skipped. An empty string will result in using `/wang/data/commissioning/BSS-1/rackplace/${WAFER}/digital_blacklisting/current`"
+))
+addBuildParameter(string(
+                  name: 'MODULE',
+                  defaultValue: "nmpm_software/current",
+                  description: "NMPM software version. The default is a link to the last stable version"
+))
+
+// Evaluate WAFER string
+String[] wafer_strings = params.get('WAFER').split(",");
+
+def parallel_tasks = [:]
+for (w in wafer_strings) {
+	// define current wafer. Loop variable gets changed!
+	def wafer = w
+	String blacklisting_path
+	if (BLACKLISTING_PATH) {
+		blacklisting_path = BLACKLISTING_PATH
+	} else {
+		blacklisting_path = "/wang/data/commissioning/BSS-1/rackplace/${wafer}/digital_blacklisting/current"
+	}
+	parallel_tasks["Init Wafer ${wafer}"] = {
+		jesh("srun -p calib -n1 --wmod ${wafer} --job-name Init_wafer_${wafer} --skip-hicann-init run_nmpm_software " +
+		      "reticle_init.py --wafer ${wafer} --fpga \$(seq 0 47) -z --defects_path ${blacklisting_path}")
+	}
+}
+stage('Run reticle init') {
+	runOnSlave(label: "frontend") {
+		catchError {
+			withModules(modules: ["${MODULE}"]) {
+				parallel parallel_tasks
+			}
+		}
+		step([$class: 'Mailer', notifyEveryUnstableBuild: true,
+		      recipients:'jose.montes@kip.uni-heidelberg.de,hschmidt@kip.uni-heidelberg.de',
+		      sendToIndividuals: true])
+	}
+}

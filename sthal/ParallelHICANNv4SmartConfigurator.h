@@ -98,13 +98,13 @@ private:
 	std::map<hicann_coord, hicann_data_t> mWrittenHICANNData;
 	std::set<fpga_coord> mDidFPGAConfig;
 
-	// variable to check if systime is started for all allocated FPGAs. Has to be repeated
-	// if at least one FPGA is configured.
-	bool m_started_systime;
-
 	// global variable to check if relocking is needed. A change on a single HICANN may requires
 	// to do the locking for all HICANNs.
 	bool m_global_l1_bus_changes;
+
+	// variable to check if systime is started for all allocated FPGAs. Has to be repeated
+	// if at least one FPGA is configured.
+	bool m_started_systime;
 
 	// need lock since access to mWrittenHICANNData and mDidFPGAConfig can be
 	// multithreaded

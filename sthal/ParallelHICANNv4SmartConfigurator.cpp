@@ -353,8 +353,14 @@ void ParallelHICANNv4SmartConfigurator::ensure_correct_l1_init_settings(
 	} else {
 		// setup skipping of locking
 		if (m_global_l1_bus_changes) {
-			LOG4CXX_WARN(getLogger(), short_format(h->coordinate())
-				<< ": Setup skipping of repeater locking even though changes in L1 were detected.");
+			// ReadRepeaterTestdata uses custom SmartConfigurator for synapse driver locking, which
+			// is not aware of correct L1 settings -> shows wrong warnings.
+			LOG4CXX_WARN(
+			    getLogger(), short_format(h->coordinate())
+			                     << ": Setup skipping of repeater locking even though changes in "
+			                        "L1 were detected. Warning can be ignored if it originates "
+			                        "from ReadRepeaterTestdata synapse driver locking (Check logs "
+			                        "with marocco loglevel DEBUG)");
 		} else {
 			LOG4CXX_INFO(getLogger(), short_format(h->coordinate())
 				<< ": Setup skipping of repeater locking.");

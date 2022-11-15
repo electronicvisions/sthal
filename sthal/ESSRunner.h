@@ -2,7 +2,9 @@
 
 #include <boost/shared_ptr.hpp>
 #include <pywrap/compat/array.hpp>
+#ifndef PYPLUSPLUS
 #include "log4cxx/provisionnode.h"
+#endif
 #include "sthal/ExperimentRunner.h"
 #include "sthal/ESSConfig.h"
 

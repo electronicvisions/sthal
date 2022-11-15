@@ -5,7 +5,15 @@
 
 #include "pywrap/compat/array.hpp"
 #include "pywrap/compat/macros.hpp"
+// GCCXML doesn't like the new log4cxx headers, avoid including them
+#ifdef PYPLUSPLUS
+namespace log4cxx {
+class Logger;
+typedef boost::shared_ptr<log4cxx::Logger> LoggerPtr;
+}
+#else
 #include "log4cxx/provisionnode.h"
+#endif
 
 #include "halco/hicann/v2/fg.h"
 

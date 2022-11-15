@@ -2,7 +2,15 @@
 
 #include <boost/shared_ptr.hpp>
 #include <pywrap/compat/array.hpp>
+// GCCXML doesn't like the new log4cxx headers, avoid including them
+#ifdef PYPLUSPLUS
+namespace log4cxx {
+class Logger;
+typedef boost::shared_ptr<log4cxx::Logger> LoggerPtr;
+}
+#else
 #include "log4cxx/provisionnode.h"
+#endif
 
 #include "halco/common/typed_array.h"
 

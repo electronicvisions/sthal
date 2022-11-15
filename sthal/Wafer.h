@@ -12,7 +12,15 @@
 #ifdef PYPLUSPLUS
 #undef _GLIBCXX_ATOMIC_BUILTINS
 #endif // PYPLUSPLUS
+// GCCXML doesn't like the new log4cxx headers, avoid including them
+#ifdef PYPLUSPLUS
+namespace log4cxx {
+class Logger;
+typedef boost::shared_ptr<log4cxx::Logger> LoggerPtr;
+}
+#else
 #include "log4cxx/provisionnode.h"
+#endif // PYPLUSPLUS
 
 #include "hal/Handle/FPGA.h"
 #include "hal/Handle/HICANN.h"

@@ -10,6 +10,25 @@
 
 namespace C = ::halco::hicann::v2;
 
+// Helper to define setter and getter of components with verify policy
+#define DECL_POLICY_GETTER_SETTER(name, type)                                                      \
+	void set_##name##_policy(VerifyPolicy val)                                                     \
+	{                                                                                              \
+		this->m_##name##_policy = val;                                                             \
+	}                                                                                              \
+	VerifyPolicy get_##name##_policy()                                                             \
+	{                                                                                              \
+		return this->m_##name##_policy;                                                            \
+	}                                                                                              \
+	void set_##name##_mask(std::vector<type> val)                                                  \
+	{                                                                                              \
+		this->m_##name##_mask = val;                                                               \
+	}                                                                                              \
+	std::vector<type> get_##name##_mask()                                                          \
+	{                                                                                              \
+		return this->m_##name##_mask;                                                              \
+	}
+
 namespace sthal {
 
 class HICANN;
@@ -36,7 +55,7 @@ struct VerificationResult
 class VerifyConfigurator : public HICANNConfigurator
 {
 public:
-	enum SynapsePolicy
+	enum VerifyPolicy
 	{
 		All,
 		None,
@@ -47,14 +66,16 @@ public:
 	/// checks if disabled component are wrongfully configured to be enabled.
 	/// synapse_policy specifies which synapses are verified in the synapse weight test
 	/// If the policy "Mask" is specified, only synapses listed in m_synapse_mask are verified.
-	VerifyConfigurator(bool verify_only_enabled = false, SynapsePolicy synapse_policy = All);
+	VerifyConfigurator(
+	    bool verify_only_enabled = false,
+	    VerifyPolicy synapse_policy = All,
+	    VerifyPolicy synapse_switch_policy = All,
+	    VerifyPolicy crossbar_switch_policy = All);
 
-	void set_synapse_policy(SynapsePolicy const sp);
-	SynapsePolicy get_synapse_policy() const;
-	/// set synapses to be verified
-	void set_synapse_mask(std::vector<C::SynapseOnWafer> const& syn_mask);
-	/// get synapses to be verified
-	std::vector<C::SynapseOnWafer> get_synapse_mask() const;
+	/// Define setter and getter for components with verify policy
+	DECL_POLICY_GETTER_SETTER(synapse, C::SynapseOnWafer);
+	DECL_POLICY_GETTER_SETTER(crossbar_switch, C::CrossbarSwitchOnWafer);
+	DECL_POLICY_GETTER_SETTER(synapse_switch, C::SynapseSwitchOnWafer);
 	/// Clear stored results
 	void clear();
 	/// Access stored results
@@ -111,16 +132,26 @@ private:
 	bool const m_verify_only_enabled;
 
 	/**
-	 * @brief: Specifies which synapses are verified during the test
+	 * @brief: Specifies which components are verified during the test
 	 * one of [All, None, Mask]
-	 * All: Verify all synapses
-	 * None: Skip verification for all synapses
-	 * Mask: Only verify synapses specified in m_synapse_mask
+	 * All: Verify all components
+	 * None: Skip verification for all components
+	 * Mask: Only verify components specified by the corresponding mask
 	 * default: All
 	 */
-	SynapsePolicy m_synapse_policy;
+	// Policy of synapses
+	VerifyPolicy m_synapse_policy;
+	// Policy of synapse switches
+	VerifyPolicy m_synapse_switch_policy;
+	// Policy of crossbar switches
+	VerifyPolicy m_crossbar_switch_policy;
+
 	// Mask of synapses to be verified
 	std::vector<C::SynapseOnWafer> m_synapse_mask;
+	// Mask of synapse switches to be verified
+	std::vector<C::SynapseSwitchOnWafer> m_synapse_switch_mask;
+	// Mask of crossbar switches to be verified
+	std::vector<C::CrossbarSwitchOnWafer> m_crossbar_switch_mask;
 };
 
 } // end namespace sthal

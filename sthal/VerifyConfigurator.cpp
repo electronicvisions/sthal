@@ -60,24 +60,52 @@ std::string check(const Prefix pre, const T& expected, const T& read)
 	}
 }
 
-template <typename Prefix, typename T>
-std::string check(
+template <typename Prefix, typename T, typename Coord>
+std::optional<std::string> check(
     const Prefix pre,
     const T& expected,
     const T& read,
-    const std::vector<SynapseOnWafer>& synapse_mask,
-    SynapseOnWafer synapse)
+    const std::vector<Coord>& mask,
+    const Coord coord)
 {
 	if (!(expected == read)) {
-		if (std::find(synapse_mask.begin(), synapse_mask.end(), synapse) != synapse_mask.end()) {
+		if (std::find(mask.begin(), mask.end(), coord) != mask.end()) {
 			std::stringstream msg;
 			msg << INDENT << pre << ":\n";
 			msg << INDENT << INDENT << "configured: " << read << "\n";
 			msg << INDENT << INDENT << "expected:   " << expected << "\n";
 			return msg.str();
+		} else {
+			// Failing component is not reported so do not count it to total amount of good
+			// components
+			return std::nullopt;
 		}
 	}
 	return std::string();
+}
+
+template <typename Prefix, typename T, typename Coord>
+std::optional<std::string> check_with_policy(
+    const Prefix pre,
+    const T& expected,
+    const T& read,
+    const VerifyConfigurator::VerifyPolicy policy,
+    const std::vector<Coord>& mask,
+    const Coord coord)
+{
+	switch (policy) {
+		case VerifyConfigurator::VerifyPolicy::All:
+			return (check(pre, expected, read));
+		case VerifyConfigurator::VerifyPolicy::Mask:
+			return (check(pre, expected, read, mask, coord));
+		case VerifyConfigurator::VerifyPolicy::None:
+			return (std::string());
+		default:
+			LOG4CXX_ERROR(
+			    VerifyConfigurator::getLogger(),
+			    "Unknown verify policy. Choose one of All, Mask or None.");
+			throw std::runtime_error("Unknown verify policy.");
+	}
 }
 
 template <typename XType, typename YType>
@@ -187,8 +215,15 @@ log4cxx::LoggerPtr VerifyConfigurator::getTimeLogger()
 	return _logger;
 }
 
-VerifyConfigurator::VerifyConfigurator(bool voe, VerifyConfigurator::SynapsePolicy sp) :
-    m_verify_only_enabled(voe), m_synapse_policy(sp)
+VerifyConfigurator::VerifyConfigurator(
+    bool voe,
+    VerifyConfigurator::VerifyPolicy sp,
+    VerifyConfigurator::VerifyPolicy ssp,
+    VerifyConfigurator::VerifyPolicy csp) :
+    m_verify_only_enabled(voe),
+    m_synapse_policy(sp),
+    m_synapse_switch_policy(ssp),
+    m_crossbar_switch_policy(csp)
 {
 }
 
@@ -419,24 +454,11 @@ void VerifyConfigurator::read_synapse_weights(
 					       << synapse.toSynapseRowOnHICANN() << ", "
 					       << synapse.toSynapseColumnOnHICANN() << ", "
 					       << synapse.toNeuronOnHICANN() << ")";
-					switch (m_synapse_policy) {
-						case SynapsePolicy::All:
-							errors.push_back(check(
-							    prefix.str(), expected.synapses[synapse].weight, weights[column]));
-							break;
-						case SynapsePolicy::Mask:
-							errors.push_back(check(
-							    prefix.str(), expected.synapses[synapse].weight, weights[column],
-							    m_synapse_mask, SynapseOnWafer(synapse, h->coordinate())));
-							break;
-						case SynapsePolicy::None:
-							errors.push_back(std::string());
-							break;
-						default:
-							LOG4CXX_ERROR(
-							    getLogger(),
-							    "Unknown synapse policy. Choose one of All, Mask or None.");
-							throw std::runtime_error("Unknown synapse policy.");
+					auto error = check_with_policy(
+					    prefix.str(), expected.synapses[synapse].weight, weights[column],
+					    m_synapse_policy, m_synapse_mask, SynapseOnWafer(synapse, h->coordinate()));
+					if (error) {
+						errors.push_back(*error);
 					}
 				} else {
 					errors.push_back(std::string());
@@ -544,9 +566,15 @@ void VerifyConfigurator::read_synapse_switch(
 	std::vector<std::string> errors;
 	for (auto row : iter_all<SynapseSwitchRowOnHICANN>()) {
 		for (auto column : values.get_lines(row)) {
-			errors.push_back(check(
-				make_xy(column, row), expected->synapse_switches.get(column, row.y()),
-				values.get(column, row.y())));
+			SynapseSwitchOnWafer syn_switch(
+			    SynapseSwitchOnHICANN(X(column), row.y()), h->coordinate());
+			auto error = check_with_policy(
+			    make_xy(column, row), expected->synapse_switches.get(column, row.y()),
+			    values.get(column, row.y()), m_synapse_switch_policy, m_synapse_switch_mask,
+			    syn_switch);
+			if (error) {
+				errors.push_back(*error);
+			}
 		}
 	}
 	post_merge_errors(h->coordinate(), "l1_synapse_switches", errors, true);
@@ -570,9 +598,15 @@ void VerifyConfigurator::read_crossbar_switches(
 	std::vector<std::string> errors;
 	for (auto row : iter_all<HLineOnHICANN>()) {
 		for (auto column : values.get_lines(row)) {
-			errors.push_back(check(
-				make_xy(column, row), expected->crossbar_switches.get(column, row),
-				values.get(column, row)));
+			CrossbarSwitchOnWafer crossbar(
+			    CrossbarSwitchOnHICANN(X(column), Y(row)), h->coordinate());
+			auto error = check_with_policy(
+			    make_xy(column, row), expected->crossbar_switches.get(column, row),
+			    values.get(column, row), m_crossbar_switch_policy, m_crossbar_switch_mask,
+			    crossbar);
+			if (error) {
+				errors.push_back(*error);
+			}
 		}
 	}
 	post_merge_errors(h->coordinate(), "l1_crossbar_switches", errors, true);
@@ -644,26 +678,6 @@ std::ostream& operator<<(std::ostream& out, const VerifyConfigurator& cfg)
 		out << "\n    " << result;
 	}
 	return out;
-}
-
-void VerifyConfigurator::set_synapse_policy(VerifyConfigurator::SynapsePolicy const sp)
-{
-	m_synapse_policy = sp;
-}
-
-VerifyConfigurator::SynapsePolicy VerifyConfigurator::get_synapse_policy() const
-{
-	return m_synapse_policy;
-}
-
-void VerifyConfigurator::set_synapse_mask(std::vector<SynapseOnWafer> const& sw)
-{
-	m_synapse_mask = sw;
-}
-
-std::vector<SynapseOnWafer> VerifyConfigurator::get_synapse_mask() const
-{
-	return m_synapse_mask;
 }
 
 } // end namespace sthal

@@ -70,12 +70,14 @@ public:
 	    bool verify_only_enabled = false,
 	    VerifyPolicy synapse_policy = All,
 	    VerifyPolicy synapse_switch_policy = All,
-	    VerifyPolicy crossbar_switch_policy = All);
+	    VerifyPolicy crossbar_switch_policy = All,
+	    VerifyPolicy synapse_array_policy = All);
 
 	/// Define setter and getter for components with verify policy
 	DECL_POLICY_GETTER_SETTER(synapse, C::SynapseOnWafer);
 	DECL_POLICY_GETTER_SETTER(crossbar_switch, C::CrossbarSwitchOnWafer);
 	DECL_POLICY_GETTER_SETTER(synapse_switch, C::SynapseSwitchOnWafer);
+	DECL_POLICY_GETTER_SETTER(synapse_array, C::SynapseArrayOnWafer);
 	/// Clear stored results
 	void clear();
 	/// Access stored results
@@ -145,6 +147,8 @@ private:
 	VerifyPolicy m_synapse_switch_policy;
 	// Policy of crossbar switches
 	VerifyPolicy m_crossbar_switch_policy;
+	// Policy of synapse arrays
+	VerifyPolicy m_synapse_array_policy;
 
 	// Mask of synapses to be verified
 	std::vector<C::SynapseOnWafer> m_synapse_mask;
@@ -152,6 +156,8 @@ private:
 	std::vector<C::SynapseSwitchOnWafer> m_synapse_switch_mask;
 	// Mask of crossbar switches to be verified
 	std::vector<C::CrossbarSwitchOnWafer> m_crossbar_switch_mask;
+	// Mask of syapse array to be verified
+	std::vector<C::SynapseArrayOnWafer> m_synapse_array_mask;
 };
 
 } // end namespace sthal

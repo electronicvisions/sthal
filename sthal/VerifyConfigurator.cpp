@@ -219,11 +219,13 @@ VerifyConfigurator::VerifyConfigurator(
     bool voe,
     VerifyConfigurator::VerifyPolicy sp,
     VerifyConfigurator::VerifyPolicy ssp,
-    VerifyConfigurator::VerifyPolicy csp) :
+    VerifyConfigurator::VerifyPolicy csp,
+    VerifyConfigurator::VerifyPolicy sap) :
     m_verify_only_enabled(voe),
     m_synapse_policy(sp),
     m_synapse_switch_policy(ssp),
-    m_crossbar_switch_policy(csp)
+    m_crossbar_switch_policy(csp),
+    m_synapse_array_policy(sap)
 {
 }
 
@@ -542,7 +544,12 @@ void VerifyConfigurator::read_synapse_controllers
 	for (auto addr : iter_all<SynapseArrayOnHICANN>()) {
 		read_controllers[addr] =  SynapseControllerData(
 		    ::HMF::HICANN::get_synapse_controller(*h, addr));
-		errors.push_back(check(addr, expected_controllers[addr], read_controllers[addr]));
+		auto error = check_with_policy(
+		    addr, expected_controllers[addr], read_controllers[addr], m_synapse_array_policy,
+		    m_synapse_array_mask, SynapseArrayOnWafer(addr, h->coordinate()));
+		if (error) {
+			errors.push_back(*error);
+		}
 	}
 
 	post_merge_errors(h->coordinate(), "synapse controllers", errors, true);

@@ -28,8 +28,6 @@ mv $log ${OUTDIR}/${log_prefix}.log
 log=${OUTDIR}/${log_prefix}.log
 exec > >(tee -a $log)
 
-source /opt/init/modules.sh
-
 if [[ -z $CONTAINER_APP_NMPM_SOFTWARE || -z $CONTAINER_IMAGE_NMPM_SOFTWARE ]]; then
     echo "Both CONTAINER_APP_NMPM_SOFTWARE and CONTAINER_IMAGE_NMPM_SOFTWARE must be set"
     exit 6

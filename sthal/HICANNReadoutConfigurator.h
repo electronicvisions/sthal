@@ -1,5 +1,7 @@
 #pragma once
 
+#include <set>
+
 #include "sthal/HICANNConfigurator.h"
 #include "halco/hicann/v2/fwd.h"
 

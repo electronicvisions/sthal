@@ -1,5 +1,8 @@
 #pragma once
 
+#include <set>
+#include <map>
+
 #include "pywrap/compat/macros.hpp"
 #include "halco/hicann/v2/l1.h"
 #include "sthal/ParallelHICANNv4Configurator.h"

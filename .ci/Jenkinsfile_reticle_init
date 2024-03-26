@@ -1,7 +1,7 @@
 @Library("jenlib") _
 addBuildParameter(string(
                   name: 'WAFER',
-                  defaultValue: "23,24,30,33",
+                  defaultValue: "23,24,30",
                   description: "comma-separated list of wafers"
 ))
 addBuildParameter(string(

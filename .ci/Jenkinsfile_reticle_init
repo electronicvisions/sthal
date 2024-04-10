@@ -20,31 +20,29 @@ String[] wafer_strings = params.get('WAFER').split(",");
 
 def parallel_tasks = [:]
 
-timeout(time: 2, unit: 'HOURS') {
-	for (w in wafer_strings) {
-		// define current wafer. Loop variable gets changed!
-		def wafer = w
-		String blacklisting_path
-		if (BLACKLISTING_PATH) {
-			blacklisting_path = BLACKLISTING_PATH
-		} else {
-			blacklisting_path = "/wang/data/commissioning/BSS-1/rackplace/${wafer}/digital_blacklisting/current"
-		}
-		parallel_tasks["Init Wafer ${wafer}"] = {
-			jesh("srun -p calib -n1 --wmod ${wafer} --job-name Init_wafer_${wafer} --skip-hicann-init run_nmpm_software " +
-				"reticle_init.py --wafer ${wafer} --fpga \$(seq 0 47) -z --defects_path ${blacklisting_path}")
-		}
+for (w in wafer_strings) {
+	// define current wafer. Loop variable gets changed!
+	def wafer = w
+	String blacklisting_path
+	if (BLACKLISTING_PATH) {
+		blacklisting_path = BLACKLISTING_PATH
+	} else {
+		blacklisting_path = "/wang/data/commissioning/BSS-1/rackplace/${wafer}/digital_blacklisting/current"
 	}
-	stage('Run reticle init') {
-		runOnSlave(label: "frontend") {
-			catchError {
-				withModules(modules: ["${MODULE}"]) {
-					parallel parallel_tasks
-				}
+	parallel_tasks["Init Wafer ${wafer}"] = {
+		jesh("srun -p calib -n1 --immediate=60 --wmod ${wafer} --job-name Init_wafer_${wafer} --skip-hicann-init " +
+		"run_nmpm_software reticle_init.py --wafer ${wafer} --fpga \$(seq 0 47) -z --defects_path ${blacklisting_path}")
+	}
+}
+stage('Run reticle init') {
+	runOnSlave(label: "frontend") {
+		catchError(buildResult: 'SUCCESS', stageResult: 'FAILURE') {
+			withModules(modules: ["${MODULE}"]) {
+				parallel parallel_tasks
 			}
-			step([$class: 'Mailer', notifyEveryUnstableBuild: true,
-				recipients:'jose.montes@kip.uni-heidelberg.de,hschmidt@kip.uni-heidelberg.de',
-				sendToIndividuals: true])
 		}
+		step([$class: 'Mailer', notifyEveryUnstableBuild: true,
+			recipients:'jose.montes@kip.uni-heidelberg.de,hschmidt@kip.uni-heidelberg.de',
+			sendToIndividuals: true])
 	}
 }

@@ -25,7 +25,7 @@ fi
 
 export SINGULARITYENV_PREPEND_PATH=$PATH
 
-jobid=$(sbatch --parsable --time=00:30:00 --nice=50 -o ${OUTDIR}/${name}.log -p calib -c1 -J ${name} \
+jobid=$(sbatch --parsable --time=00:30:00 --nice=50 -o ${OUTDIR}/${name}.log -p batch -c1 -J ${name} \
     --kill-on-invalid-dep=yes $SP_DEPENDENCY_ARG \
     --wrap "singularity exec --app $CONTAINER_APP_NMPM_SOFTWARE $CONTAINER_IMAGE_NMPM_SOFTWARE ./run.sh $SP_ORIGINAL_ARGS")
 if [[ -z "${jobid}" ]]; then

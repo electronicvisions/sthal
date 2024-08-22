@@ -27,7 +27,7 @@ export SINGULARITYENV_PREPEND_PATH=$PATH
 echo "SINGULARITYENV_PREPEND_PATH: " $SINGULARITYENV_PREPEND_PATH
 echo "SP_DEPENDENCY_ARG: " $SP_DEPENDENCY_ARG
 
-jobid=$(sbatch --parsable --nice=50 -o ${OUTDIR}/$name.log -p calib -c1 --skip-hicann-init \
+jobid=$(sbatch --parsable --nice=50 -o ${OUTDIR}/$name.log -p batch -c1 --skip-hicann-init \
     --wmod $WAFER --reticle-with-aout ${DNC} -J ${name} --kill-on-invalid-dep=yes ${SP_DEPENDENCY_ARG} --time=00:30:00 \
     --wrap "singularity exec --app $CONTAINER_APP_NMPM_SOFTWARE $CONTAINER_IMAGE_NMPM_SOFTWARE \
     ./run.sh $SP_ORIGINAL_ARGS")

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 
-#include "logger.h"
+#include "logger/log4cxx/logger.h"
 #include "test/hwtest.h"
 #include "test/CommandLineArgs.h"
 

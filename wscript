@@ -94,7 +94,7 @@ def build(bld):
         target       = 'sthal_tests',
         features     = 'gtest cxx cxxprogram pyembed',
         source       =  bld.path.ant_glob('tests/**/sthal_test_*.cpp'),
-        use          =  ['sthal', 'logger_obj', 'hwtest_obj', 'RT'],
+        use          =  ['sthal', 'logger', 'hwtest_obj', 'RT'],
         install_path='${PREFIX}/bin',
         test_environ = {
             'NMPM_DATADIR': datadirsrc.abspath(),
@@ -105,7 +105,7 @@ def build(bld):
         target        = 'sthal_multi_fpga_loopback_hwtest',
         features      = 'cxx cxxprogram pyembed',
         source        = 'tests/sthal_multi_fpga_loopback_hwtest.cpp',
-        use           = ['sthal', 'logger_obj', 'hwtest_obj', 'RT'],
+        use           = ['sthal', 'logger', 'hwtest_obj', 'RT'],
         install_path  = '${PREFIX}/bin',
     )
 
@@ -114,7 +114,7 @@ def build(bld):
         target       = 'sthal_hwtests',
         features     = 'cxx cxxprogram pyembed gtest',
         source       = bld.path.ant_glob('tests/**/sthal_hwtest_*.cpp'),
-        use          =  ['sthal', 'logger_obj', 'hwtest_obj', 'RT', 'GTEST'],
+        use          =  ['sthal', 'logger', 'hwtest_obj', 'RT', 'GTEST'],
         install_path ='${PREFIX}/bin',
         skip_run     = True,
     )

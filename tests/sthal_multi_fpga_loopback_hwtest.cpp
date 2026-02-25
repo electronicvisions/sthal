@@ -15,7 +15,7 @@
 #include "sthal/MagicHardwareDatabase.h"
 #include "sthal/Spike.h"
 #include "sthal/Timer.h"
-#include "logger.h"
+#include "logger/log4cxx/logger.h"
 
 namespace po = boost::program_options;
 using namespace halco::hicann::v2;

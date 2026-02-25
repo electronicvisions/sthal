@@ -1,6 +1,6 @@
 #include <boost/program_options.hpp>
 
-#include "logging_ctrl.h"
+#include "logger/log4cxx/logging_ctrl.h"
 
 #include "sthal/Wafer.h"
 #include "sthal/ESSHardwareDatabase.h"
